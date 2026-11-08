@@ -23,7 +23,7 @@ This plan is **read-only for product code in the monorepo sense**. No monorepo-d
 | Init creates `faneqo_staging` DB | `docker/postgres-init.sql` |
 | Local Node pin via mise (dev host only) | Root `mise.toml` + `NODE_VERSION` in `example.env` (Architecture H); staging droplet/containers do **not** need mise |
 | No custom app Dockerfiles planned for staging | Staging FE/BE use stock Node image tags from env + volume mounts (Architecture G locked); unrelated `frontend/workers/studio-video/Dockerfile` out of scope |
-| Root `npm test` / `test:stack` points at `tests/stackrun/check.sh` but **`tests/` is still missing** | Confirmed 2026-11-08; recreate after history merge / CI phase |
+| Root `npm test` runs stackrun + root shape checks | `tests/stackrun/` (import-root overlays) + `tests/root/` (scripts / mise / example.env / compose / docs); Task 3.7. Full FE/BE app builds **not** in root suite. GitHub Actions root workflow still Phase 5 / Task 12 |
 | Each app already has its own CI on its own remote | `frontend/.github/workflows/ci.yml`, `backend/.github/workflows/ci.yml` |
 | Prod Railway: two projects (FE `musicbizqr`+`mbq-cron`, BE `qrserver`+Postgres) | Root `AGENTS.md` |
 | `.audit/` = Netlify site `faneqo-audit`; ignored by root `.gitignore` | `.audit/DEPLOY.md`, `.gitignore` |
@@ -59,6 +59,8 @@ No root `SPEC.md` / `STACK.md` / `PLAN.md` (on purpose: `AGENTS.md` + `tasks/` +
 Root orchestration (compose, stackrun, example.env, mise pin) — present / Task 3.4
         │
         ├── Optional: local root git + temp nested-.git removal (local only)
+        │
+        ├── Root test suite (stackrun overlays + shape checks) — Task 3.7
         │
         ├── Unified compose profiles (one file: db-only vs staging apps)  ← before droplet
         │       │  image tags from NODE_VERSION / FRONTEND_* / BACKEND_*
@@ -228,6 +230,24 @@ Caveats (accept for v1):
 
 **Do not** require mise in droplet bootstrap, CI droplet agents, or staging container images.
 
+### I. Root test coverage (fast shell; no app builds)
+
+Own the tooling we own at workspace root. Prefer small bash (+ `node` JSON parse) checks over CI that runs full Nuxt/Strapi builds.
+
+**In suite (Task 3.7):**
+
+- `tests/stackrun/` — import root `stack.config.ts`, strip docker/tunnels, echo overlay env (already green).
+- `tests/root/` — `package.json` scripts exist and point at expected commands/prefixes; `mise.toml` loads `.env` and pins `node = "{{ env.NODE_VERSION }}"`; `example.env` has `NODE_VERSION` (+ optional `FRONTEND_NODE_VERSION` / `BACKEND_NODE_VERSION`); `stack.config.ts` has `$development` / `$staging` and no accidental top-level `commands` array; `docker-compose.yml` has `postgres` service (current truth — **no** staging-profile asserts until Task 3.6 lands); cheap presence of `README.md` / `AGENTS.md` / `example.env`.
+- Root `npm test` runs **all** root checks (`test:stack` + `test:root`).
+
+**Assumptions:**
+
+1. “Full root coverage” = behavior of root orchestration files, not FE/BE product builds in CI (deps + time). Skip `npm run build` of apps unless a later cheap smoke exists.
+2. TDD for new checks: write assertion that would fail if the contract broke; green against current correct files.
+3. Extend `npm test` to the whole root suite; keep stackrun import-root approach.
+
+**Skipped (on purpose):** staging Compose profile service asserts (Task 3.6 not implemented); live `stackrun` with real FE/BE; full app builds; droplet/CI workflow (Task 12).
+
 ### D. CI / deploy isolation (path filters — after monorepo exists)
 
 Path filters stay relevant **after** history merge. Until then, product CI stays on `musicbizqr` / `qrserver` as today.
@@ -235,7 +255,7 @@ Path filters stay relevant **after** history merge. Until then, product CI stays
 **GitHub Actions (monorepo, Phase 5):**
 
 - Port FE/BE `ci.yml` with `paths:` filters and package working directories.
-- Thin root workflow for compose / stackrun / `tests/stackrun/**`.
+- Thin root workflow for compose / stackrun / `tests/stackrun/**` / `tests/root/**` (suite itself lands early in Task 3.7; Actions wiring stays Phase 5).
 
 **Railway (cutover):** service roots `frontend`, `backend`, `frontend/jobs/mbq-cron` + watch paths.
 
@@ -282,9 +302,11 @@ Confirm root orchestration; optionally init root git and remove nested `.git` **
 - [ ] Tip SHAs recorded before any local `.git` removal
 - [ ] Human OK to proceed to staging (or confirmed skip of temp path)
 
-### Phase 2 prep — mise pins + unified compose (local first)
+### Phase 2 prep — mise pins + unified compose + root tests (local first)
 
-Architecture H (mise + env Node pins) landed in Task 3.4. Architecture G design locked (stock Node from those env vars, dual FE/BE versions allowed, no custom Dockerfiles unless needed). **Implement** one-file profiles + stackrun hooks locally (Task 3.6), wiring `image: node:…` from `FRONTEND_NODE_VERSION` / `BACKEND_NODE_VERSION` with fallback to `NODE_VERSION`. Prove: db-only for `npm run dev`; staging profile mounts built FE/BE for `npm run staging`. **Do not** invent a second compose file. **Do not** install mise on the droplet. Checkpoint before droplet.
+Architecture H (mise + env Node pins) landed in Task 3.4. Architecture G design locked (stock Node from those env vars, dual FE/BE versions allowed, no custom Dockerfiles unless needed). **Implement** one-file profiles + stackrun hooks locally (Task 3.6), wiring `image: node:…` from `FRONTEND_NODE_VERSION` / `BACKEND_NODE_VERSION` with fallback to `NODE_VERSION`. Prove: db-only for `npm run dev`; staging profile mounts built FE/BE for `npm run staging`. **Do not** invent a second compose file. **Do not** install mise on the droplet.
+
+**Root test coverage (Task 3.7, Architecture I)** can land in parallel with / before 3.6: fast shell checks for scripts, mise, example.env, stack overlays, postgres-only compose, docs presence. No staging-profile asserts until 3.6 exists. Checkpoint before droplet.
 
 ### Checkpoint Compose — Design OK / local profile works
 
@@ -329,7 +351,7 @@ Freeze merge SHAs (current product tips); filter-repo (or subtree) in scratch; m
 
 ### Phase 5 — Path-aware CI on the monorepo
 
-Port FE/BE workflows with path filters; restore `tests/stackrun/`; root stack workflow.
+Port FE/BE workflows with path filters; wire root GitHub Actions to existing `npm test` (`tests/stackrun/` + `tests/root/` from Task 3.7).
 
 ### Checkpoint E — CI isolation
 
@@ -369,7 +391,7 @@ Begin `.audit/` work once daily development is the single repo/dir.
 | Duplicate compose files / drift local vs droplet | Med | One file + profiles (Architecture G); droplet uses `--profile staging` only |
 | Staging volume mounts miss runtime deps (node_modules, Nuxt `.output`) | Med | Document exact mount paths in Task 3.6; verify local staging before droplet |
 | Accidental staging profile in `npm run dev` | Med | Postgres unprofiled; FE/BE only under `staging` profile; keep `$development` before db-only |
-| `tests/stackrun` missing | Low | Recreate in Phase 5 |
+| Root suite drifts from compose/stack reality | Low | Task 3.7 shape checks; extend after Task 3.6 for staging profile |
 
 ## Open questions (need human forks)
 

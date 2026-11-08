@@ -213,10 +213,39 @@ Do not make monorepo-driven edits under `frontend/` / `backend/` until Task 15 i
 
 
 
+### Task 3.7: Root test coverage (fast shell; no app builds)
+
+**Description:** Expand root `npm test` beyond stackrun overlays to cover tooling we own at workspace root: `package.json` scripts, `mise.toml` pin shape, `example.env` Node keys, stack overlay structure, postgres-only compose (current truth), cheap docs presence. Keep stackrun import-root approach. Do **not** run full FE/BE builds. Do **not** assert staging Compose profile services until Task 3.6 lands. Hard lock: no product edits under `frontend/` / `backend/` / `.audit/`.
+
+**Acceptance criteria:**
+
+- [x] `tests/root/check.sh` covers: required root scripts + expected command prefixes; mise `.env` + `node = "{{ env.NODE_VERSION }}"`; `example.env` `NODE_VERSION` / optional FE+BE keys; stack `$development`/`$staging` present and no top-level `commands`; compose has `postgres`; `README.md` / `AGENTS.md` / `example.env` exist
+- [x] `tests/stackrun/` overlay env checks still pass (import root config)
+- [x] Root `package.json`: `test:root` runs root suite; `test:stack` unchanged; `npm test` runs both
+- [x] Assumptions / skips recorded in `tasks/plan.md` Architecture I
+- [x] No staging-profile compose asserts; no `npm run build` of apps in suite
+
+**Verification:**
+
+- [x] Tests pass: `npm test` (and focused `npm run test:root` / `npm run test:stack`) — 2026-11-08
+- [x] Manual check: RED before wiring — `test:root` missing failed `check.sh`; GREEN after `package.json` update
+- [x] Manual check: `git status` — only root / `tests/` / `tasks/` files
+
+**Dependencies:** Task 3.4 (mise + env pins exist); stackrun suite already present
+
+**Files likely touched:** `tests/root/check.sh`, root `package.json`, `tasks/plan.md`, `tasks/todo.md` — **not** `frontend/` / `backend/` / `.audit/`
+
+**Estimated scope:** S
+
+---
+
+
+
 ## Checkpoint Compose: Local unified stack OK
 
 - [x] Human OK on stock-Node approach (no custom Dockerfiles unless needed) — 2026-11-08 / Task 3.5
 - [x] Task 3.4 mise + README deps done (host only; env pins for compose tags)
+- [x] Task 3.7 root test suite green (`npm test`) — 2026-11-08
 - [ ] Tasks 3.5–3.6 done (3.5 design lock done; 3.6 implement still open)
 - [ ] Human OK on local staging profile behavior (incl. image tags from env / dual Node when set)
 - [ ] Ready for DO droplet using the **same** compose file + `--profile staging` (**no mise** on droplet)
@@ -509,26 +538,25 @@ Do not make monorepo-driven edits under `frontend/` / `backend/` until Task 15 i
 
 
 
-### Task 12: Root stack smoke test + workflow
+### Task 12: Root stack CI workflow
 
-**Description:** Restore `tests/stackrun/check.sh` (referenced by root `package.json` but missing) and root CI gated on stack/compose paths.
+**Description:** Suite itself lands in Task 3.7 (`tests/stackrun/` + `tests/root/`, `npm test`). This task wires a monorepo GitHub Actions workflow gated on stack/compose/docker/tests paths that runs `npm test`.
 
 **Acceptance criteria:**
 
-- [ ] `npm run test:stack` exits 0 on sane checkout
-- [ ] Root workflow on stack/compose/docker/tests paths
-- [ ] Document what the check covers
+- [ ] Root workflow on stack/compose/docker/`tests/**` paths runs `npm test`
+- [ ] Document what the check covers (point at Architecture I / Task 3.7)
 
 **Verification:**
 
-- [ ] Tests pass: `npm run test:stack`
+- [ ] Tests pass: `npm test` (local) / workflow green on a stack-path PR
 - [ ] Manual check: workflow path filters correct
 
-**Dependencies:** Task 10
+**Dependencies:** Task 10; Task 3.7
 
-**Files likely touched:** `tests/stackrun/`**, `.github/workflows/*`, maybe root `package.json`
+**Files likely touched:** `.github/workflows/*`, maybe short README/`AGENTS.md` note
 
-**Estimated scope:** M
+**Estimated scope:** S
 
 ---
 
@@ -733,6 +761,7 @@ Do not make monorepo-driven edits under `frontend/` / `backend/` until Task 15 i
 | 2026-11-08 | Unified docker-compose                    | **YES** — one root `docker-compose.yml`; Compose profiles (`staging` for FE/BE). Dev: DB only + host hot reload. Local staging + DO droplet: same file + `--profile staging`; built apps **volume-mounted** into runtime containers. Implement Tasks 3.5–3.6 before droplet Task 4. No duplicate staging compose file. |
 | 2026-11-08 | Staging runtime images                    | **Stock Node** — tags from `NODE_VERSION` / optional `FRONTEND_NODE_VERSION` / `BACKEND_NODE_VERSION` (empty → `NODE_VERSION`); dual FE/BE versions allowed; same image OK when equal; different `command` / ports / volume mounts. **No custom Dockerfiles unless needed**. Task 3.5 locked. |
 | 2026-11-08 | Local Node tooling (mise)                 | **mise** on development host only (`mise.toml` + `NODE_VERSION` in `example.env`). Staging droplet / staging containers do **not** require mise — they use Docker stock Node tags from the same env vars. Task 3.4. |
+| 2026-11-08 | Root test coverage                        | Fast shell suite only (Architecture I / Task 3.7): stackrun overlays + package/mise/example.env/compose/docs shape. Skip full FE/BE builds and staging-profile asserts until Task 3.6. Actions wiring = Task 12. |
 |            | Audit in git?                             |                                                                                                                                                                                                                                                                       |
 |            | Archive old repos when?                   |                                                                                                                                                                                                                                                                       |
 |            | Cutover approved?                         |                                                                                                                                                                                                                                                                       |
