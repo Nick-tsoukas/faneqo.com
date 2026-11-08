@@ -6,7 +6,7 @@ Side-by-side product trees under one root git (content-only `staging` on [`Nick-
 
 **Migration (canonical):** before staging, history merge, CI, or cutover work, read [`tasks/plan.md`](tasks/plan.md) and track progress in [`tasks/todo.md`](tasks/todo.md). Do not invent a second plan. **Order:** root/staging first → optional local temp `.git` removal → staging dogfood → re-clone pristine FE/BE → history merge into `faneqo.com` → then (approval) monorepo product edits / prod cutover / audit.
 
-**Audit issues (docs track, parallel):** prioritized drafts live in [`tasks/audit-issues.md`](tasks/audit-issues.md) (plan [`tasks/audit-issues-plan.md`](tasks/audit-issues-plan.md), index [`docs/audit-issues.md`](docs/audit-issues.md)). Source evidence stays in gitignored `.audit/`. Does not replace the staging plan.
+**Audit issues (parallel track, not started):** plan [`tasks/audit-issues-plan.md`](tasks/audit-issues-plan.md), progress [`tasks/audit-issues-todo.md`](tasks/audit-issues-todo.md), specs [`tasks/audit-issues.md`](tasks/audit-issues.md). Does not replace the staging plan.
 
 ## Layout
 
@@ -16,9 +16,9 @@ Side-by-side product trees under one root git (content-only `staging` on [`Nick-
 | `backend/` | Strapi v4, canonical data — checkout `Nick-tsoukas/qrserver`. Defers to frontend loop: `backend/AGENTS.md`. |
 | `docker-compose.yml`, `docker/` | Today: Postgres 16 only (`faneqo_dev`; init also creates `faneqo_staging`). Planned: one compose file with profiles — db-only for `npm run dev`; `--profile staging` adds FE/BE containers (stock Node image + built apps volume-mounted; no custom Dockerfiles unless needed). See `tasks/plan.md` Architecture G / Tasks 3.5–3.6. |
 | `stack.config.ts`, `example.env`, `mise.toml`, root `package.json` | stackrun orchestration + local mise Node pin. Copy `example.env` → `.env`; `mise install` for host Node (`NODE_VERSION`). Staging profile hooks change when Architecture G is implemented. |
-| `.audit/` | Netlify audit site `faneqo-audit` (gitignored). Not the product app. Leave as-is; do not treat HTML/page-cards as the work queue. |
-| `tasks/audit-issues.md` | Prioritized audit-issue task page extracted from `.audit/github-issues.json` (docs track). |
-| `docs/audit-issues.md` | Short index for that track. |
+| `tasks/audit-issues-plan.md` | Central plan to resolve audit issues (one approved step at a time). |
+| `tasks/audit-issues-todo.md` | Progress checklist — check off as issues resolve. |
+| `tasks/audit-issues.md` | Issue specs + acceptance criteria. |
 | `docs/mise-install.md` | Host-only mise install (Linux / macOS / Windows / WSL); linked from README. |
 | `graphify-out/` | Local knowledge graph (gitignored). |
 

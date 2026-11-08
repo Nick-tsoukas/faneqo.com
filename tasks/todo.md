@@ -27,7 +27,8 @@ Do not make monorepo-driven edits under `frontend/` / `backend/` until Task 15 i
 - [x] Unified compose: **YES** — one `docker-compose.yml`; Compose profiles; dev = DB only + host FE/BE; local + droplet staging = DB + FE/BE containers with built apps volume-mounted (Architecture G in `tasks/plan.md`)
 - [x] Staging runtime images: **stock Node** (same image OK twice when versions match); tags from `NODE_VERSION` / `FRONTEND_NODE_VERSION` / `BACKEND_NODE_VERSION`; dual FE/BE versions allowed; **no custom Dockerfiles unless needed** (Task 3.5)
 - [x] Local Node tooling: **mise** on development host only; droplet/containers do **not** need mise (Architecture H / Task 3.4)
-- [ ] Still open: audit-in-repo?; old-repo archival after cutover? (not blocking Phase 1–2)
+- [x] Audit track: plan `tasks/audit-issues-plan.md`, progress `tasks/audit-issues-todo.md`, specs `tasks/audit-issues.md` (not started)
+- [ ] Still open: old-repo archival after cutover? (not blocking Phase 1–2)
 
 **Verification:**
 
@@ -215,7 +216,7 @@ Do not make monorepo-driven edits under `frontend/` / `backend/` until Task 15 i
 
 ### Task 3.7: Root test coverage (fast shell; no app builds)
 
-**Description:** Expand root `npm test` beyond stackrun overlays to cover tooling we own at workspace root: `package.json` scripts, `mise.toml` pin shape, `example.env` Node keys, stack overlay structure, postgres-only compose (current truth), cheap docs presence. Keep stackrun import-root approach. Do **not** run full FE/BE builds. Do **not** assert staging Compose profile services until Task 3.6 lands. Hard lock: no product edits under `frontend/` / `backend/` / `.audit/`.
+**Description:** Expand root `npm test` beyond stackrun overlays to cover tooling we own at workspace root: `package.json` scripts, `mise.toml` pin shape, `example.env` Node keys, stack overlay structure, postgres-only compose (current truth), cheap docs presence. Keep stackrun import-root approach. Do **not** run full FE/BE builds. Do **not** assert staging Compose profile services until Task 3.6 lands. Hard lock: no product edits under `frontend/` / `backend/`.
 
 **Acceptance criteria:**
 
@@ -233,7 +234,7 @@ Do not make monorepo-driven edits under `frontend/` / `backend/` until Task 15 i
 
 **Dependencies:** Task 3.4 (mise + env pins exist); stackrun suite already present
 
-**Files likely touched:** `tests/root/check.sh`, root `package.json`, `tasks/plan.md`, `tasks/todo.md` — **not** `frontend/` / `backend/` / `.audit/`
+**Files likely touched:** `tests/root/check.sh`, root `package.json`, `tasks/plan.md`, `tasks/todo.md` — **not** `frontend/` / `backend/`
 
 **Estimated scope:** S
 
@@ -721,22 +722,23 @@ Do not make monorepo-driven edits under `frontend/` / `backend/` until Task 15 i
 
 
 
-### Task 17: Begin audit work from `.audit/`
+### Task 17: Begin audit remediation from `tasks/audit-issues.md`
 
-**Description:** With single-dir/repo daily workflow in place, start audit remediation / issue filing per `.audit/` docs. Netlify flow unless Decision log says vend into git. **Doc track (already extracted, not product fixes):** prioritized queue in [`tasks/audit-issues.md`](audit-issues.md) — plan [`audit-issues-plan.md`](audit-issues-plan.md), index [`docs/audit-issues.md`](../docs/audit-issues.md).
+**Description:** With single-dir/repo daily workflow in place, start product remediation per [`tasks/audit-issues-plan.md`](audit-issues-plan.md). Progress in [`audit-issues-todo.md`](audit-issues-todo.md); specs in [`audit-issues.md`](audit-issues.md). One approved step at a time. Do **not** change Stripe amounts, Lifetime Pro / `free` meaning, or fan charges.
 
 **Acceptance criteria:**
 
-- [ ] First audit action item identified and tracked
-- [ ] Deploy path known (`DEPLOY.md`)
+- [ ] First remediation item from `tasks/audit-issues-todo.md` identified and approved
+- [ ] Work follows the audit-issues plan phases (sec P1 first unless human reorders)
 
 **Verification:**
 
-- [ ] Manual check: audit site or tracker reflects started work
+- [ ] Manual check: chosen issue acceptance criteria pass in product code
+- [ ] Manual check: no silent Stripe / billing-rule changes
 
-**Dependencies:** Checkpoint F; preferably H if audit needs prod context
+**Dependencies:** Checkpoint F; preferably H if remediation needs prod context; **explicit remediation approval**
 
-**Files likely touched:** `.audit/`** (and optionally un-ignore if approved)
+**Files likely touched:** `frontend/` / `backend/` only for the chosen issue (and only after approval)
 
 **Estimated scope:** M+ (ongoing)
 
@@ -762,7 +764,7 @@ Do not make monorepo-driven edits under `frontend/` / `backend/` until Task 15 i
 | 2026-11-08 | Staging runtime images                    | **Stock Node** — tags from `NODE_VERSION` / optional `FRONTEND_NODE_VERSION` / `BACKEND_NODE_VERSION` (empty → `NODE_VERSION`); dual FE/BE versions allowed; same image OK when equal; different `command` / ports / volume mounts. **No custom Dockerfiles unless needed**. Task 3.5 locked. |
 | 2026-11-08 | Local Node tooling (mise)                 | **mise** on development host only (`mise.toml` + `NODE_VERSION` in `example.env`). Staging droplet / staging containers do **not** require mise — they use Docker stock Node tags from the same env vars. Task 3.4. |
 | 2026-11-08 | Root test coverage                        | Fast shell suite only (Architecture I / Task 3.7): stackrun overlays + package/mise/example.env/compose/docs shape. Skip full FE/BE builds and staging-profile asserts until Task 3.6. Actions wiring = Task 12. |
-|            | Audit in git?                             |                                                                                                                                                                                                                                                                       |
+| 2026-11-08 | Audit track                               | Plan `tasks/audit-issues-plan.md`; progress `tasks/audit-issues-todo.md`; specs `tasks/audit-issues.md`. Remediation not started — explicit go / Task 17.                                                                                                            |
 |            | Archive old repos when?                   |                                                                                                                                                                                                                                                                       |
 |            | Cutover approved?                         |                                                                                                                                                                                                                                                                       |
 |            | Monorepo product edit list approved?      |                                                                                                                                                                                                                                                                       |

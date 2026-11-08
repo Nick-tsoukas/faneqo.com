@@ -2,7 +2,7 @@
 
 ## Overview
 
-Stand up cheap staging (DO droplet + compose) from the workspace root **before** any history rewrite. Optional local-only temp path: drop nested `frontend/.git` / `backend/.git` so the workspace is one deployable tree for staging — never push that surgery to `musicbizqr` / `qrserver`. After staging works, restore pristine product checkouts, then merge commit history into empty `Nick-tsoukas/faneqo.com`. Only after that (and approval): product-tree monorepo edits, Railway prod cutover, and `.audit/` work.
+Stand up cheap staging (DO droplet + compose) from the workspace root **before** any history rewrite. Optional local-only temp path: drop nested `frontend/.git` / `backend/.git` so the workspace is one deployable tree for staging — never push that surgery to `musicbizqr` / `qrserver`. After staging works, restore pristine product checkouts, then merge commit history into empty `Nick-tsoukas/faneqo.com`. Only after that (and approval): product-tree monorepo edits, Railway prod cutover, and audit remediation per `tasks/audit-issues-plan.md`.
 
 **Product remotes stay the source of truth.** `musicbizqr` and `qrserver` keep receiving normal development on GitHub. This plan does **not** pause FE/BE work. It only delays monorepo history merge, nested-`.git` surgery that affects remotes, and Railway prod retarget until staging is live.
 
@@ -26,7 +26,7 @@ This plan is **read-only for product code in the monorepo sense**. No monorepo-d
 | Root `npm test` runs stackrun + root shape checks | `tests/stackrun/` (import-root overlays) + `tests/root/` (scripts / mise / example.env / compose / docs); Task 3.7. Full FE/BE app builds **not** in root suite. GitHub Actions root workflow still Phase 5 / Task 12 |
 | Each app already has its own CI on its own remote | `frontend/.github/workflows/ci.yml`, `backend/.github/workflows/ci.yml` |
 | Prod Railway: two projects (FE `musicbizqr`+`mbq-cron`, BE `qrserver`+Postgres) | Root `AGENTS.md` |
-| `.audit/` = Netlify site `faneqo-audit`; ignored by root `.gitignore` | `.audit/DEPLOY.md`, `.gitignore` |
+| Audit remediation track (not started) | `tasks/audit-issues-plan.md` + `tasks/audit-issues-todo.md` + `tasks/audit-issues.md` |
 | Prior Cursor plan (superseded) | `.cursor/plans/monorepo_staging_stack_641598ee.plan.md` — local compose/stackrun largely done; staging = **DO+compose**; history-first order **replaced** by this revision |
 
 No root `SPEC.md` / `STACK.md` / `PLAN.md` (on purpose: `AGENTS.md` + `tasks/` + short `README.md` are enough). Product loops stay in `frontend/AGENTS.md` and `backend/AGENTS.md` — do not deep-scan those trees unless a task needs product code.
@@ -86,7 +86,7 @@ Root orchestration (compose, stackrun, example.env, mise pin) — present / Task
         │
         ├── Production cutover (Railway → monorepo; watch paths)
         │
-        └── Audit work (`.audit/`) — after single-dir/repo is daily reality
+        └── Audit remediation (`tasks/audit-issues-plan.md`) — after single-dir/repo is daily reality
 ```
 
 Vertical slices: each phase leaves a usable system. Staging is not blocked on history merge.
@@ -269,7 +269,7 @@ Forbidden until approval: monorepo PRs that change app sources under `frontend/`
 
 ### F. Audit after monorepo is daily workspace
 
-`.audit/` stays gitignored + Netlify until single-repo daily workflow is real. Then remediate from `.audit/` docs. Vend-into-git is an open question.
+Audit remediation plan: `tasks/audit-issues-plan.md`. Start product fixes only after Task 17 approval (or earlier explicit go).
 
 ## Phases
 
@@ -372,7 +372,7 @@ Retarget Railway prod services to monorepo subdirs + watch paths; leave `chalk-v
 
 ### Phase 9 — Audit
 
-Begin `.audit/` work once daily development is the single repo/dir.
+Begin remediation per `tasks/audit-issues-plan.md` once daily development is the single repo/dir (Task 17).
 
 ## Risks and mitigations
 
@@ -410,7 +410,7 @@ Begin `.audit/` work once daily development is the single repo/dir.
 
 **Still open:**
 
-11. **Audit:** keep `.audit/` gitignored + Netlify, or vend into monorepo?
+11. ~~**Audit track**~~ → Plan/todo/specs under `tasks/audit-issues-*.md` (2026-11-08). Remediation still waits on Task 17 / explicit go.
 12. **Old repos after cutover:** archive on GitHub, or leave writable for emergency?
 13. **Railway staging smoke before cutover?** Revisit at Checkpoint B.
 

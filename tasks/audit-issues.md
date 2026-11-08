@@ -1,10 +1,10 @@
-# Audit issues task page
+# Audit issues
 
-Prioritized checklist extracted from `.audit/github-issues.json` (37 drafts). Source evidence: `.audit/FINDINGS.md`, order: `.audit/REMEDIATION_PLAN.md`. Plan: [`tasks/audit-issues-plan.md`](audit-issues-plan.md). Extraction checklist: [`tasks/audit-issues-todo.md`](audit-issues-todo.md). Index: [`docs/audit-issues.md`](../docs/audit-issues.md).
+Specs for the **37** audit issues. **Plan (central):** [`tasks/audit-issues-plan.md`](audit-issues-plan.md). **Progress:** check ids in [`tasks/audit-issues-todo.md`](audit-issues-todo.md) as each issue resolves.
 
-**Status of a checkbox:** the draft is tracked for remediation — **not** that product code is fixed. Do **not** edit `.audit/`. Do **not** change Stripe amounts, the 30-day trial, Lifetime Pro/`free` meaning, fan charges, or file GitHub issues until separate explicit approval. Ignore page-cards, `index.html`, and Netlify deploy for this queue.
+**Status: not started.** Acceptance criteria below are the done definition for each id. Progress boxes live on the todo; mark criteria here when that issue ships.
 
-**Ignored sources:** `.audit/page-cards/`, `.audit/index.html`, `.audit/DEPLOY.md`, `.audit/deploy.sh`, REL/PERF leads with no draft.
+**Standing do-nots:** no Stripe amount / trial / Lifetime Pro (`free`) meaning changes; no fan charges or limited Free tier; leave `POST /stripe/confirm-social` unregistered; do not claim YouTube routes are reachable in production; do not publish toy band names; do not invent extra issues from marketing page-scan notes; no GitHub filing unless separately approved.
 
 ---
 
@@ -73,14 +73,14 @@ Priority **0**, severity **High**, effort **XL**, repo **musicbizqr**, labels: a
 
 **Verification:**
 
-- [ ] Draft `audit-parent` in `.audit/github-issues.json` still matches this section’s intent
+- [ ] Section `audit-parent` still matches this page’s inventory title and acceptance criteria
 - [ ] Manual check: all child draft ids for this parent appear elsewhere on this page
 
 **Dependencies:** None (map)
 
 **Files likely touched:**
 
-- (none listed in draft body — see `.audit/FINDINGS.md` for evidence paths)
+- (none listed in draft body — use description paths / product trees at remediation time)
 
 **Estimated scope:** XL
 
@@ -109,8 +109,8 @@ Priority **1**, severity **High**, effort **S**, repo **qrserver**, findings `SE
 
 **Verification:**
 
-- [ ] Draft `sec-001` in `.audit/github-issues.json` still matches this section’s intent
-- [ ] Manual check (at remediation time): acceptance criteria pass against product code — not claimed done by doc extraction
+- [ ] Section `sec-001` still matches this page’s inventory title and acceptance criteria
+- [ ] Manual check: acceptance criteria pass against product code
 
 **Dependencies:** audit-parent
 
@@ -144,8 +144,8 @@ Priority **1**, severity **High**, effort **XS**, repo **qrserver**, findings `S
 
 **Verification:**
 
-- [ ] Draft `sec-002` in `.audit/github-issues.json` still matches this section’s intent
-- [ ] Manual check (at remediation time): acceptance criteria pass against product code — not claimed done by doc extraction
+- [ ] Section `sec-002` still matches this page’s inventory title and acceptance criteria
+- [ ] Manual check: acceptance criteria pass against product code
 
 **Dependencies:** audit-parent
 
@@ -179,8 +179,8 @@ Priority **1**, severity **High**, effort **S**, repo **qrserver**, findings `SE
 
 **Verification:**
 
-- [ ] Draft `sec-005` in `.audit/github-issues.json` still matches this section’s intent
-- [ ] Manual check (at remediation time): acceptance criteria pass against product code — not claimed done by doc extraction
+- [ ] Section `sec-005` still matches this page’s inventory title and acceptance criteria
+- [ ] Manual check: acceptance criteria pass against product code
 
 **Dependencies:** audit-parent
 
@@ -213,7 +213,7 @@ Priority **1**, severity **High**, effort **XS**, repo **musicbizqr**, findings 
 
 **Verification:**
 
-- [ ] Draft `bill-001` in `.audit/github-issues.json` still matches this section’s intent
+- [ ] Section `bill-001` still matches this page’s inventory title and acceptance criteria
 - [ ] Manual check: no product change shipped for this guard without explicit override
 
 **Dependencies:** audit-parent
@@ -249,8 +249,8 @@ Priority **1**, severity **High**, effort **M**, repo **qrserver**, findings `DA
 
 **Verification:**
 
-- [ ] Draft `data-001` in `.audit/github-issues.json` still matches this section’s intent
-- [ ] Manual check (at remediation time): acceptance criteria pass against product code — not claimed done by doc extraction
+- [ ] Section `data-001` still matches this page’s inventory title and acceptance criteria
+- [ ] Manual check: acceptance criteria pass against product code
 
 **Dependencies:** audit-parent
 
@@ -292,8 +292,8 @@ Priority **1**, severity **High**, effort **S**, repo **musicbizqr**, findings `
 
 **Verification:**
 
-- [ ] Draft `dead-004` in `.audit/github-issues.json` still matches this section’s intent
-- [ ] Manual check (at remediation time): acceptance criteria pass against product code — not claimed done by doc extraction
+- [ ] Section `dead-004` still matches this page’s inventory title and acceptance criteria
+- [ ] Manual check: acceptance criteria pass against product code
 
 **Dependencies:** audit-parent
 
@@ -335,8 +335,8 @@ Priority **1**, severity **High**, effort **S**, repo **musicbizqr**, findings `
 
 **Verification:**
 
-- [ ] Draft `dead-005` in `.audit/github-issues.json` still matches this section’s intent
-- [ ] Manual check (at remediation time): acceptance criteria pass against product code — not claimed done by doc extraction
+- [ ] Section `dead-005` still matches this page’s inventory title and acceptance criteria
+- [ ] Manual check: acceptance criteria pass against product code
 
 **Dependencies:** audit-parent
 
@@ -357,9 +357,9 @@ Priority **1**, severity **High**, effort **S**, repo **musicbizqr**, findings `
 
 **Role:** Map / parent (children carry the work)
 
-**Description:** Problem. Public pages still describe smart links and QR codes, often under the name MusicBizQR, and several product paths never ask an artist to subscribe. This draft is the ongoing list. The work is the child drafts. Page cards in .audit/page-cards/ are scan notes, not extra issues. There are 142 files and 106 unique URLs. 36 addresses have two files, and on 33 of those the two files do not say the same thing. Read both. Do not file a card as its own issue.
+**Description:** Problem. Public pages still describe smart links and QR codes, often under the name MusicBizQR, and several product paths never ask an artist to subscribe. This draft is the ongoing list. The work is the child drafts. Marketing page-scan notes are reading aids, not extra issues. Do not file a scan note as its own issue.
 
-Faneqo is a website for bands. The band is the customer. The owner pays for Pro and gets a band page with links, a YouTube embed, a song, and a QR code that opens the page. Fans join that page. Fans do not pay. The blocks and the role split are in .audit/PRODUCT.md. Do not charge fans. Do not build the limited Free tier. Do not add a fan plan or a separate artist account. Do not reuse plan=free for a smaller plan. Do not change the $12 price or the 30-day trial.
+Faneqo is a website for bands. The band is the customer. The owner pays for Pro and gets a band page with links, a YouTube embed, a song, and a QR code that opens the page. Fans join that page. Fans do not pay. Do not charge fans. Do not build the limited Free tier. Do not add a fan plan or a separate artist account. Do not reuse plan=free for a smaller plan. Do not change the $12 price or the 30-day trial.
 
 Priority **1**, severity **High**, effort **XL**, repo **musicbizqr**, findings `MKT-001`, labels: marketing, audit.
 
@@ -373,7 +373,7 @@ Priority **1**, severity **High**, effort **XL**, repo **musicbizqr**, findings 
 
 **Verification:**
 
-- [ ] Draft `mkt-001` in `.audit/github-issues.json` still matches this section’s intent
+- [ ] Section `mkt-001` still matches this page’s inventory title and acceptance criteria
 - [ ] Manual check: all child draft ids for this parent appear elsewhere on this page
 
 **Dependencies:** audit-parent
@@ -403,7 +403,7 @@ Priority **1**, severity **High**, effort **XL**, repo **musicbizqr**, findings 
 
 **Description:** Problem. A visitor reading an article often clicks a button that leaves for musicbizqr.com or musicbizqr.com/signup. Signup on faneqo.com never happens. The close box in the Vue file already uses /signup, but the essay HTML from Strapi still contains the old host.
 
-Where. musicbizqr/pages/article/[category]/[slug].vue. renderMarkdown calls marked.parse on page.content and does not rewrite hosts. The musicbizqr.com rewrite in that file applies only to JSON-LD. Example from a page card, not every URL: https://faneqo.com/article/qr-code-strategy/free-qr-code-generator-for-bands (.audit/page-cards/article-qr-code-strategy-free-qr-generator.json) sends "Get Started Free" to https://musicbizqr.com/signup.
+Where. musicbizqr/pages/article/[category]/[slug].vue. renderMarkdown calls marked.parse on page.content and does not rewrite hosts. The musicbizqr.com rewrite in that file applies only to JSON-LD. Example (not every URL): https://faneqo.com/article/qr-code-strategy/free-qr-code-generator-for-bands sends "Get Started Free" to https://musicbizqr.com/signup.
 
 Priority **1**, severity **High**, effort **S**, repo **musicbizqr**, findings `MKT-001`, labels: marketing, audit.
 
@@ -416,8 +416,8 @@ Priority **1**, severity **High**, effort **S**, repo **musicbizqr**, findings `
 
 **Verification:**
 
-- [ ] Draft `mkt-002` in `.audit/github-issues.json` still matches this section’s intent
-- [ ] Manual check (at remediation time): acceptance criteria pass against product code — not claimed done by doc extraction
+- [ ] Section `mkt-002` still matches this page’s inventory title and acceptance criteria
+- [ ] Manual check: acceptance criteria pass against product code
 
 **Dependencies:** audit-parent
 
@@ -448,8 +448,8 @@ Priority **1**, severity **High**, effort **M**, repo **musicbizqr**, findings `
 
 **Verification:**
 
-- [ ] Draft `mkt-003` in `.audit/github-issues.json` still matches this section’s intent
-- [ ] Manual check (at remediation time): acceptance criteria pass against product code — not claimed done by doc extraction
+- [ ] Section `mkt-003` still matches this page’s inventory title and acceptance criteria
+- [ ] Manual check: acceptance criteria pass against product code
 
 **Dependencies:** audit-parent
 
@@ -484,8 +484,8 @@ Priority **1**, severity **High**, effort **S**, repo **musicbizqr**, findings `
 
 **Verification:**
 
-- [ ] Draft `mkt-004` in `.audit/github-issues.json` still matches this section’s intent
-- [ ] Manual check (at remediation time): acceptance criteria pass against product code — not claimed done by doc extraction
+- [ ] Section `mkt-004` still matches this page’s inventory title and acceptance criteria
+- [ ] Manual check: acceptance criteria pass against product code
 
 **Dependencies:** audit-parent
 
@@ -519,8 +519,8 @@ Priority **1**, severity **High**, effort **M**, repo **musicbizqr**, findings `
 
 **Verification:**
 
-- [ ] Draft `mkt-005` in `.audit/github-issues.json` still matches this section’s intent
-- [ ] Manual check (at remediation time): acceptance criteria pass against product code — not claimed done by doc extraction
+- [ ] Section `mkt-005` still matches this page’s inventory title and acceptance criteria
+- [ ] Manual check: acceptance criteria pass against product code
 
 **Dependencies:** audit-parent
 
@@ -554,8 +554,8 @@ Priority **1**, severity **High**, effort **M**, repo **musicbizqr**, findings `
 
 **Verification:**
 
-- [ ] Draft `mkt-006` in `.audit/github-issues.json` still matches this section’s intent
-- [ ] Manual check (at remediation time): acceptance criteria pass against product code — not claimed done by doc extraction
+- [ ] Section `mkt-006` still matches this page’s inventory title and acceptance criteria
+- [ ] Manual check: acceptance criteria pass against product code
 
 **Dependencies:** audit-parent
 
@@ -589,8 +589,8 @@ Priority **1**, severity **High**, effort **S**, repo **musicbizqr**, findings `
 
 **Verification:**
 
-- [ ] Draft `mkt-007` in `.audit/github-issues.json` still matches this section’s intent
-- [ ] Manual check (at remediation time): acceptance criteria pass against product code — not claimed done by doc extraction
+- [ ] Section `mkt-007` still matches this page’s inventory title and acceptance criteria
+- [ ] Manual check: acceptance criteria pass against product code
 
 **Dependencies:** audit-parent
 
@@ -611,7 +611,7 @@ Priority **1**, severity **High**, effort **S**, repo **musicbizqr**, findings `
 
 **Description:** Problem. Article essays still say the product is free forever, that the first three QR codes are free, or that a free tier is available. Those are not plans in the billing code. A writing prompt is still in some essays. Two merch URLs redirect to one indie-bands article. The central-hub URL has been scanned serving the promote-new-releases essay.
 
-Where. Essays render in musicbizqr/pages/article/[category]/[slug].vue via renderMarkdown. Redirects are in musicbizqr/server/utils/seoRedirects.ts. Example URLs: https://faneqo.com/article/qr-code-strategy/free-qr-code-generator-for-bands ("Free Forever Plan"), https://faneqo.com/article/qr-code-strategy/how-bands-can-use-qr-codes-to-explode-their-fanbase-in-2025 ("first three QR codes free"), https://faneqo.com/article/qr-code-strategy/musicbizqr-vs-linktree-for-musicians. Merch URLs: https://faneqo.com/article/merch-growth/sell-more-band-merch-with-qr-codes and https://faneqo.com/article/merch-growth/sell-more-band-merch-with-smart-qr-codes. Central hub: https://faneqo.com/article/smart-links/smart-links-for-musicians-why-every-artist-needs-a-central-hub. Notes are in .audit/page-cards/. Read both notes when two files disagree.
+Where. Essays render in musicbizqr/pages/article/[category]/[slug].vue via renderMarkdown. Redirects are in musicbizqr/server/utils/seoRedirects.ts. Example URLs: https://faneqo.com/article/qr-code-strategy/free-qr-code-generator-for-bands ("Free Forever Plan"), https://faneqo.com/article/qr-code-strategy/how-bands-can-use-qr-codes-to-explode-their-fanbase-in-2025 ("first three QR codes free"), https://faneqo.com/article/qr-code-strategy/musicbizqr-vs-linktree-for-musicians. Merch URLs: https://faneqo.com/article/merch-growth/sell-more-band-merch-with-qr-codes and https://faneqo.com/article/merch-growth/sell-more-band-merch-with-smart-qr-codes. Central hub: https://faneqo.com/article/smart-links/smart-links-for-musicians-why-every-artist-needs-a-central-hub. If two scan notes for the same URL disagreed historically, treat that as note noise, not two bugs.
 
 Priority **1**, severity **High**, effort **L**, repo **musicbizqr**, findings `MKT-001`, labels: marketing, audit.
 
@@ -626,8 +626,8 @@ Priority **1**, severity **High**, effort **L**, repo **musicbizqr**, findings `
 
 **Verification:**
 
-- [ ] Draft `mkt-008` in `.audit/github-issues.json` still matches this section’s intent
-- [ ] Manual check (at remediation time): acceptance criteria pass against product code — not claimed done by doc extraction
+- [ ] Section `mkt-008` still matches this page’s inventory title and acceptance criteria
+- [ ] Manual check: acceptance criteria pass against product code
 
 **Dependencies:** audit-parent
 
@@ -659,8 +659,8 @@ Priority **1**, severity **High**, effort **S**, repo **musicbizqr**, findings `
 
 **Verification:**
 
-- [ ] Draft `mkt-009` in `.audit/github-issues.json` still matches this section’s intent
-- [ ] Manual check (at remediation time): acceptance criteria pass against product code — not claimed done by doc extraction
+- [ ] Section `mkt-009` still matches this page’s inventory title and acceptance criteria
+- [ ] Manual check: acceptance criteria pass against product code
 
 **Dependencies:** audit-parent
 
@@ -678,7 +678,7 @@ Priority **1**, severity **High**, effort **S**, repo **musicbizqr**, findings `
 
 **Role:** Actionable
 
-**Description:** Problem. https://faneqo.com/bands/all is the public list of artist pages. On 28 Oct 2026 the public band API returned 109 pages. .audit/scan_bands.py labeled 47 linked, 2 thin, 14 review, and 46 toy. Linked means the page already has a song, a video, a social link, or a website. Thin means it does not, and it did not match the toy rules. Review means a person still has to look: the bio is under 20 characters, the name contains a digit, the text mentions Roblox, or it reads as a tribute. Toy means the bio equals the name, the text matches resume-fragment or store-name phrases, or the name ends in a long number. The directory title still says MusicBizQR. The page file asks for 100 rows. The live API currently ignores that and returns all 109. The name-by-name sheet is .audit/bands-review.json. Do not publish that file.
+**Description:** Problem. https://faneqo.com/bands/all is the public list of artist pages. On 28 Oct 2026 the public band API returned 109 pages. A local scan labeled 47 linked, 2 thin, 14 review, and 46 toy. Linked means the page already has a song, a video, a social link, or a website. Thin means it does not, and it did not match the toy rules. Review means a person still has to look: the bio is under 20 characters, the name contains a digit, the text mentions Roblox, or it reads as a tribute. Toy means the bio equals the name, the text matches resume-fragment or store-name phrases, or the name ends in a long number. The directory title still says MusicBizQR. The page file asks for 100 rows. The live API currently ignores that and returns all 109. Do not publish the name-by-name toy/thin sheet.
 
 Priority **1**, severity **High**, effort **M**, repo **musicbizqr**, findings `MKT-001`, labels: marketing, audit.
 
@@ -692,8 +692,8 @@ Priority **1**, severity **High**, effort **M**, repo **musicbizqr**, findings `
 
 **Verification:**
 
-- [ ] Draft `mkt-010` in `.audit/github-issues.json` still matches this section’s intent
-- [ ] Manual check (at remediation time): acceptance criteria pass against product code — not claimed done by doc extraction
+- [ ] Section `mkt-010` still matches this page’s inventory title and acceptance criteria
+- [ ] Manual check: acceptance criteria pass against product code
 
 **Dependencies:** audit-parent
 
@@ -725,8 +725,8 @@ Priority **1**, severity **High**, effort **M**, repo **musicbizqr**, findings `
 
 **Verification:**
 
-- [ ] Draft `mkt-011` in `.audit/github-issues.json` still matches this section’s intent
-- [ ] Manual check (at remediation time): acceptance criteria pass against product code — not claimed done by doc extraction
+- [ ] Section `mkt-011` still matches this page’s inventory title and acceptance criteria
+- [ ] Manual check: acceptance criteria pass against product code
 
 **Dependencies:** audit-parent
 
@@ -760,8 +760,8 @@ Priority **1**, severity **High**, effort **M**, repo **musicbizqr**, findings `
 
 **Verification:**
 
-- [ ] Draft `mkt-012` in `.audit/github-issues.json` still matches this section’s intent
-- [ ] Manual check (at remediation time): acceptance criteria pass against product code — not claimed done by doc extraction
+- [ ] Section `mkt-012` still matches this page’s inventory title and acceptance criteria
+- [ ] Manual check: acceptance criteria pass against product code
 
 **Dependencies:** audit-parent
 
@@ -794,8 +794,8 @@ Priority **1**, severity **High**, effort **M**, repo **musicbizqr**, findings `
 
 **Verification:**
 
-- [ ] Draft `mkt-014` in `.audit/github-issues.json` still matches this section’s intent
-- [ ] Manual check (at remediation time): acceptance criteria pass against product code — not claimed done by doc extraction
+- [ ] Section `mkt-014` still matches this page’s inventory title and acceptance criteria
+- [ ] Manual check: acceptance criteria pass against product code
 
 **Dependencies:** audit-parent
 
@@ -816,7 +816,7 @@ Priority **1**, severity **High**, effort **M**, repo **musicbizqr**, findings `
 
 **Role:** Map / parent (children carry the work)
 
-**Description:** Problem. A band is the customer. The public site and the app use a second set of words for the same things: artist, musician, user, smart link, MusicBizQR, free plan, bandmate, and team member. A reader cannot tell who pays, or what they pay for. The word list is .audit/GLOSSARY.md. One word per thing.
+**Description:** Problem. A band is the customer. The public site and the app use a second set of words for the same things: artist, musician, user, smart link, MusicBizQR, free plan, bandmate, and team member. A reader cannot tell who pays, or what they pay for. One word per thing: band, band page, band owner, fan, fan list, Pro, Lifetime Pro, owner, manager, viewer.
 
 The children, each with the problem and the files.
 
@@ -831,7 +831,7 @@ Priority **1**, severity **High**, effort **M**, repo **musicbizqr**, findings `
 
 **Verification:**
 
-- [ ] Draft `vocab-001` in `.audit/github-issues.json` still matches this section’s intent
+- [ ] Section `vocab-001` still matches this page’s inventory title and acceptance criteria
 - [ ] Manual check: all child draft ids for this parent appear elsewhere on this page
 
 **Dependencies:** audit-parent
@@ -863,8 +863,8 @@ Priority **1**, severity **High**, effort **S**, repo **musicbizqr**, findings `
 
 **Verification:**
 
-- [ ] Draft `vocab-002` in `.audit/github-issues.json` still matches this section’s intent
-- [ ] Manual check (at remediation time): acceptance criteria pass against product code — not claimed done by doc extraction
+- [ ] Section `vocab-002` still matches this page’s inventory title and acceptance criteria
+- [ ] Manual check: acceptance criteria pass against product code
 
 **Dependencies:** audit-parent
 
@@ -902,8 +902,8 @@ Priority **1**, severity **High**, effort **M**, repo **musicbizqr**, findings `
 
 **Verification:**
 
-- [ ] Draft `vocab-003` in `.audit/github-issues.json` still matches this section’s intent
-- [ ] Manual check (at remediation time): acceptance criteria pass against product code — not claimed done by doc extraction
+- [ ] Section `vocab-003` still matches this page’s inventory title and acceptance criteria
+- [ ] Manual check: acceptance criteria pass against product code
 
 **Dependencies:** audit-parent
 
@@ -945,8 +945,8 @@ Priority **1**, severity **High**, effort **S**, repo **musicbizqr**, findings `
 
 **Verification:**
 
-- [ ] Draft `vocab-004` in `.audit/github-issues.json` still matches this section’s intent
-- [ ] Manual check (at remediation time): acceptance criteria pass against product code — not claimed done by doc extraction
+- [ ] Section `vocab-004` still matches this page’s inventory title and acceptance criteria
+- [ ] Manual check: acceptance criteria pass against product code
 
 **Dependencies:** audit-parent
 
@@ -982,8 +982,8 @@ Priority **2**, severity **Low**, effort **XS**, repo **qrserver**, findings `SE
 
 **Verification:**
 
-- [ ] Draft `sec-003` in `.audit/github-issues.json` still matches this section’s intent
-- [ ] Manual check (at remediation time): acceptance criteria pass against product code — not claimed done by doc extraction
+- [ ] Section `sec-003` still matches this page’s inventory title and acceptance criteria
+- [ ] Manual check: acceptance criteria pass against product code
 
 **Dependencies:** audit-parent
 
@@ -1018,8 +1018,8 @@ Priority **2**, severity **Medium**, effort **XS**, repo **qrserver**, findings 
 
 **Verification:**
 
-- [ ] Draft `sec-004` in `.audit/github-issues.json` still matches this section’s intent
-- [ ] Manual check (at remediation time): acceptance criteria pass against product code — not claimed done by doc extraction
+- [ ] Section `sec-004` still matches this page’s inventory title and acceptance criteria
+- [ ] Manual check: acceptance criteria pass against product code
 
 **Dependencies:** audit-parent
 
@@ -1053,7 +1053,7 @@ Priority **2**, severity **Medium**, effort **S**, repo **qrserver**, findings `
 
 **Verification:**
 
-- [ ] Draft `bill-002` in `.audit/github-issues.json` still matches this section’s intent
+- [ ] Section `bill-002` still matches this page’s inventory title and acceptance criteria
 - [ ] Manual check: no product change shipped for this guard without explicit override
 
 **Dependencies:** audit-parent
@@ -1090,8 +1090,8 @@ Priority **2**, severity **High**, effort **M**, repo **musicbizqr**, findings `
 
 **Verification:**
 
-- [ ] Draft `dead-002` in `.audit/github-issues.json` still matches this section’s intent
-- [ ] Manual check (at remediation time): acceptance criteria pass against product code — not claimed done by doc extraction
+- [ ] Section `dead-002` still matches this page’s inventory title and acceptance criteria
+- [ ] Manual check: acceptance criteria pass against product code
 
 **Dependencies:** audit-parent
 
@@ -1122,8 +1122,8 @@ Priority **2**, severity **High**, effort **S**, repo **musicbizqr**, findings `
 
 **Verification:**
 
-- [ ] Draft `dead-003` in `.audit/github-issues.json` still matches this section’s intent
-- [ ] Manual check (at remediation time): acceptance criteria pass against product code — not claimed done by doc extraction
+- [ ] Section `dead-003` still matches this page’s inventory title and acceptance criteria
+- [ ] Manual check: acceptance criteria pass against product code
 
 **Dependencies:** audit-parent
 
@@ -1146,7 +1146,7 @@ Priority **2**, severity **High**, effort **S**, repo **musicbizqr**, findings `
 
 **Description:** Problem. Forty-six of the 109 public pages match toy rules: the bio equals the name, the text repeats a resume fragment or a store name, or the name ends in a long number. Emailing those addresses burns the Resend reputation and does not create a subscriber. Some of those pages already contain a song. That does not make them a mailing target.
 
-Where. The gate is .audit/scan_bands.py, which writes .audit/bands-review.json. That file has no owner email. The send in mkt-012 must skip label toy. The public directory hide in mkt-010 uses the same label.
+Where. The toy/thin/review labels come from the same local band scan used for mkt-010. That sheet has no owner email. The send in mkt-012 must skip label toy. The public directory hide in mkt-010 uses the same label.
 
 Priority **2**, severity **Medium**, effort **S**, repo **musicbizqr**, findings `MKT-001`, labels: marketing, audit.
 
@@ -1159,14 +1159,14 @@ Priority **2**, severity **Medium**, effort **S**, repo **musicbizqr**, findings
 
 **Verification:**
 
-- [ ] Draft `mkt-013` in `.audit/github-issues.json` still matches this section’s intent
+- [ ] Section `mkt-013` still matches this page’s inventory title and acceptance criteria
 - [ ] Manual check: no product change shipped for this guard without explicit override
 
 **Dependencies:** audit-parent
 
 **Files likely touched:**
 
-- (none listed in draft body — see `.audit/FINDINGS.md` for evidence paths)
+- (none listed in draft body — use description paths / product trees at remediation time)
 
 **Estimated scope:** S
 
@@ -1191,8 +1191,8 @@ Priority **2**, severity **Medium**, effort **S**, repo **musicbizqr**, findings
 
 **Verification:**
 
-- [ ] Draft `vocab-005` in `.audit/github-issues.json` still matches this section’s intent
-- [ ] Manual check (at remediation time): acceptance criteria pass against product code — not claimed done by doc extraction
+- [ ] Section `vocab-005` still matches this page’s inventory title and acceptance criteria
+- [ ] Manual check: acceptance criteria pass against product code
 
 **Dependencies:** audit-parent
 
@@ -1227,8 +1227,8 @@ Priority **3**, severity **Medium**, effort **XL**, repo **qrserver**, findings 
 
 **Verification:**
 
-- [ ] Draft `arch-001-api` in `.audit/github-issues.json` still matches this section’s intent
-- [ ] Manual check (at remediation time): acceptance criteria pass against product code — not claimed done by doc extraction
+- [ ] Section `arch-001-api` still matches this page’s inventory title and acceptance criteria
+- [ ] Manual check: acceptance criteria pass against product code
 
 **Dependencies:** audit-parent
 
@@ -1260,14 +1260,14 @@ Priority **3**, severity **Medium**, effort **L**, repo **musicbizqr**, findings
 
 **Verification:**
 
-- [ ] Draft `arch-001-app` in `.audit/github-issues.json` still matches this section’s intent
-- [ ] Manual check (at remediation time): acceptance criteria pass against product code — not claimed done by doc extraction
+- [ ] Section `arch-001-app` still matches this page’s inventory title and acceptance criteria
+- [ ] Manual check: acceptance criteria pass against product code
 
 **Dependencies:** audit-parent
 
 **Files likely touched:**
 
-- (none listed in draft body — see `.audit/FINDINGS.md` for evidence paths)
+- (none listed in draft body — use description paths / product trees at remediation time)
 
 **Estimated scope:** L
 
@@ -1292,8 +1292,8 @@ Priority **3**, severity **Medium**, effort **M**, repo **musicbizqr**, findings
 
 **Verification:**
 
-- [ ] Draft `dead-006` in `.audit/github-issues.json` still matches this section’s intent
-- [ ] Manual check (at remediation time): acceptance criteria pass against product code — not claimed done by doc extraction
+- [ ] Section `dead-006` still matches this page’s inventory title and acceptance criteria
+- [ ] Manual check: acceptance criteria pass against product code
 
 **Dependencies:** audit-parent
 
@@ -1325,8 +1325,8 @@ Priority **4**, severity **Low**, effort **S**, repo **qrserver**, findings `TES
 
 **Verification:**
 
-- [ ] Draft `test-001-api` in `.audit/github-issues.json` still matches this section’s intent
-- [ ] Manual check (at remediation time): acceptance criteria pass against product code — not claimed done by doc extraction
+- [ ] Section `test-001-api` still matches this page’s inventory title and acceptance criteria
+- [ ] Manual check: acceptance criteria pass against product code
 
 **Dependencies:** audit-parent, matching sec/billing rules above
 
@@ -1356,8 +1356,8 @@ Priority **4**, severity **Low**, effort **S**, repo **musicbizqr**, findings `T
 
 **Verification:**
 
-- [ ] Draft `test-001-app` in `.audit/github-issues.json` still matches this section’s intent
-- [ ] Manual check (at remediation time): acceptance criteria pass against product code — not claimed done by doc extraction
+- [ ] Section `test-001-app` still matches this page’s inventory title and acceptance criteria
+- [ ] Manual check: acceptance criteria pass against product code
 
 **Dependencies:** audit-parent, matching sec/billing rules above
 

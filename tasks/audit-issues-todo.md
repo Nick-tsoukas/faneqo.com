@@ -1,148 +1,135 @@
-# Todo: Audit findings → prioritized issues task page
+# Todo: Resolve audit issues
 
-Canonical checklist for [`tasks/audit-issues-plan.md`](audit-issues-plan.md). Does **not** replace monorepo [`tasks/todo.md`](todo.md).
+Progress checklist for [`tasks/audit-issues-plan.md`](audit-issues-plan.md). Specs and acceptance criteria: [`tasks/audit-issues.md`](audit-issues.md). Does **not** replace monorepo [`tasks/todo.md`](todo.md).
 
-Leave `.audit/` as-is. Ignore `index.html`, Netlify/`DEPLOY.md`, and `page-cards/`. No `frontend/` / `backend/` edits. No GitHub issue publish in this track.
-
----
-
-## Phase 1: Inventory
-
-### Task A: Priority inventory from drafts
-
-**Description:** Read `.audit/github-issues.json` (37 issues) plus order cues in `.audit/REMEDIATION_PLAN.md`. Produce a one-table inventory (id, priority, severity, effort, repo, parent, title) sorted by the plan’s priority rule. Confirm drops: no REL/PERF drafts; page-cards not listed as issues.
-
-**Acceptance criteria:**
-
-- [x] All 37 draft ids appear exactly once in the inventory
-- [x] Sort matches Architecture Decision 5 in `tasks/audit-issues-plan.md`
-- [x] Explicit “ignored sources” note lists HTML, Netlify, page-cards
-
-**Verification:**
-
-- [x] Manual check: `python3` count of `issues` in `github-issues.json` equals inventory rows (37)
-- [x] Manual check: no page-card filename appears as an issue id
-
-**Dependencies:** None
-
-**Files likely touched:** inventory section inside `tasks/audit-issues.md`
-
-**Estimated scope:** S
-
-**Done notes (2026-11-08):** Inventory table at top of `tasks/audit-issues.md`; order P0 → P1 sec → bill → data → dead-live → mkt → vocab → P2 → P3 → P4.
+**Status: not started.** Check an item only when that issue’s acceptance criteria pass in product code (or a guard is verified unchanged). After each check, stop for the next human approval unless told otherwise.
 
 ---
 
-## Checkpoint: Inventory
+## Phase 0: Plan design
 
-- [x] Task A done
-- [x] Human skim of priority bands OK (or corrections noted in plan Open Questions)
-
----
-
-## Phase 2: Documents
-
-### Task B: Write `docs/audit-issues.md` pointer
-
-**Description:** Short durable index in `docs/` matching the house note style. Explain what was audited, where drafts live (`.audit/`, gitignored), what to ignore, and point to `tasks/audit-issues.md` as the executable checklist.
-
-**Acceptance criteria:**
-
-- [x] File exists at `docs/audit-issues.md`
-- [x] Links to `tasks/audit-issues.md`, `.audit/FINDINGS.md`, `.audit/REMEDIATION_PLAN.md`, `.audit/GLOSSARY.md`
-- [x] States page-cards / HTML / Netlify are out of scope for the task page
-- [x] Does not duplicate full issue bodies
-
-**Verification:**
-
-- [x] Manual check: links resolve relative to repo root
-- [x] Manual check: `.audit/` files unchanged (mtime/hash spot-check on `github-issues.json`)
-
-**Dependencies:** Task A
-
-**Files likely touched:** `docs/audit-issues.md`
-
-**Estimated scope:** S
+- [ ] Human approved [`tasks/audit-issues-plan.md`](audit-issues-plan.md) shape and priority order
+- [ ] Explicit go to start Phase 1 (default: wait)
 
 ---
 
-### Task C: Write `tasks/audit-issues.md` single issues task page
+## Phase 1: Security
 
-**Description:** One prioritized task page covering every draft in `github-issues.json`, same Task block shape as monorepo `tasks/todo.md`.
+- [ ] `sec-001` — YouTube routes check the caller; debug routes gone
+- [ ] `sec-002` — user-admin accepts only `USER_ADMIN_SECRET`
+- [ ] `sec-005` — explicit auth on four Stripe signup routes
 
-**Acceptance criteria:**
+### Checkpoint: Security
 
-- [x] `tasks/audit-issues.md` exists
-- [x] All 37 draft ids present as sections
-- [x] Order follows plan priority bands
-- [x] Each actionable child has acceptance criteria from the JSON draft
-- [x] No page-card-derived extra issues invented
-- [x] Header states: leave `.audit/` frozen; product fixes need separate approval
-
-**Verification:**
-
-- [x] Manual check: id set equals JSON id set (37 sections)
-- [x] Manual check: sample `sec-001`, `mkt-002`, `vocab` sections present with AC
-- [x] Manual check: no edits under `frontend/`, `backend/`, or `.audit/`
-
-**Dependencies:** Task A
-
-**Files likely touched:** `tasks/audit-issues.md`
-
-**Estimated scope:** M
+- [ ] Phase 1 criteria pass
+- [ ] Human review before Phase 2
 
 ---
 
-## Checkpoint: Docs match house style
+## Phase 2: Billing guard
 
-- [x] Tasks B–C done
-- [x] Issues page readable as a work queue
-- [x] Review with human before Phase 3 wiring / any remediation — **go 2026-11-08**
+- [ ] `bill-001` — `free` means Lifetime Pro; no limited Free tier shipped
 
----
+### Checkpoint: Billing
 
-## Phase 3: Discovery wiring
-
-### Task D: Point workspace entry docs at the new files
-
-**Description:** Pointers in `AGENTS.md` and a one-line cross-link under monorepo Task 17 without rewriting the staging plan.
-
-**Acceptance criteria:**
-
-- [x] `AGENTS.md` links the audit-issues plan + issues page
-- [x] Monorepo `tasks/todo.md` Task 17 has a cross-link only
-- [x] Staging plan body in `tasks/plan.md` left intact
-
-**Verification:**
-
-- [x] Manual check: pointers in `AGENTS.md` and Task 17
-- [x] Manual check: staging checklist not replaced
-
-**Dependencies:** Checkpoint Docs
-
-**Files likely touched:** `AGENTS.md`, `tasks/todo.md` (Task 17 note only)
-
-**Estimated scope:** XS
+- [ ] Guard holds; Stripe amounts / trial unchanged
+- [ ] Human review before Phase 3
 
 ---
 
-## Checkpoint: Complete
+## Phase 3: Data + live exposure
 
-- [x] Tasks A–D done
-- [ ] Human reviewed `tasks/audit-issues.md` (product remediation still gated)
-- [x] No GitHub issues filed; no product remediation started from this track
-- [x] Decision “Audit in git?” still open in monorepo Decisions log
+- [ ] `data-001` — stored pages no longer link to musicbizqr.com (migrate, not dump)
+- [ ] `dead-004` — test/internal preview pages not on the live site
+- [ ] `dead-005` — lab pages 404 in production
+
+### Checkpoint: Data / exposure
+
+- [ ] Phase 3 criteria pass
+- [ ] Human review before Phase 4
 
 ---
 
-## Draft id checklist (Task C completeness)
+## Phase 4: Marketing
 
-**P0:** audit-parent
+- [ ] `mkt-002` — article CTAs / hosts → faneqo.com (+ signup)
+- [ ] `mkt-003` — pricing page + sitemap entries
+- [ ] `mkt-004` — article close box sells the band page
+- [ ] `mkt-005` — post-trial subscribe prompt on dashboard
+- [ ] `mkt-006` — Connect fee note when fee env valid; buttons stay off by default
+- [ ] `mkt-007` — no agency price while sample data
+- [ ] `mkt-008` — strip false free offers; fix merch redirects
+- [ ] `mkt-009` — Lifetime Pro comps skip checkout
+- [ ] `mkt-010` — `/bands/all` hides toy; says Faneqo; loads all bands
+- [ ] `mkt-011` — band editor missing-block checklist
+- [ ] `mkt-012` — one completion email to thin-page owners (not fans)
+- [ ] `mkt-014` — public copy: customer is a band; owner pays
+- [ ] `mkt-001` — map closed (all Phase 4 children done)
 
-**P1:** sec-001, sec-002, sec-005, bill-001, data-001, dead-004, dead-005, mkt-001, mkt-002, mkt-003, mkt-004, mkt-005, mkt-006, mkt-007, mkt-008, mkt-009, mkt-010, mkt-011, mkt-012, mkt-014, vocab-001, vocab-002, vocab-003, vocab-004
+### Checkpoint: Marketing
 
-**P2:** sec-003, sec-004, bill-002, dead-002, dead-003, mkt-013, vocab-005
+- [ ] Phase 4 criteria pass
+- [ ] Human review before Phase 5
 
-**P3:** arch-001-api, arch-001-app, dead-006
+---
 
-**P4:** test-001-api, test-001-app
+## Phase 5: Vocabulary
+
+- [ ] `vocab-002` — live pages say Faneqo (legal pages only if company name confirmed)
+- [ ] `vocab-003` — visible copy: band / band page / band owner; fan nav Bands
+- [ ] `vocab-004` — “free” only for the 30-day Pro trial
+- [ ] `vocab-001` — map closed (all Phase 5 children done)
+
+### Checkpoint: Vocabulary
+
+- [ ] Phase 5 criteria pass
+- [ ] Human review before Phase 6
+
+---
+
+## Phase 6: P2
+
+- [ ] `sec-003` — Stripe webhook failure returns fixed string
+- [ ] `sec-004` — browser allowlist (drop unowned host / keep localhost out of prod)
+- [ ] `bill-002` — Connect fee / buttons / trial / subscription-check guard verified
+- [ ] `dead-002` — unused pages/components removed or justified kept
+- [ ] `dead-003` — old homepages off live site
+- [ ] `mkt-013` — toy pages never emailed (guard with mkt-012)
+- [ ] `vocab-005` — team copy: manager and viewer only
+
+### Checkpoint: P2
+
+- [ ] Phase 6 criteria pass
+- [ ] Human review before Phase 7
+
+---
+
+## Phase 7: Architecture / unused code
+
+- [ ] `arch-001-api` — split only if band permission / inbox / artist update clearly two jobs
+- [ ] `arch-001-app` — live-show gallery split only if two jobs
+- [ ] `dead-006` — unreferenced components handled with evidence
+
+### Checkpoint: P3
+
+- [ ] No speculative refactors
+- [ ] Human review before Phase 8
+
+---
+
+## Phase 8: Tests
+
+- [ ] `test-001-api` — tests lock YouTube caller check + user-admin secret rule
+- [ ] `test-001-app` — tests lock `free` = Lifetime Pro
+
+### Checkpoint: Complete
+
+- [ ] All actionable items above checked
+- [ ] Standing do-nots in the plan still true
+- [ ] Human sign-off
+
+---
+
+## Map-only (no separate product step)
+
+- [ ] `audit-parent` — closed when child work tracked above is done (navigation map only)
