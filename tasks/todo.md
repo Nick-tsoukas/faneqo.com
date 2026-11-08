@@ -723,7 +723,7 @@ Do not make monorepo-driven edits under `frontend/` / `backend/` until Task 15 i
 
 ### Task 17: Begin audit work from `.audit/`
 
-**Description:** With single-dir/repo daily workflow in place, start audit remediation / issue filing per `.audit/` docs. Netlify flow unless Decision log says vend into git.
+**Description:** With single-dir/repo daily workflow in place, start audit remediation / issue filing per `.audit/` docs. Netlify flow unless Decision log says vend into git. **Doc track (already extracted, not product fixes):** prioritized queue in [`tasks/audit-issues.md`](audit-issues.md) — plan [`audit-issues-plan.md`](audit-issues-plan.md), index [`docs/audit-issues.md`](../docs/audit-issues.md).
 
 **Acceptance criteria:**
 
