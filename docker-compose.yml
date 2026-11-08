@@ -10,6 +10,58 @@ services:
     volumes:
       - faneqo_pg:/var/lib/postgresql/data
       - ./docker/postgres-init.sql:/docker-entrypoint-initdb.d/01-init.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U faneqo -d faneqo_dev"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  # Staging only (Architecture G). Stock Node tags from env via scripts/docker-compose.sh.
+  backend:
+    profiles: ["staging"]
+    image: node:${BACKEND_NODE_VERSION}
+    working_dir: /app
+    volumes:
+      # Built Strapi tree (host npm run build) + runtime deps — no custom Dockerfile.
+      - ./backend:/app
+    command: ["npm", "run", "start"]
+    ports:
+      - "${STAGING_STRAPI_PORT:-1337}:1337"
+    env_file:
+      - path: .env
+        required: false
+    environment:
+      HOST: "0.0.0.0"
+      PORT: "1337"
+      # Containers reach Postgres on the compose network (not 127.0.0.1).
+      DATABASE_URL: postgresql://faneqo:faneqo@postgres:5432/faneqo_staging?sslmode=disable
+      DATABASE_SSL: "false"
+      NODE_ENV: staging
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+  frontend:
+    profiles: ["staging"]
+    image: node:${FRONTEND_NODE_VERSION}
+    working_dir: /app
+    volumes:
+      # Nuxt Nitro build output from host `npm run build` / `build:frontend`.
+      - ./frontend/.output:/app/.output:ro
+    command: ["node", ".output/server/index.mjs"]
+    ports:
+      - "${STAGING_NUXT_PORT:-3000}:3000"
+    env_file:
+      - path: .env
+        required: false
+    environment:
+      HOST: "0.0.0.0"
+      PORT: "3000"
+      NITRO_HOST: "0.0.0.0"
+      NITRO_PORT: "3000"
+      NODE_ENV: staging
+    depends_on:
+      - backend
 
 volumes:
   faneqo_pg:

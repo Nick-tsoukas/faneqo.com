@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Root shape checks: scripts, mise, example.env, stack overlays, compose, docs.
-# No FE/BE builds. No staging-profile asserts until Task 3.6.
+# No FE/BE builds.
 set -euo pipefail
 ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
 cd "$ROOT"
@@ -70,17 +70,80 @@ grep -Fq '$staging' stack.config.ts || fail "stack.config.ts missing \$staging"
 if grep -E '^  commands:' stack.config.ts >/dev/null; then
   fail "stack.config.ts must not declare top-level commands (overlays only)"
 fi
+# Staging must drive compose profile containers, not host develop/dev servers.
+grep -Fq -- '--profile staging' stack.config.ts || fail "stack.config.ts \$staging must use --profile staging"
+if grep -E "run: \"npm run (develop|dev)\"" stack.config.ts | grep -q .; then
+  # allow develop/dev only under $development block — fail if staging still hosts them
+  # crude: after $staging marker, develop/dev run lines are forbidden
+  awk '
+    /\$staging/ { in_staging=1 }
+    in_staging && /run: "npm run develop"/ { found=1 }
+    in_staging && /run: "npm run dev"/ { found=1 }
+    END { exit found ? 0 : 1 }
+  ' stack.config.ts && fail "stack.config.ts \$staging must not host npm run develop/dev"
+fi
 ok stack.config.ts overlays
 
-# --- docker-compose.yml current truth: postgres only (no staging profile yet) ---
+# --- docker-compose.yml: postgres always; FE/BE under staging profile ---
 [[ -f docker-compose.yml ]] || fail "docker-compose.yml missing"
 grep -Eq '^[[:space:]]*postgres:' docker-compose.yml || fail "docker-compose.yml missing postgres service"
 grep -Fq 'image: postgres:16' docker-compose.yml || fail "docker-compose.yml expected postgres:16"
-ok docker-compose postgres
+grep -Eq '^[[:space:]]*frontend:' docker-compose.yml || fail "docker-compose.yml missing frontend service"
+grep -Eq '^[[:space:]]*backend:' docker-compose.yml || fail "docker-compose.yml missing backend service"
+grep -Fq 'profiles:' docker-compose.yml || fail "docker-compose.yml missing profiles"
+grep -Fq 'staging' docker-compose.yml || fail "docker-compose.yml missing staging profile"
+# Stock Node images from env pins (wrapper resolves empty → NODE_VERSION)
+grep -Eq 'image:[[:space:]]*node:\$\{FRONTEND_NODE_VERSION\}' docker-compose.yml \
+  || fail "frontend must use image: node:\${FRONTEND_NODE_VERSION}"
+grep -Eq 'image:[[:space:]]*node:\$\{BACKEND_NODE_VERSION\}' docker-compose.yml \
+  || fail "backend must use image: node:\${BACKEND_NODE_VERSION}"
+# No custom app Dockerfiles at root for staging
+if compgen -G 'docker/Dockerfile*' >/dev/null; then
+  fail "unexpected docker/Dockerfile* (stock Node only unless escape hatch)"
+fi
+ok docker-compose services + profiles
 
-# --- cheap docs presence ---
+# --- compose service selection (db-only vs staging profile) ---
+[[ -x scripts/docker-compose.sh ]] || fail "scripts/docker-compose.sh must exist and be executable"
+mapfile -t default_services < <(bash scripts/docker-compose.sh config --services | sort)
+default_joined=$(IFS=,; echo "${default_services[*]}")
+[[ "$default_joined" == "postgres" ]] \
+  || fail "default compose services want only postgres, got: ${default_services[*]}"
+
+mapfile -t staging_services < <(bash scripts/docker-compose.sh --profile staging config --services | sort)
+staging_joined=$(IFS=,; echo "${staging_services[*]}")
+printf '%s\n' "${staging_services[@]}" | grep -Fxq postgres || fail "staging profile missing postgres"
+printf '%s\n' "${staging_services[@]}" | grep -Fxq frontend || fail "staging profile missing frontend"
+printf '%s\n' "${staging_services[@]}" | grep -Fxq backend || fail "staging profile missing backend"
+ok "compose services default=[${default_joined}] staging=[${staging_joined}]"
+
+# Dual Node tags via wrapper (empty FE/BE pins fall back to NODE_VERSION)
+dual_cfg="$(
+  NODE_VERSION=22.11.0 \
+  FRONTEND_NODE_VERSION=22.11.0 \
+  BACKEND_NODE_VERSION=20.18.0 \
+  bash scripts/docker-compose.sh --profile staging config
+)"
+printf '%s\n' "$dual_cfg" | grep -Fq 'image: node:22.11.0' || fail "frontend image tag missing node:22.11.0"
+printf '%s\n' "$dual_cfg" | grep -Fq 'image: node:20.18.0' || fail "backend image tag missing node:20.18.0"
+# Built-app volume mounts present
+printf '%s\n' "$dual_cfg" | grep -Eq '\.output|/app' || fail "staging config missing built-app volume mounts"
+ok compose node tags + volume mounts
+
+# --- cheap docs presence + staging modes described ---
 [[ -f README.md ]] || fail "README.md missing"
 [[ -f AGENTS.md ]] || fail "AGENTS.md missing"
-ok docs presence
+grep -Fiq 'mise' README.md || fail "README.md should mention mise"
+grep -Fiq 'profile staging' README.md || fail "README.md should describe --profile staging"
+grep -Fiq 'mise' AGENTS.md || fail "AGENTS.md should mention mise"
+grep -Fiq 'profile staging' AGENTS.md || fail "AGENTS.md should describe --profile staging"
+# Droplet/containers do not need mise
+if ! grep -Ei 'droplet|container' README.md | grep -Eiq 'not.*(mise)|do not.*mise|no mise|without mise|not need mise|not required'; then
+  # allow either README phrasing above or AGENTS
+  if ! grep -Ei 'droplet|container' AGENTS.md | grep -Eiq 'not.*(mise)|do not.*mise|no mise|without mise|not need mise|not required'; then
+    fail "docs must state droplet/containers do not need mise"
+  fi
+fi
+ok docs presence + staging modes
 
 echo "root shape checks passed"

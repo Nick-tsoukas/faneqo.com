@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
-# Prove $development / $staging overlays from root stack.config.ts pass expected ports.
-# Test config imports root, strips docker/tunnels, replaces run with echo of env keys.
+# Prove $development / $staging overlays from root stack.config.ts.
+# Dev: host FE/BE env ports. Staging: compose profile path (not host develop/dev).
 set -euo pipefail
 ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
 CFG="$ROOT/tests/stackrun/stack.config.ts"
@@ -38,5 +38,29 @@ check development \
 check staging \
   "STRAPI_PORT=1338" \
   "NUXT_PORT=3001"
+
+# Dry-run root config: staging uses profile containers; development stays db-only + host apps.
+dev_dry="$(NODE_ENV=development npx stackrun --dry-run 2>/dev/null)"
+printf '%s\n' "$dev_dry" | grep -Fq 'docker compose up -d' \
+  || { echo "FAIL development dry-run missing db-only compose up"; printf '%s\n' "$dev_dry"; exit 1; }
+printf '%s\n' "$dev_dry" | grep -Fq 'npm run develop' \
+  || { echo "FAIL development dry-run missing host backend develop"; printf '%s\n' "$dev_dry"; exit 1; }
+printf '%s\n' "$dev_dry" | grep -Fq 'npm run dev' \
+  || { echo "FAIL development dry-run missing host frontend dev"; printf '%s\n' "$dev_dry"; exit 1; }
+
+stg_dry="$(NODE_ENV=staging npx stackrun --dry-run 2>/dev/null)"
+printf '%s\n' "$stg_dry" | grep -Fq -- '--profile staging' \
+  || { echo "FAIL staging dry-run missing --profile staging"; printf '%s\n' "$stg_dry"; exit 1; }
+if printf '%s\n' "$stg_dry" | grep -Fq '"run": "npm run develop"'; then
+  echo "FAIL staging dry-run still hosts npm run develop"
+  printf '%s\n' "$stg_dry"
+  exit 1
+fi
+if printf '%s\n' "$stg_dry" | grep -Fq '"run": "npm run dev"'; then
+  echo "FAIL staging dry-run still hosts npm run dev"
+  printf '%s\n' "$stg_dry"
+  exit 1
+fi
+echo "ok staging compose-profile path (dry-run)"
 
 echo "stackrun overlay env checks passed"

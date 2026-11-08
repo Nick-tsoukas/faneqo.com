@@ -25,7 +25,7 @@ npm install
 
 Installs root tooling (`stackrun`, `jiti`). Frontend/backend deps install when you run the stack (dev) or when you `npm install` inside those folders.
 
-**Node pins:** `NODE_VERSION` is the shared default. Leave `FRONTEND_NODE_VERSION` / `BACKEND_NODE_VERSION` empty to use it. Set either override when FE and BE must differ (staging compose image tags will follow the same vars in Task 3.6).
+**Node pins:** `NODE_VERSION` is the shared default. Leave `FRONTEND_NODE_VERSION` / `BACKEND_NODE_VERSION` empty to use it (`scripts/docker-compose.sh` resolves empties before compose). Set either override when FE and BE must differ — staging stock Node image tags follow those vars.
 
 ## Local development
 
@@ -33,7 +33,7 @@ Installs root tooling (`stackrun`, `jiti`). Frontend/backend deps install when y
 npm run dev
 ```
 
-Sets `NODE_ENV=development`, runs `docker compose up -d` (Postgres 16 on `5432`, DB `faneqo_dev`), then starts backend + frontend with hot reload on the **host** Node from mise. Default ports: Strapi `1337`, Nuxt `3000`. On exit, stackrun stops Compose.
+Sets `NODE_ENV=development`, runs `docker compose up -d` (**Postgres only** on `5432`, DB `faneqo_dev`), then starts backend + frontend with hot reload on the **host** Node from mise. Default ports: Strapi `1337`, Nuxt `3000`. On exit, stackrun stops Compose.
 
 ## Local staging
 
@@ -41,15 +41,13 @@ Sets `NODE_ENV=development`, runs `docker compose up -d` (Postgres 16 on `5432`,
 npm run staging
 ```
 
-**Today:** same host-app shape with `NODE_ENV=staging`. Uses `$staging` in `stack.config.ts` and `STAGING_*` overlays from `.env` (e.g. `STAGING_DATABASE_URL` → `faneqo_staging`). Ports fall back to `STAGING_STRAPI_PORT` / `STAGING_NUXT_PORT`, then the unprefixed defaults. Compose only runs Postgres; apps run on the host via stackrun.
-
-**Planned (Architecture G — Tasks 3.5–3.6):** one root `docker-compose.yml` with Compose profiles. Dev stays Postgres-only + host hot reload (mise Node). Staging (local and DO droplet) uses `--profile staging`: Postgres + FE/BE on **stock Node** images tagged from `FRONTEND_NODE_VERSION` / `BACKEND_NODE_VERSION` (fallback `NODE_VERSION`) with **built** apps mounted as volumes — no custom Dockerfiles unless needed. Droplet/containers do **not** install mise. `$staging` will build then bring up that profile instead of host `develop`/`dev`. See `tasks/plan.md`.
+Sets `NODE_ENV=staging`. Stackrun `$staging` installs + builds FE/BE on the host, then runs `scripts/docker-compose.sh --profile staging up -d` (same root `docker-compose.yml`). That profile starts Postgres + **stock Node** FE/BE containers tagged from `FRONTEND_NODE_VERSION` / `BACKEND_NODE_VERSION` (fallback `NODE_VERSION`). Built artifacts are volume-mounted (`frontend/.output`, whole `backend/` including Strapi build output) — no custom Dockerfiles. Containers talk to Postgres on the compose network (`faneqo_staging`). Stackrun then follows container logs (not host `develop`/`dev`). Ports: `STAGING_STRAPI_PORT` / `STAGING_NUXT_PORT`, else unprefixed defaults. Droplet/containers do **not** need mise.
 
 `mbq-cron` stays off locally.
 
 ## Build / start (host)
 
-Production-style builds and servers (after `npm install` in `frontend/` / `backend/` as needed). Stackrun entrypoints (`npm run dev` / `npm run staging`) still start both apps for local loops.
+Production-style builds and servers (after `npm install` in `frontend/` / `backend/` as needed). `npm run staging` builds on the host then serves via compose profile containers; `npm run start:*` remains available for host-only starts.
 
 ```bash
 npm run build            # backend then frontend

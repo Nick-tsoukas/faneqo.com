@@ -14,8 +14,8 @@ Side-by-side product trees under one root git (content-only `staging` on [`Nick-
 |------|------|
 | `frontend/` | Nuxt — checkout `Nick-tsoukas/musicbizqr`. Product operating loop: `frontend/AGENTS.md`. |
 | `backend/` | Strapi v4, canonical data — checkout `Nick-tsoukas/qrserver`. Defers to frontend loop: `backend/AGENTS.md`. |
-| `docker-compose.yml`, `docker/` | Today: Postgres 16 only (`faneqo_dev`; init also creates `faneqo_staging`). Planned: one compose file with profiles — db-only for `npm run dev`; `--profile staging` adds FE/BE containers (stock Node image + built apps volume-mounted; no custom Dockerfiles unless needed). See `tasks/plan.md` Architecture G / Tasks 3.5–3.6. |
-| `stack.config.ts`, `example.env`, `mise.toml`, root `package.json` | stackrun orchestration + local mise Node pin. Copy `example.env` → `.env`; `mise install` for host Node (`NODE_VERSION`). Staging profile hooks change when Architecture G is implemented. |
+| `docker-compose.yml`, `docker/`, `scripts/docker-compose.sh` | One compose file + profiles. Default: Postgres 16 only (`faneqo_dev`; init also creates `faneqo_staging`). `--profile staging`: stock Node FE/BE (tags from env via wrapper) with built apps volume-mounted; no custom Dockerfiles unless needed. See `tasks/plan.md` Architecture G. |
+| `stack.config.ts`, `example.env`, `mise.toml`, root `package.json` | stackrun orchestration + local mise Node pin. Copy `example.env` → `.env`; `mise install` for host Node (`NODE_VERSION`). `$development` = db-only compose + host hot reload; `$staging` = build then `--profile staging` containers. |
 | `tasks/audit-issues-plan.md` | Central plan to resolve audit issues (one approved step at a time). |
 | `tasks/audit-issues-todo.md` | Progress checklist — check off as issues resolve. |
 | `tasks/audit-issues.md` | Issue specs + acceptance criteria. |
@@ -37,15 +37,15 @@ Human-facing how-to: [`README.md`](README.md).
 1. `cp example.env .env` and fill secrets as needed (`NODE_VERSION` / optional `FRONTEND_NODE_VERSION` / `BACKEND_NODE_VERSION` are non-secret pins).
 2. `mise install` (local host only — pins Node from `NODE_VERSION` via `mise.toml`). Staging droplet/containers do **not** need mise.
 3. `npm install` at workspace root (stackrun + jiti).
-4. `npm run dev` — `docker compose up -d` Postgres only, then hot-reload FE + BE on the host via stackrun `$development`.
-5. `npm run staging` — today: stackrun `$staging` host apps + `STAGING_*` overlays. Planned (Architecture G): build apps, then compose `--profile staging` (stock Node FE/BE containers tagged from env Node pins + DB; built output volume-mounted; no custom Dockerfiles unless needed).
-6. Root `npm test` runs `test:stack` (`tests/stackrun/check.sh`) + `test:root` (`tests/root/check.sh`) — suite landed in Task 3.7. GitHub Actions wiring for that suite is still Task 12.
+4. `npm run dev` — `docker compose up -d` Postgres only, then hot-reload FE + BE on the host via stackrun `$development` (mise Node).
+5. `npm run staging` — host install + build, then `scripts/docker-compose.sh --profile staging up -d` (Postgres + stock Node FE/BE containers; built output volume-mounted; no custom Dockerfiles unless needed). Droplet/containers do **not** need mise.
+6. Root `npm test` runs `test:stack` (`tests/stackrun/check.sh`) + `test:root` (`tests/root/check.sh`) — suite from Task 3.7; staging-profile asserts added in Task 3.6. GitHub Actions wiring for that suite is still Task 12.
 
-Today compose runs Postgres only; stackrun runs apps on the host. After Tasks 3.5–3.6, staging apps move into compose profile containers; dev stays host hot-reload + mise. `mbq-cron` stays off locally.
+Dev = db-only compose + host hot-reload + mise. Staging = same compose file + `--profile staging` containers. `mbq-cron` stays off locally.
 
-## Staging (planned early)
+## Staging (local done; droplet next)
 
-Lean path per plan: **one unified `docker-compose.yml`** (profiles) for local staging + **DigitalOcean droplet** (same file + `--profile staging`; Postgres + FE + BE; cron off) **before** history merge. Implement compose locally first (Tasks 3.5–3.6), then droplet (Task 4). No live Stripe, live Resend, production domains, or Railway `chalk-volume`. Optional Railway staging later for builder parity before cutover. Detail: `tasks/plan.md` Architecture C + G.
+Local unified compose profiles landed (Task 3.6). Next: **DigitalOcean droplet** with the same file + `--profile staging` (Task 4); cron off; no mise on droplet. No live Stripe, live Resend, production domains, or Railway `chalk-volume`. Optional Railway staging later for builder parity before cutover. Detail: `tasks/plan.md` Architecture C + G.
 
 ## Re-clone tips (Phase 1 temp `.git` removal)
 

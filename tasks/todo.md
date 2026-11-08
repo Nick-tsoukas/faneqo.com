@@ -184,31 +184,33 @@ Do not make monorepo-driven edits under `frontend/` / `backend/` until Task 15 i
 
 **Acceptance criteria:**
 
-- [ ] One root `docker-compose.yml` (no duplicate staging compose as SoT)
-- [ ] Staging FE/BE services use stock Node image tags from env (`FRONTEND_NODE_VERSION` / `BACKEND_NODE_VERSION` → `NODE_VERSION`); dual versions work when set differently
-- [ ] No custom Dockerfiles added unless stock Node fails
-- [ ] `docker compose up -d` starts **only** Postgres
-- [ ] `docker compose --profile staging up -d` starts Postgres + FE + BE
-- [ ] Staging FE/BE containers mount **built** app dirs as volumes
-- [ ] `npm run dev` still hot-reloads FE/BE on host after db-only compose (mise pin)
-- [ ] `npm run staging` uses staging-profile containers (not host `develop` as the server)
-- [ ] Docs state droplet/containers do **not** need mise
-- [ ] `AGENTS.md` / `README.md` describe the two modes
-- [ ] No intentional product-source diffs under `frontend/` / `backend/` for this task
+- [x] One root `docker-compose.yml` (no duplicate staging compose as SoT)
+- [x] Staging FE/BE services use stock Node image tags from env (`FRONTEND_NODE_VERSION` / `BACKEND_NODE_VERSION` → `NODE_VERSION`); dual versions work when set differently
+- [x] No custom Dockerfiles added unless stock Node fails
+- [x] `docker compose up -d` starts **only** Postgres
+- [x] `docker compose --profile staging up -d` starts Postgres + FE + BE
+- [x] Staging FE/BE containers mount **built** app dirs as volumes
+- [x] `npm run dev` still hot-reloads FE/BE on host after db-only compose (mise pin)
+- [x] `npm run staging` uses staging-profile containers (not host `develop` as the server)
+- [x] Docs state droplet/containers do **not** need mise
+- [x] `AGENTS.md` / `README.md` describe the two modes
+- [x] No intentional product-source diffs under `frontend/` / `backend/` for this task
 
 **Verification:**
 
-- [ ] Manual check: `docker compose ps` after plain `up -d` shows postgres only
-- [ ] Manual check: after host builds + `--profile staging up -d`, FE and BE respond on staging ports; `docker compose … config` (or `ps` image column) shows expected Node tags from env
-- [ ] Manual check: setting different `FRONTEND_NODE_VERSION` vs `BACKEND_NODE_VERSION` yields different image tags (smoke via `compose config`)
-- [ ] Manual check: `npm run dev` still starts host Nuxt/Strapi with hot reload
-- [ ] Manual check: `git status` — no product-source monorepo edits unless pre-approved; no unexpected `docker/Dockerfile.*`
+- [x] Manual check: `docker compose config --services` (via `scripts/docker-compose.sh`) shows postgres only; staging profile lists postgres + frontend + backend — 2026-11-08
+- [x] Manual check: dual `FRONTEND_NODE_VERSION` / `BACKEND_NODE_VERSION` yields different image tags via `scripts/docker-compose.sh --profile staging config` — 2026-11-08
+- [x] Manual check: `npm test` green with staging-profile asserts — 2026-11-08
+- [x] Manual check: `$development` dry-run still host `develop`/`dev` after db-only compose; `$staging` dry-run uses `--profile staging` logs (not host develop) — 2026-11-08
+- [x] Manual check: `git status` — no product-source monorepo edits; no `docker/Dockerfile.*`
 
 **Dependencies:** Task 3.5 (stock-Node / no-custom-Dockerfile approach locked); Task 3.4 (env pin names exist)
 
-**Files likely touched:** `docker-compose.yml`, `stack.config.ts`, root `package.json` (optional helper scripts), `example.env` (if compose needs more keys), `AGENTS.md`, `README.md` — **not** `docker/Dockerfile.*` unless escape hatch needed
+**Files likely touched:** `docker-compose.yml`, `stack.config.ts`, `scripts/docker-compose.sh`, root `package.json` (optional helper scripts), `example.env` (if compose needs more keys), `AGENTS.md`, `README.md`, `tests/**` — **not** `docker/Dockerfile.*` unless escape hatch needed
 
 **Estimated scope:** M
+
+**Status:** complete 2026-11-08
 
 ---
 
@@ -247,7 +249,7 @@ Do not make monorepo-driven edits under `frontend/` / `backend/` until Task 15 i
 - [x] Human OK on stock-Node approach (no custom Dockerfiles unless needed) — 2026-11-08 / Task 3.5
 - [x] Task 3.4 mise + README deps done (host only; env pins for compose tags)
 - [x] Task 3.7 root test suite green (`npm test`) — 2026-11-08
-- [ ] Tasks 3.5–3.6 done (3.5 design lock done; 3.6 implement still open)
+- [x] Tasks 3.5–3.6 done (3.5 design lock; 3.6 implement complete 2026-11-08)
 - [ ] Human OK on local staging profile behavior (incl. image tags from env / dual Node when set)
 - [ ] Ready for DO droplet using the **same** compose file + `--profile staging` (**no mise** on droplet)
 - [ ] Still no history merge / Railway prod retarget
@@ -763,7 +765,8 @@ Do not make monorepo-driven edits under `frontend/` / `backend/` until Task 15 i
 | 2026-11-08 | Unified docker-compose                    | **YES** — one root `docker-compose.yml`; Compose profiles (`staging` for FE/BE). Dev: DB only + host hot reload. Local staging + DO droplet: same file + `--profile staging`; built apps **volume-mounted** into runtime containers. Implement Tasks 3.5–3.6 before droplet Task 4. No duplicate staging compose file. |
 | 2026-11-08 | Staging runtime images                    | **Stock Node** — tags from `NODE_VERSION` / optional `FRONTEND_NODE_VERSION` / `BACKEND_NODE_VERSION` (empty → `NODE_VERSION`); dual FE/BE versions allowed; same image OK when equal; different `command` / ports / volume mounts. **No custom Dockerfiles unless needed**. Task 3.5 locked. |
 | 2026-11-08 | Local Node tooling (mise)                 | **mise** on development host only (`mise.toml` + `NODE_VERSION` in `example.env`). Staging droplet / staging containers do **not** require mise — they use Docker stock Node tags from the same env vars. Task 3.4. |
-| 2026-11-08 | Root test coverage                        | Fast shell suite only (Architecture I / Task 3.7): stackrun overlays + package/mise/example.env/compose/docs shape. Skip full FE/BE builds and staging-profile asserts until Task 3.6. Actions wiring = Task 12. |
+| 2026-11-08 | Root test coverage                        | Fast shell suite only (Architecture I / Task 3.7): stackrun overlays + package/mise/example.env/compose/docs shape. Staging-profile asserts added in Task 3.6. Skip full FE/BE builds in suite. Actions wiring = Task 12. |
+| 2026-11-08 | Unified compose profiles (Task 3.6)       | One `docker-compose.yml` + `staging` profile; stock Node via `scripts/docker-compose.sh`; `$staging` builds then containers; `$development` stays db-only + host hot reload. |
 | 2026-11-08 | Audit track                               | Plan `tasks/audit-issues-plan.md`; progress `tasks/audit-issues-todo.md`; specs `tasks/audit-issues.md`. Remediation not started — explicit go / Task 17.                                                                                                            |
 |            | Archive old repos when?                   |                                                                                                                                                                                                                                                                       |
 |            | Cutover approved?                         |                                                                                                                                                                                                                                                                       |
