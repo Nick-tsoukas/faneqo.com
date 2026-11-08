@@ -1,0 +1,47 @@
+{
+  "collectionName": "components_singlesong_singlesongs",
+  "info": {
+    "displayName": "singlesong",
+    "icon": "music",
+    "description": "A single featured song, either uploaded or embedded"
+  },
+  "options": {},
+  "attributes": {
+    "title": { "type": "string", "required": false },
+    "song": {
+      "type": "media",
+      "multiple": false,
+      "required": false,
+      "allowedTypes": ["audios"]
+    },
+    "isEmbed": { "type": "boolean", "default": false },
+    "platform": {
+      "type": "enumeration",
+      "enum": [
+        "spotify",
+        "appleMusic",
+        "youtube",
+        "deezer",
+        "bandcamp",
+        "mixcloud",
+        "audiomack",
+        "soundcloud"
+      ],
+      "required": false
+    },
+    "url": { "type": "string" },
+    "embedUrl": { "type": "string" },
+    "embedHtml": { "type": "text" },
+    "trackId": { "type": "string" },
+
+    "spotifyUrl": { "type": "string" },
+    "spotifyOembedTitle": { "type": "string" },
+    "spotifyOembedThumbnailUrl": { "type": "string" },
+    "spotifyOembedType": {
+      "type": "enumeration",
+      "enum": ["track", "album", "playlist", "artist"],
+      "required": false
+    },
+    "spotifyOembedHtml": { "type": "text" }
+  }
+}

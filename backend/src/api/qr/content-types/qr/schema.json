@@ -1,0 +1,107 @@
+{
+  "kind": "collectionType",
+  "collectionName": "qrs",
+  "info": {
+    "singularName": "qr",
+    "pluralName": "qrs",
+    "displayName": "Qr",
+    "description": ""
+  },
+  "options": {
+    "draftAndPublish": false
+  },
+  "pluginOptions": {},
+  "attributes": {
+    "q_image": {
+      "type": "media",
+      "multiple": false,
+      "required": false,
+      "allowedTypes": [
+        "images",
+        "files",
+        "videos",
+        "audios"
+      ]
+    },
+    "url": {
+      "type": "string"
+    },
+    "q_type": {
+      "type": "string"
+    },
+    "band": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "api::band.band",
+      "inversedBy": "qrs"
+    },
+    "users_permissions_user": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "plugin::users-permissions.user",
+      "inversedBy": "qrs"
+    },
+    "link": {
+      "type": "string"
+    },
+    "name": {
+      "type": "string"
+    },
+    "scanTime": {
+      "displayName": "scanTime",
+      "type": "component",
+      "repeatable": true,
+      "component": "scan-time.scan-time"
+    },
+    "options": {
+      "type": "json"
+    },
+    "album": {
+      "type": "relation",
+      "relation": "oneToOne",
+      "target": "api::album.album"
+    },
+    "event": {
+      "type": "relation",
+      "relation": "oneToOne",
+      "target": "api::event.event"
+    },
+    "tour": {
+      "type": "relation",
+      "relation": "oneToOne",
+      "target": "api::tour.tour"
+    },
+    "scans": {
+      "type": "relation",
+      "relation": "oneToMany",
+      "target": "api::scan.scan",
+      "mappedBy": "qr"
+    },
+    "slugId": {
+      "type": "string"
+    },
+    "arEnabled": {
+      "type": "boolean",
+      "default": false
+    },
+    "template": {
+      "type": "enumeration",
+      "enum": [
+        "video",
+        "song",
+        "event",
+        "test"
+      ],
+      "default": "video"
+    },
+    "videoId": {
+      "type": "string"
+    },
+    "songUrl": {
+      "type": "string"
+    },
+    "eventPosterUrl": {
+      "type": "string"
+    }
+  }
+}

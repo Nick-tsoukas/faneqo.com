@@ -1,0 +1,105 @@
+{
+  "kind": "collectionType",
+  "collectionName": "artist_updates",
+  "info": {
+    "singularName": "artist-update",
+    "pluralName": "artist-updates",
+    "displayName": "Artist Update",
+    "description": "Published artist photo/gallery updates. Independent of conversation-message."
+  },
+  "options": {
+    "draftAndPublish": false
+  },
+  "pluginOptions": {},
+  "attributes": {
+    "band": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "api::band.band",
+      "required": true
+    },
+    "createdByUser": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "plugin::users-permissions.user"
+    },
+    "title": {
+      "type": "string"
+    },
+    "bodyText": {
+      "type": "text"
+    },
+    "slug": {
+      "type": "string",
+      "required": true
+    },
+    "contentKind": {
+      "type": "enumeration",
+      "enum": ["image", "gallery"],
+      "default": "image"
+    },
+    "media": {
+      "type": "media",
+      "multiple": true,
+      "required": false,
+      "allowedTypes": ["images"]
+    },
+    "visibility": {
+      "type": "enumeration",
+      "enum": ["public", "fan_list", "show_attendees"],
+      "default": "public",
+      "required": true
+    },
+    "event": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "api::event.event"
+    },
+    "showRecap": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "api::show-recap.show-recap"
+    },
+    "campaign": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "api::message-campaign.message-campaign"
+    },
+    "status": {
+      "type": "enumeration",
+      "enum": ["draft", "published", "hidden"],
+      "default": "draft",
+      "required": true
+    },
+    "publishedAt": {
+      "type": "datetime"
+    },
+    "hiddenAt": {
+      "type": "datetime"
+    },
+    "coverMediaId": {
+      "type": "integer"
+    },
+    "mediaCaptions": {
+      "type": "json"
+    },
+    "galleryVersion": {
+      "type": "integer",
+      "default": 0
+    },
+    "publishIdempotencyKey": {
+      "type": "string",
+      "unique": true,
+      "private": true,
+      "searchable": false,
+      "column": { "unique": true }
+    },
+    "showOnRockSnaps": {
+      "type": "boolean",
+      "default": false
+    },
+    "rocksnapsPublishedAt": {
+      "type": "datetime"
+    }
+  }
+}

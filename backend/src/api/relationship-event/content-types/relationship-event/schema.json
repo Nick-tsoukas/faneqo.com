@@ -1,0 +1,62 @@
+{
+  "kind": "collectionType",
+  "collectionName": "relationship_events",
+  "info": {
+    "singularName": "relationship-event",
+    "pluralName": "relationship-events",
+    "displayName": "Relationship Event",
+    "description": "Thin durable ledger of meaningful artist–fan facts. Canonical objects remain source of truth."
+  },
+  "options": {
+    "draftAndPublish": false
+  },
+  "pluginOptions": {},
+  "attributes": {
+    "type": {
+      "type": "string",
+      "required": true
+    },
+    "band": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "api::band.band",
+      "required": true
+    },
+    "fan": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "api::fan.fan"
+    },
+    "occurredAt": {
+      "type": "datetime",
+      "required": true
+    },
+    "sourceType": {
+      "type": "string",
+      "required": true
+    },
+    "sourceId": {
+      "type": "string",
+      "required": true
+    },
+    "idempotencyKey": {
+      "type": "string",
+      "required": true,
+      "unique": true
+    },
+    "metadata": {
+      "type": "json"
+    },
+    "visibility": {
+      "type": "enumeration",
+      "enum": ["artist_fan", "fan_only", "artist_only", "derived_from_source"],
+      "required": true,
+      "default": "artist_fan"
+    },
+    "schemaVersion": {
+      "type": "integer",
+      "required": true,
+      "default": 1
+    }
+  }
+}

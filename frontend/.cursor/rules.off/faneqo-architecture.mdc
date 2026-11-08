@@ -1,0 +1,47 @@
+---
+description: Faneqo relationship-platform architectural invariants
+alwaysApply: true
+---
+
+# Faneqo architecture invariants
+
+Build the truth once. Let many products read from it.
+Open at the edges. Strict at the core.
+
+Full architecture: `docs/FANEQO_RELATIONSHIP_PLATFORM.md`
+What wins when documents disagree: `AGENTS.md`
+
+## Strict core
+
+Fan identity, artist identity, attendance, consent, visibility, ownership, provenance, uniqueness, authorization, idempotency.
+
+## Fan identity
+
+One fan per `band + email.trim().toLowerCase()`. Same email on different artists is allowed.
+
+## Attendance
+
+One canonical unsuppressed fan-show-attendance row = one attended show.
+A row with both campaign and event is still one show.
+
+```
+showCount = COUNT(unsuppressed attendance rows)
+returning = showCount >= 2
+```
+
+`fans.checkedInShowCount` is a write-side cache, not canonical truth.
+
+## RelationshipEvent
+
+Thin durable fact ledger. Not an event bus, not a copy of domain objects, not message/media/analytics storage. Canonical rows remain truth.
+
+## Do not
+
+- Morph legacy `fan-moment` into future Moments (new collection)
+- Create a global `MediaAsset` table in V1 (Upload + S3 stay file truth; parent domain owns authorization)
+- Let external data invent attendance, identity, consent, loyalty, or Passport stamps
+- Put Rive state/layout into canonical domain facts (presentation only)
+- Re-query mutable truth when rendering a future ShareSnapshot (immutable)
+- Let an artist see a fan's cross-artist Passport (private by default; artist sees only its own relationship)
+
+Frontend visibility is not authorization.

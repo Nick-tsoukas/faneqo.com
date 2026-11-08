@@ -1,0 +1,44 @@
+.DS_Store
+.env
+.env.*
+!.env.example
+env.prod
+/.cursor/
+node_modules/
+**/node_modules/
+.ua/
+.audit/
+graphify-out/
+**/graphify-out/
+__pycache__/
+*.log
+logs/
+
+# frontend (Nuxt)
+frontend/node_modules/
+frontend/.output/
+frontend/.data/
+frontend/.nuxt/
+frontend/.nitro/
+frontend/.cache/
+frontend/dist/
+frontend/logs/
+frontend/.tmp-*
+frontend/.visual-review/
+
+# backend (Strapi)
+backend/node_modules/
+backend/.strapi/
+backend/.strapi-updater.json
+backend/dist/
+backend/build/
+backend/exports/
+backend/.tmp/
+backend/coverage/
+backend/logs/
+backend/.cache/
+
+# Phase 1 content-only: defer >50MB media until upload path works (files remain local)
+frontend/public/howtocreateartistpage.mp4
+frontend/public/howtocreateqr.mp4
+frontend/assets/ZoomInstaller.exe

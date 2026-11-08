@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1280" height="720" viewBox="0 0 1280 720" role="img" aria-label="Featured video thumbnail fixture">
+  <defs>
+    <linearGradient id="vbg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#090a0e"/>
+      <stop offset="100%" stop-color="#161821"/>
+    </linearGradient>
+    <radialGradient id="vglow" cx="70%" cy="30%" r="50%">
+      <stop offset="0%" stop-color="#7c3aed" stop-opacity="0.22"/>
+      <stop offset="100%" stop-color="#7c3aed" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="vspot" cx="32%" cy="58%" r="46%">
+      <stop offset="0%" stop-color="#39d5ff" stop-opacity="0.16"/>
+      <stop offset="100%" stop-color="#39d5ff" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+  <rect width="1280" height="720" fill="url(#vbg)"/>
+  <rect width="1280" height="720" fill="url(#vglow)"/>
+  <rect width="1280" height="720" fill="url(#vspot)"/>
+</svg>

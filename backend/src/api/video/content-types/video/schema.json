@@ -1,0 +1,58 @@
+{
+  "kind": "collectionType",
+  "collectionName": "videos",
+  "info": {
+    "singularName": "video",
+    "pluralName": "videos",
+    "displayName": "video",
+    "description": ""
+  },
+  "options": {
+    "draftAndPublish": true
+  },
+  "pluginOptions": {},
+  "attributes": {
+    "users_permissions_users": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "plugin::users-permissions.user",
+      "inversedBy": "videos"
+    },
+    "mediayoutube": {
+      "displayName": "videoyoutube",
+      "type": "component",
+      "repeatable": true,
+      "component": "youtube.videoyoutube"
+    },
+    "bandImg": {
+      "type": "media",
+      "multiple": false,
+      "required": false,
+      "allowedTypes": [
+        "images",
+        "files",
+        "videos",
+        "audios"
+      ]
+    },
+    "bandlink": {
+      "type": "string"
+    },
+    "bandname": {
+      "type": "string"
+    },
+    "title": {
+      "type": "string"
+    },
+    "bands": {
+      "type": "relation",
+      "relation": "manyToMany",
+      "target": "api::band.band",
+      "inversedBy": "videos"
+    },
+    "isApproved": {
+      "type": "boolean",
+      "default": true
+    }
+  }
+}

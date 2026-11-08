@@ -1,0 +1,286 @@
+/* Gallery Page photo-stack + context. Memory Deck is an internal name only. */
+
+.fq-gd {
+  position: relative;
+  min-height: 100dvh;
+  min-height: 100svh;
+  display: flex;
+  flex-direction: column;
+  background: #000;
+  color: #f7f9fc;
+  font-family: Poppins, ui-sans-serif, system-ui, sans-serif;
+  padding:
+    calc(0.35rem + env(safe-area-inset-top, 0px))
+    0
+    calc(4.6rem + env(safe-area-inset-bottom, 0px));
+}
+
+.fq-gd__top,
+.fq-gd__context,
+.fq-gd__thumbs {
+  padding-left: max(1.1rem, env(safe-area-inset-left, 0px));
+  padding-right: max(1.1rem, env(safe-area-inset-right, 0px));
+}
+
+.fq-gd__top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  min-height: 44px;
+}
+
+.fq-gd__back,
+.fq-gd__share {
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  text-decoration: none;
+  font-size: 0.72rem;
+  font-weight: 500;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  min-height: 44px;
+  display: inline-flex;
+  align-items: center;
+}
+
+.fq-gd__back {
+  color: rgba(247, 249, 252, 0.52);
+}
+
+.fq-gd__share {
+  color: #f7f9fc;
+}
+
+.fq-gd__back:focus-visible,
+.fq-gd__share:focus-visible,
+.fq-gd__thumb:focus-visible,
+.fq-md__card.is-front:focus-visible {
+  outline: 1px solid rgba(247, 249, 252, 0.7);
+  outline-offset: 3px;
+}
+
+.fq-gd__context {
+  margin-top: 0.2rem;
+}
+
+.fq-gd__artist {
+  margin: 0;
+  font-size: clamp(1.7rem, 7.4vw, 2.2rem);
+  font-weight: 700;
+  letter-spacing: -0.05em;
+  line-height: 0.92;
+  color: #f7f9fc;
+}
+
+.fq-gd__collection {
+  margin: 0.62rem 0 0;
+  font-size: 0.74rem;
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: rgba(247, 249, 252, 0.72);
+}
+
+.fq-gd__place {
+  margin: 0.28rem 0 0;
+  font-size: 0.62rem;
+  font-weight: 500;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: rgba(247, 249, 252, 0.4);
+}
+
+.fq-gd__count {
+  margin: 0.72rem 0 0;
+  font-size: 0.58rem;
+  font-weight: 500;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: rgba(247, 249, 252, 0.26);
+}
+
+.fq-gd__caption {
+  margin: 0.75rem 0 0;
+  max-width: 21rem;
+  font-size: 0.88rem;
+  font-weight: 500;
+  letter-spacing: 0.01em;
+  line-height: 1.38;
+  color: rgba(247, 249, 252, 0.58);
+}
+
+.fq-gd__more {
+  margin: 0.1rem 0 0;
+  padding: 0;
+  border: 0;
+  min-height: 36px;
+  background: transparent;
+  color: rgba(247, 249, 252, 0.46);
+  font-size: 0.62rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.fq-md {
+  position: relative;
+  flex: 1 1 auto;
+  min-height: 16rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0.85rem 0 0;
+  touch-action: pan-y;
+}
+
+.fq-md__stage {
+  position: relative;
+  width: min(92vw, 24rem);
+  height: min(52vh, 28rem);
+}
+
+.fq-md__card {
+  position: absolute;
+  overflow: hidden;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  will-change: transform;
+  transition:
+    transform 0.36s cubic-bezier(0.22, 1, 0.36, 1),
+    width 0.28s cubic-bezier(0.22, 1, 0.36, 1),
+    height 0.28s cubic-bezier(0.22, 1, 0.36, 1),
+    left 0.28s cubic-bezier(0.22, 1, 0.36, 1),
+    top 0.28s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.fq-md.is-dragging .fq-md__card.is-front {
+  transition: none;
+}
+
+.fq-md__card.is-front {
+  cursor: pointer;
+  touch-action: pan-x;
+}
+
+.fq-md__card:not(.is-front) {
+  display: none;
+}
+
+.fq-md__card img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  user-select: none;
+  -webkit-user-drag: none;
+}
+
+[data-gx-continuity='hidden'] {
+  opacity: 0 !important;
+  pointer-events: none !important;
+}
+
+.fq-md.is-single .fq-md__stage {
+  height: min(56vh, 30rem);
+}
+
+.fq-gd__thumbs {
+  display: flex;
+  align-items: flex-end;
+  gap: 0.45rem;
+  overflow-x: auto;
+  margin-top: 1.15rem;
+  padding-bottom: 0.15rem;
+  scroll-padding-inline: 1.1rem;
+  scrollbar-width: none;
+  touch-action: pan-x;
+  -webkit-overflow-scrolling: touch;
+}
+
+.fq-gd__thumbs::-webkit-scrollbar {
+  display: none;
+}
+
+.fq-gd__thumb {
+  flex: 0 0 auto;
+  width: auto;
+  height: 56px;
+  aspect-ratio: var(--fq-gd-thumb-aspect, 0.75);
+  min-width: 44px;
+  max-width: 92px;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  opacity: 0.38;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.fq-gd__thumb.is-active {
+  opacity: 1;
+  box-shadow: 0 0 0 1px rgba(247, 249, 252, 0.88);
+}
+
+.fq-gd__thumb img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.fq-gd-dock {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 8;
+  padding: 0.15rem 0.4rem calc(0.28rem + env(safe-area-inset-bottom, 0px));
+  background: #000;
+  border-top: 1px solid rgba(247, 249, 252, 0.06);
+  pointer-events: none;
+}
+
+.fq-gd-dock__note {
+  margin: 0 0.35rem 0;
+  font-size: 0.45rem;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: rgba(247, 249, 252, 0.16);
+}
+
+.fq-gd-dock__row {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.2rem;
+}
+
+.fq-gd-dock__item {
+  flex: 1 1 0;
+  min-height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.6rem;
+  letter-spacing: 0.11em;
+  text-transform: uppercase;
+  color: rgba(247, 249, 252, 0.3);
+}
+
+.fq-gd-dock__item.is-active {
+  color: #f7f9fc;
+  font-weight: 600;
+}
+
+.fq-gd.is-public-shell {
+  padding-bottom: calc(1.4rem + env(safe-area-inset-bottom, 0px));
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .fq-md__card {
+    transition: none;
+  }
+}

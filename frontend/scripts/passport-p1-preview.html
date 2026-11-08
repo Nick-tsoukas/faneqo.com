@@ -1,0 +1,199 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Passport P1 owner preview</title>
+  <style>
+    :root { color-scheme: dark; }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      background: #050608;
+      color: #f7f9fc;
+      font-family: Poppins, ui-sans-serif, system-ui, sans-serif;
+    }
+    .page { width: min(100%, 42rem); margin: 0 auto; padding: 1.2rem 1.1rem 5rem; }
+    .page.desktop { width: min(100%, 58rem); }
+    .eyebrow { margin: 0; color: #39d5ff; font-size: 0.68rem; font-weight: 650; letter-spacing: 0.16em; text-transform: uppercase; }
+    h1 { margin: 0.5rem 0 0; font-size: clamp(2.05rem, 9vw, 4.2rem); font-weight: 850; letter-spacing: -0.065em; line-height: 0.96; }
+    .lede { max-width: 34rem; margin: 1.05rem 0 0; color: rgba(247,249,252,0.56); line-height: 1.6; }
+    .meta { color: rgba(247,249,252,0.42); font-size: 0.78rem; }
+    .card { margin-top: 2rem; }
+    .art { position: relative; min-height: 15.5rem; background: #0b0e14; overflow: hidden; }
+    .art img, .art .cover { display: block; width: 100%; height: 16.5rem; object-fit: cover; }
+    .cover.poster { background: linear-gradient(160deg, #1a1030, #4ca6ff 55%, #111); display: grid; place-items: end start; padding: 1rem; font-weight: 800; letter-spacing: -0.04em; }
+    .cover.artist { background: radial-gradient(circle at 30% 20%, #4ca6ff, #111722 70%); }
+    .fallback {
+      height: 16.5rem; display: grid; place-items: center;
+      background: radial-gradient(120% 80% at 20% 10%, rgba(76,166,255,0.22), transparent 46%),
+        radial-gradient(90% 70% at 90% 90%, rgba(69,227,174,0.16), transparent 42%), #0b0e14;
+      color: #39d5ff; font-size: 2rem;
+    }
+    .peek { position: absolute; right: 0.85rem; bottom: 0.85rem; display: inline-flex; align-items: center; gap: 0.45rem; min-height: 32px; padding: 0.2rem 0.55rem 0.2rem 0.2rem; background: rgba(5,6,8,0.72); font-size: 0.68rem; font-weight: 650; }
+    .peek i { width: 28px; height: 28px; background: #333; display: block; }
+    .artist { margin: 1.15rem 0 0; color: #39d5ff; font-size: 0.72rem; font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase; }
+    .venue { margin: 0.45rem 0 0; font-size: clamp(1.55rem, 6.4vw, 2.35rem); font-weight: 800; letter-spacing: -0.055em; line-height: 0.98; }
+    .place, .date { margin: 0.45rem 0 0; color: rgba(247,249,252,0.58); }
+    .there { display: inline-flex; gap: 0.4rem; margin: 0.85rem 0 0; color: #45e3ae; font-size: 0.78rem; font-weight: 700; }
+    .empty { min-height: 16rem; display: grid; place-content: center; text-align: center; }
+    .empty .mark { color: #39d5ff; font-size: 2rem; }
+    .sm { margin-top: 1.5rem; padding: 16px; background: #0b0c10; border: 1px solid rgba(255,255,255,0.08); border-radius: 1rem; }
+    .sm h2 { margin: 0; font-size: 16px; }
+    .field { margin-top: 10px; }
+    .field label { display: block; margin-bottom: 5px; font-size: 11px; font-weight: 600; color: rgba(255,255,255,0.42); }
+    .field input { width: 100%; min-height: 44px; padding: 0 12px; background: rgba(255,255,255,0.045); border: 1px solid rgba(255,255,255,0.1); border-radius: 10px; color: #f5f5f6; }
+    .hint { margin: 0 0 8px; font-size: 11.5px; color: rgba(255,255,255,0.38); }
+    .opt { color: #39d5ff; font-size: 9.5px; letter-spacing: 0.04em; text-transform: uppercase; }
+    .add { min-height: 40px; padding: 0 12px; border: 1px solid rgba(57,213,255,0.28); border-radius: 10px; background: rgba(57,213,255,0.06); color: #7ee7ff; }
+    .preview-row { display: flex; align-items: center; gap: 10px; }
+    .preview-row img, .thumb { width: 56px; height: 72px; object-fit: cover; background: linear-gradient(160deg, #1a1030, #4ca6ff); }
+    .shot { display: none; }
+    .shot.on { display: block; }
+    .nav { display: flex; gap: 1.1rem; margin-bottom: 1.5rem; color: rgba(247,249,252,0.46); font-size: 0.78rem; }
+    .nav b { color: #45e3ae; }
+  </style>
+</head>
+<body>
+  <article id="s1" class="shot on page">
+    <nav class="nav"><span>Artists</span><span>Messages</span><b>Passport</b></nav>
+    <p class="eyebrow">Passport</p>
+    <h1>Your nights stay with you.</h1>
+    <p class="lede">Every show you check into becomes part of your history with the artists you love.</p>
+    <p class="meta">1 night · 1 artist</p>
+    <div class="card">
+      <div class="art"><div class="cover poster">BADFLOWER<br>NIGHT ONE</div></div>
+      <p class="artist">Badflower</p>
+      <h2 class="venue">The Basement East</h2>
+      <p class="place">Nashville, TN</p>
+      <p class="date">October 18, 2026</p>
+      <p class="there">✓ You were there</p>
+    </div>
+  </article>
+
+  <article id="s2" class="shot page">
+    <nav class="nav"><span>Artists</span><span>Messages</span><b>Passport</b></nav>
+    <p class="eyebrow">Passport</p>
+    <h1>Your nights stay with you.</h1>
+    <p class="lede">Every show you check into becomes part of your history with the artists you love.</p>
+    <div class="card">
+      <div class="art"><div class="cover artist"></div></div>
+      <p class="artist">Badflower</p>
+      <h2 class="venue">The Mill &amp; Mine</h2>
+      <p class="place">Knoxville, TN</p>
+      <p class="date">October 20, 2026</p>
+      <p class="there">✓ You were there</p>
+    </div>
+  </article>
+
+  <article id="s3" class="shot page">
+    <div class="card">
+      <div class="art">
+        <div class="cover poster">BADFLOWER<br>NIGHT ONE</div>
+        <div class="peek"><i></i><span>8 photos</span></div>
+      </div>
+      <p class="artist">Badflower</p>
+      <h2 class="venue">The Basement East</h2>
+      <p class="place">Nashville, TN</p>
+      <p class="date">October 18, 2026</p>
+      <p class="there">✓ You were there</p>
+    </div>
+  </article>
+
+  <article id="s4" class="shot page">
+    <p>← Passport</p>
+    <p class="artist">Badflower</p>
+    <h1 class="venue">The Basement East</h1>
+    <p class="place">Nashville, TN</p>
+    <p class="date">October 18, 2026</p>
+    <p class="there">✓ You were there</p>
+    <div class="art" style="margin-top:1.6rem"><div class="cover poster">BADFLOWER<br>NIGHT ONE</div></div>
+  </article>
+
+  <article id="s5" class="shot page">
+    <div class="empty">
+      <p class="mark">✦</p>
+      <h2 style="font-size:1.5rem;letter-spacing:-0.03em">Your nights will live here.</h2>
+      <p class="lede">Check in at a show using Faneqo and it becomes part of your Passport.</p>
+    </div>
+  </article>
+
+  <article id="s6" class="shot page">
+    <div class="sm">
+      <h2>Show Mode</h2>
+      <div class="field"><label>Show Title (optional)</label><input value="Album Night"></div>
+      <div class="field"><label>Venue (optional)</label><input value="The Basement East"></div>
+      <div class="field">
+        <label>Show cover <span class="opt">Optional</span></label>
+        <p class="hint">Add a poster, flyer, or photo for this show.</p>
+        <button class="add">Add cover</button>
+      </div>
+      <p style="margin-top:14px"><button class="add">Activate</button></p>
+    </div>
+  </article>
+
+  <article id="s7" class="shot page">
+    <div class="sm">
+      <h2>Show Mode</h2>
+      <div class="field"><label>Show Title (optional)</label><input placeholder="e.g. Album Release Party"></div>
+      <div class="field"><label>Venue (optional)</label><input placeholder="e.g. The Roxy"></div>
+      <div class="field">
+        <label>Show cover <span class="opt">Optional</span></label>
+        <p class="hint">Add a poster, flyer, or photo for this show.</p>
+        <button class="add">Add cover</button>
+      </div>
+    </div>
+  </article>
+
+  <article id="s8" class="shot page">
+    <div class="sm">
+      <h2>Show Mode</h2>
+      <div class="field">
+        <label>Show cover <span class="opt">Optional</span></label>
+        <p class="hint">Add a poster, flyer, or photo for this show.</p>
+        <div class="preview-row">
+          <div class="thumb"></div>
+          <button class="add">Replace</button>
+          <button class="add">Remove</button>
+        </div>
+        <p style="color:#45e3ae;font-size:11.5px">Ready</p>
+      </div>
+    </div>
+  </article>
+
+  <article id="s9" class="shot page desktop">
+    <nav class="nav"><span>Artists</span><span>Messages</span><b>Passport</b></nav>
+    <p class="eyebrow">Passport</p>
+    <h1>Your nights stay with you.</h1>
+    <p class="lede">Every show you check into becomes part of your history with the artists you love.</p>
+    <p class="meta">2 nights · 1 artist</p>
+    <div class="card">
+      <div class="art"><div class="cover poster">BADFLOWER<br>NIGHT ONE</div></div>
+      <p class="artist">Badflower</p>
+      <h2 class="venue">The Basement East</h2>
+      <p class="place">Nashville, TN</p>
+      <p class="date">October 18, 2026</p>
+      <p class="there">✓ You were there</p>
+    </div>
+  </article>
+
+  <article id="s10" class="shot page desktop">
+    <div class="sm" style="max-width:28rem">
+      <h2>Show Mode</h2>
+      <p class="hint">Ready for your next live event</p>
+      <div class="field"><label>Show Title (optional)</label><input></div>
+      <div class="field"><label>Venue (optional)</label><input></div>
+      <div class="field">
+        <label>Show cover <span class="opt">Optional</span></label>
+        <p class="hint">Add a poster, flyer, or photo for this show.</p>
+        <button class="add">Add cover</button>
+      </div>
+      <p style="margin-top:14px"><button class="add">Activate</button></p>
+    </div>
+  </article>
+  <script>
+    const id = new URLSearchParams(location.search).get('shot') || 's1'
+    document.querySelectorAll('.shot').forEach((el) => el.classList.toggle('on', el.id === id))
+  </script>
+</body>
+</html>

@@ -1,0 +1,494 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+
+.btn {
+    @apply bg-neon-green hover:bg-neon-purple text-black font-bold py-2 px-4 rounded shadow-lg
+}
+
+:root {
+  --header-height: 70px;
+  /* Artist-profile / marketing product language (do not replace messaging-app --faneqo-green). */
+  --faneqo-obsidian: #050608;
+  --faneqo-raised: #0B0E14;
+  --faneqo-surface: #111722;
+  --faneqo-text: #F7F9FC;
+  --faneqo-muted: #9AA6B5;
+  --faneqo-brand-pink: #FF4FD8;
+  --faneqo-brand-violet: #8B6CFF;
+  --faneqo-connection-blue: #4CA6FF;
+  --faneqo-connection-cyan: #39D5FF;
+  --faneqo-connection-green: #45E3AE;
+  --faneqo-success: #62F29D;
+  --faneqo-connection-edge: linear-gradient(90deg, #4CA6FF 0%, #39D5FF 72%, #45E3AE 100%);
+  --faneqo-fan-surface: #100B16;
+  --faneqo-fan-cta: #0E0B14;
+  --faneqo-fan-edge: linear-gradient(90deg, #8B6CFF 0%, #4CA6FF 100%);
+  --faneqo-brand-edge: linear-gradient(90deg, #FF4FD8, #8B6CFF);
+  --faneqo-green: #39FF14;
+  --faneqo-purple: #9100FF;
+  --faneqo-magenta: #FF00FF;
+  --fq-green: #39FF14;
+  --fq-purple: #9100FF;
+  --fq-magenta: #FF00FF;
+  --fq-app-bg: #050506;
+  --fq-canvas: #07080A;
+  --fq-surface: #0B0C10;
+  --fq-surface-raised: #111217;
+  --fq-surface-hover: #14161B;
+  --fq-surface-tinted: #0D0B10;
+  --fq-border: rgba(255, 255, 255, 0.07);
+  --fq-border-strong: rgba(255, 255, 255, 0.11);
+  --fq-arrow: rgba(57, 255, 20, 0.82);
+  --fq-surface-base: #050506;
+  --fq-surface-rail: #0B0C10;
+  --fq-surface-thread: #07080A;
+  --fq-surface-composer: #0B0C10;
+  --fq-msg-canvas: 52rem;
+  --fq-messages-max: 100rem;
+  --fq-border-subtle: rgba(255, 255, 255, 0.07);
+  --fq-text-primary: #F5F5F6;
+  --fq-text-secondary: rgba(255, 255, 255, 0.58);
+  --fq-text-muted: rgba(255, 255, 255, 0.38);
+  --fq-text-disabled: rgba(255, 255, 255, 0.28);
+  --fq-state-success: #39FF14;
+  --fq-state-unread: #39FF14;
+  --fq-state-progress: #23C7C3;
+  --fq-state-error: #fca5a5;
+  --fq-ink-on-green: #052e16;
+  --fq-form-cta-from: #45D6A7;
+  --fq-form-cta-to: #23C7C3;
+  --fq-ink-on-form-cta: #06251F;
+  --fq-gradient-form-cta: linear-gradient(135deg, #45D6A7 0%, #23C7C3 100%);
+  --fq-gradient-primary: linear-gradient(135deg, #39FF14 0%, #2EE6B8 48%, #9100FF 100%);
+  --fq-gradient-tab: linear-gradient(90deg, #39FF14 0%, #2EE6B8 55%, #9100FF 100%);
+}
+
+/* Fan List: aubergine world + cyan signal. Shared by live FanCapture + /home-v2 lite. */
+.fq-fan-card {
+  background:
+    linear-gradient(180deg, rgba(139, 108, 255, 0.16) 0%, rgba(255, 79, 216, 0.05) 24%, transparent 50%),
+    var(--faneqo-fan-surface);
+  border-color: rgba(139, 108, 255, 0.22);
+}
+
+.fq-fan-edge {
+  background: var(--faneqo-fan-edge);
+}
+
+.fq-fan-icon {
+  border-color: rgba(57, 213, 255, 0.36);
+  background: rgba(76, 166, 255, 0.1);
+  color: var(--faneqo-connection-cyan);
+}
+
+.fq-fan-input {
+  background: var(--faneqo-obsidian);
+  border-color: rgba(255, 255, 255, 0.12);
+  color: var(--faneqo-text);
+}
+
+.fq-fan-input:focus {
+  border-color: rgba(57, 213, 255, 0.62);
+}
+
+.fq-fan-cta {
+  background: var(--faneqo-fan-cta);
+  color: var(--faneqo-text);
+  border-color: rgba(139, 108, 255, 0.36);
+}
+
+.fq-fan-cta:hover:not(:disabled) {
+  border-color: rgba(76, 166, 255, 0.52);
+  background: #12101C;
+}
+
+/* Application workspace only. Do not put this on public artist pages. */
+.fq-app {
+  background: var(--fq-app-bg);
+  color: var(--fq-text-primary);
+  min-height: 100%;
+}
+
+.fq-app-header {
+  background: var(--fq-app-bg);
+  border-bottom: 1px solid var(--fq-border);
+  box-shadow: none;
+}
+
+.fq-go {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.2rem;
+}
+
+.fq-go .fq-arrow {
+  color: var(--fq-arrow);
+  opacity: 0.82;
+  flex-shrink: 0;
+  transition: transform 155ms ease, opacity 155ms ease;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .fq-go:hover .fq-arrow {
+    transform: translateX(2px);
+    opacity: 1;
+  }
+}
+
+/* Hide header when share modal is open */
+body.share-modal-open header {
+  display: none !important;
+}
+
+html {
+  background: black;
+  margin: 0;
+  padding: 0;
+  overflow-x: hidden;
+  height: 100%;
+}
+
+ body {
+  margin: 0;
+  padding: 0;
+  overflow-x: hidden;
+  height: 100%;
+}
+
+
+/* Neon green spinner */
+.spinner {
+  border: 8px solid rgba(0, 255, 0, 0.2); /* Light neon green border */
+  border-top: 8px solid #00ff00; /* Neon green border at the top */
+  border-radius: 50%;
+  width: 60px;
+  height: 60px;
+  animation: spin 1s linear infinite;
+
+}
+
+/* Keyframes for the spin animation */
+@keyframes spin {
+  0% {
+    transform: rotate(0deg);
+  }
+  100% {
+    transform: rotate(360deg);
+  }
+}
+
+/* Loading container to center the spinner */
+.loading-container {
+  position: fixed; /* Fixes the container to the viewport */
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100vh;
+  display: flex; /* To center the spinner */
+  justify-content: center; /* Center horizontally */
+  align-items: center; /* Center vertically */
+  background-color: rgba(0, 0, 0, 0.5); /* Optional background */
+  z-index: 99999999999999; /* Make sure it's on top of other content */
+}
+
+/* phone  */
+.phone-mockup {
+  width: 300px;
+  height: 600px;
+  background-color: #333;
+  border-radius: 30px;
+  padding: 20px;
+  box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
+  position: relative;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.phone-mockup::before {
+  content: '';
+  position: absolute;
+  top: 10px;
+  left: 50%;
+  width: 60px;
+  height: 5px;
+  background-color: #333;
+  border-radius: 10px;
+  transform: translateX(-50%);
+}
+
+.phone-mockup::after {
+  content: '';
+  position: absolute;
+  bottom: 10px;
+  left: 50%;
+  width: 70px;
+  height: 10px;
+  background-color: #333;
+  border-radius: 10px;
+  transform: translateX(-50%);
+}
+
+.phone-screen {
+  width: 100%;
+  height: 100%;
+  border-radius: 20px;
+  overflow: hidden;
+}
+
+.phone-screen img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+/* end of phone  */
+.container-mdc {
+    margin: 2rem auto;
+    padding: 2rem;
+    border:1px solid black;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  }
+  
+  /* Title Styling */
+  .title {
+    font-size: 1.5rem;
+    font-weight: bold;
+    margin-bottom: 1.5rem;
+    color: #333;
+  }
+  
+  /* Material Design Text Field Styling */
+  .mdc-text-field {
+    position: relative;
+    margin-bottom: 1.5rem;
+    display: inline-block;
+    width: 100%;
+  }
+  .mdc-text-field__input::placeholder {
+    color: transparent;
+  }
+  
+  .mdc-text-field__input:focus::placeholder {
+    color: #aaa;
+  }
+  
+  .mdc-text-field__input {
+    font-size: 1rem;
+    line-height: 1.5;
+    padding: 0.75rem 0.5rem;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    outline: none;
+    width: 100%;
+  }
+  
+  .mdc-floating-label {
+    position: absolute;
+    z-index: 99999;
+    top: 0.75rem;
+    left: 0.5rem;
+    padding-left: .2em;
+    padding-right: .2em;
+    font-size: 1rem;
+    background: white;
+    line-height: 1;
+    color: #aaa;
+    pointer-events: none;
+    transition: transform 0.2s, color 0.2s;
+  }
+  
+  .mdc-text-field__input:focus + .mdc-floating-label,
+  .mdc-text-field__input:not(:placeholder-shown) + .mdc-floating-label {
+    transform: translateY(-1.5rem);
+    color: #6200ee;
+  }
+  
+  .mdc-line-ripple {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 2px;
+    background-color: #6200ee;
+    transform: scaleX(0);
+    transition: transform 0.2s;
+  }
+  
+  .mdc-text-field__input:focus ~ .mdc-line-ripple {
+    transform: scaleX(1);
+  }
+  
+  /* Button Styling */
+  .mdc-button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0.75rem 1.5rem;
+    font-size: 0.875rem;
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.0892857143em;
+    color: #fff;
+    /* background-color: #2C2C2C; */
+    background: linear-gradient(to right, #ec4899, #8b5cf6);
+
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: background-color 0.2s;
+  }
+
+  .form-group {
+   
+    margin-bottom: 2rem;
+    border: 1px solid black;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  }
+
+  .mdc-button-green {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0.75rem 1.5rem;
+    font-size: 0.875rem;
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: 0.0892857143em;
+    color: black;
+    background-color: #1db954;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: background-color 0.2s;
+  }
+  
+  .mdc-button:hover {
+    background-color: #3700b3;
+  }
+  
+  .mdc-button:focus {
+    outline: none;
+  }
+  .cancel-icon {
+    position: absolute;
+    top: 50%;
+    right: 1rem;
+    transform: translateY(-50%);
+    width: 24px;
+    height: 24px;
+    cursor: pointer;
+  }
+
+/* Shared Cybered / editor artist-hero frame. Desktop matches BandPageCybered AP.D1. */
+.faneqo-artist-hero-frame {
+  min-height: 17.5rem;
+  height: clamp(17.5rem, 48vh, 26.875rem);
+}
+
+@media (min-width: 768px) {
+  .faneqo-artist-hero-frame:not(.is-mobile-preview) {
+    min-height: 22.5rem;
+    height: clamp(22.5rem, 50vh, 30rem);
+  }
+}
+
+@media (min-width: 1024px) {
+  .faneqo-artist-hero-frame:not(.is-mobile-preview) {
+    min-height: 31rem;
+    height: clamp(31rem, 56vh, 35rem);
+    max-height: 35rem;
+  }
+}
+
+.faneqo-artist-hero-frame.is-mobile-preview {
+  width: 100%;
+  min-height: 0;
+  height: auto;
+  aspect-ratio: var(--fq-hero-ratio, 1.6);
+  max-height: 26.875rem;
+}
+
+.faneqo-artist-hero-frame.is-mobile-preview.is-portrait,
+.faneqo-artist-hero-frame.is-mobile-preview.is-deep {
+  aspect-ratio: auto;
+  height: clamp(23.75rem, 48vh, 26.875rem);
+  max-height: 26.875rem;
+}
+
+/* Homepage mobile typography axis — left on small screens, desktop keeps its composition */
+.home-section-head {
+  text-align: left;
+  max-width: none;
+  margin-left: 0;
+  margin-right: 0;
+}
+
+@media (min-width: 1024px) {
+  .home-section-head:not(.home-section-head--flush) {
+    text-align: center;
+    margin-left: auto;
+    margin-right: auto;
+  }
+}
+
+.home-kicker {
+  font-size: 0.6875rem;
+  font-weight: 600;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+}
+
+@media (min-width: 640px) {
+  .home-kicker {
+    font-size: 0.75rem;
+    letter-spacing: 0.18em;
+  }
+}
+
+.home-section-title {
+  font-size: 1.75rem;
+  line-height: 1.02;
+  letter-spacing: -0.03em;
+  font-weight: 800;
+}
+
+@media (min-width: 640px) {
+  .home-section-title {
+    font-size: 2.25rem;
+    line-height: 1.08;
+    letter-spacing: -0.025em;
+  }
+}
+
+@media (min-width: 1024px) {
+  .home-section-title {
+    font-size: 3rem;
+    line-height: 1.08;
+    letter-spacing: -0.025em;
+  }
+}
+
+.home-section-body {
+  max-width: 34ch;
+  margin-left: 0;
+  margin-right: 0;
+  text-align: left;
+  text-wrap: pretty;
+}
+
+@media (min-width: 1024px) {
+  .home-section-head:not(.home-section-head--flush) .home-section-body {
+    max-width: 36rem;
+    margin-left: auto;
+    margin-right: auto;
+    text-align: center;
+  }
+
+  .home-section-head--flush .home-section-body {
+    max-width: 36rem;
+  }
+}

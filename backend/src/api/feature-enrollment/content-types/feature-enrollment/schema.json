@@ -1,0 +1,57 @@
+{
+  "kind": "collectionType",
+  "collectionName": "feature_enrollments",
+  "info": {
+    "singularName": "feature-enrollment",
+    "pluralName": "feature-enrollments",
+    "displayName": "Feature Enrollment",
+    "description": "Default-deny Labs / Moments feature grants. Not a public API."
+  },
+  "options": {
+    "draftAndPublish": false
+  },
+  "pluginOptions": {},
+  "indexes": [
+    {
+      "name": "feature_enrollments_feature_subject_unique",
+      "columns": ["feature_key", "subject_type", "subject_id"],
+      "type": "unique"
+    }
+  ],
+  "attributes": {
+    "featureKey": {
+      "type": "string",
+      "required": true
+    },
+    "subjectType": {
+      "type": "enumeration",
+      "enum": ["user", "band", "cohort", "platform"],
+      "required": true
+    },
+    "subjectId": {
+      "type": "string",
+      "required": true
+    },
+    "status": {
+      "type": "enumeration",
+      "enum": ["enabled", "disabled"],
+      "required": true,
+      "default": "enabled"
+    },
+    "startsAt": {
+      "type": "datetime"
+    },
+    "endsAt": {
+      "type": "datetime"
+    },
+    "grantedBy": {
+      "type": "string"
+    },
+    "cohort": {
+      "type": "string"
+    },
+    "metadata": {
+      "type": "json"
+    }
+  }
+}

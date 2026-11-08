@@ -1,0 +1,493 @@
+{
+  "kind": "collectionType",
+  "collectionName": "bands",
+  "info": {
+    "singularName": "band",
+    "pluralName": "bands",
+    "displayName": "Band",
+    "description": ""
+  },
+  "options": {
+    "draftAndPublish": false
+  },
+  "pluginOptions": {},
+  "attributes": {
+    "name": {
+      "type": "string",
+      "required": true,
+      "unique": true
+    },
+    "genre": {
+      "type": "string",
+      "required": false
+    },
+    "bio": {
+      "type": "text",
+      "required": true,
+      "maxLength": 347
+    },
+    "bandImg": {
+      "type": "media",
+      "multiple": false,
+      "required": false,
+      "allowedTypes": [
+        "images"
+      ]
+    },
+    "members": {
+      "type": "component",
+      "repeatable": true,
+      "component": "member.members"
+    },
+    "facebook": {
+      "type": "string"
+    },
+    "instagram": {
+      "type": "string"
+    },
+    "twitch": {
+      "type": "string"
+    },
+    "appleMusic": {
+      "type": "string"
+    },
+    "soundcloud": {
+      "type": "string"
+    },
+    "albums": {
+      "type": "relation",
+      "relation": "oneToMany",
+      "target": "api::album.album",
+      "mappedBy": "band"
+    },
+    "events": {
+      "type": "relation",
+      "relation": "oneToMany",
+      "target": "api::event.event",
+      "mappedBy": "band"
+    },
+    "users_permissions_user": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "plugin::users-permissions.user",
+      "inversedBy": "bands"
+    },
+    "tours": {
+      "type": "relation",
+      "relation": "manyToMany",
+      "target": "api::tour.tour",
+      "mappedBy": "bands"
+    },
+    "deezer": {
+      "type": "string"
+    },
+    "youtube": {
+      "type": "string"
+    },
+    "bandcamp": {
+      "type": "string"
+    },
+    "videos": {
+      "type": "relation",
+      "relation": "manyToMany",
+      "target": "api::video.video",
+      "mappedBy": "bands"
+    },
+    "twitter": {
+      "type": "string"
+    },
+    "whatsapp": {
+      "type": "string"
+    },
+    "tiktok": {
+      "type": "string"
+    },
+    "media_plays": {
+      "type": "relation",
+      "relation": "oneToMany",
+      "target": "api::media-play.media-play",
+      "mappedBy": "band"
+    },
+    "singlesong": {
+      "displayName": "singlesong",
+      "type": "component",
+      "repeatable": false,
+      "component": "singlesong.singlesong"
+    },
+    "singlevideo": {
+      "displayName": "singlevideo",
+      "type": "component",
+      "repeatable": false,
+      "component": "singlevideo.singlevideo"
+    },
+    "spotify": {
+      "type": "string"
+    },
+    "snapchat": {
+      "type": "string"
+    },
+    "websitelink": {
+      "type": "string"
+    },
+    "websitelinktext": {
+      "type": "string"
+    },
+    "biotagline": {
+      "type": "string"
+    },
+    "link_clicks": {
+      "type": "relation",
+      "relation": "oneToMany",
+      "target": "api::link-click.link-click",
+      "mappedBy": "band"
+    },
+    "qrs": {
+      "type": "relation",
+      "relation": "oneToMany",
+      "target": "api::qr.qr",
+      "mappedBy": "band"
+    },
+    "reverbnation": {
+      "type": "string"
+    },
+    "isBandNameInLogo": {
+      "type": "boolean",
+      "default": false
+    },
+    "slug": {
+      "type": "string",
+      "unique": true
+    },
+    "externalAccounts": {
+      "type": "relation",
+      "relation": "oneToMany",
+      "target": "api::band-external-account.band-external-account",
+      "mappedBy": "band"
+    },
+    "externalMetrics": {
+      "type": "relation",
+      "relation": "oneToMany",
+      "target": "api::band-external-metric.band-external-metric",
+      "mappedBy": "band"
+    },
+    "band_page_views": {
+      "type": "relation",
+      "relation": "oneToMany",
+      "target": "api::band-page-view.band-page-view",
+      "mappedBy": "band"
+    },
+    "paymentsEnabled": {
+      "type": "boolean",
+      "default": false
+    },
+    "stripeAccountId": {
+      "type": "string"
+    },
+    "stripeOnboardingComplete": {
+      "type": "boolean",
+      "default": false
+    },
+    "paymentButtons": {
+      "type": "json"
+    },
+    "merchConcierge": {
+      "type": "json"
+    },
+    "hiddenLinks": {
+      "type": "json"
+    },
+    "support_moments": {
+      "type": "relation",
+      "relation": "oneToMany",
+      "target": "api::support-moment.support-moment",
+      "mappedBy": "band"
+    }, 
+    "layoutConfig": {
+      "type": "json"
+    },
+    "layoutVersion": {
+      "type": "integer",
+      "default": 1
+    },
+    "pageStyle": {
+      "type": "enumeration",
+      "enum": ["default", "compact", "bold", "smartlink"],
+      "default": "default"
+    },
+    "buttonStyle": {
+      "type": "enumeration",
+      "enum": ["classic", "modern"],
+      "default": "classic"
+    },
+    "newReleaseDate": {
+      "type": "date"
+    },
+    "nowBannerOverride": {
+      "type": "enumeration",
+      "enum": ["SHOW_TONIGHT", "ON_TOUR", "NEW_RELEASE", "POST_SHOW_THANKS", "QUIET_DEFAULT"],
+      "default": null
+    },
+    "youtubeMusic": {
+      "type": "string"
+    },
+    "amazonMusic": {
+      "type": "string"
+    },
+    "tidal": {
+      "type": "string"
+    },
+    "pandora": {
+      "type": "string"
+    },
+    "audiomack": {
+      "type": "string"
+    },
+    "mixcloud": {
+      "type": "string"
+    },
+    "beatport": {
+      "type": "string"
+    },
+    "napster": {
+      "type": "string"
+    },
+    "vimeo": {
+      "type": "string"
+    },
+    "kick": {
+      "type": "string"
+    },
+    "threads": {
+      "type": "string"
+    },
+    "discord": {
+      "type": "string"
+    },
+    "telegram": {
+      "type": "string"
+    },
+    "reddit": {
+      "type": "string"
+    },
+    "pinterest": {
+      "type": "string"
+    },
+    "linkedin": {
+      "type": "string"
+    },
+    "bandsintown": {
+      "type": "string"
+    },
+    "songkick": {
+      "type": "string"
+    },
+    "patreon": {
+      "type": "string"
+    },
+    "jambase": {
+      "type": "string"
+    },
+    "relix": {
+      "type": "string"
+    },
+    "bookingEmail": {
+      "type": "string"
+    },
+    "managementEmail": {
+      "type": "string"
+    },
+    "pressEmail": {
+      "type": "string"
+    },
+    "bookingAgent": {
+      "type": "string"
+    },
+    "labelUrl": {
+      "type": "string"
+    },
+    "officialMerchUrl": {
+      "type": "string"
+    },
+    "labelName": {
+      "type": "string"
+    },
+    "customButtons": {
+      "type": "component",
+      "repeatable": true,
+      "component": "custom-link-button.custom-link-button"
+    },
+    "editorialShowcaseEnabled": {
+      "type": "boolean",
+      "default": false
+    },
+    "publicationHeaderImageMode": {
+      "type": "enumeration",
+      "enum": ["contain_blur", "cinematic_cover"],
+      "default": "contain_blur"
+    },
+    "editorialSectionTitle": {
+      "type": "string"
+    },
+    "editorialArchiveUrl": {
+      "type": "string"
+    },
+    "editorialArchiveLabel": {
+      "type": "string"
+    },
+    "editorialItems": {
+      "type": "component",
+      "repeatable": true,
+      "component": "editorial.editorial-item"
+    },
+    "fans": {
+      "type": "relation",
+      "relation": "oneToMany",
+      "target": "api::fan.fan",
+      "mappedBy": "band"
+    },
+    "fanCaptureEnabled": {
+      "type": "boolean",
+      "default": true
+    },
+    "fanCaptureHeadline": {
+      "type": "string",
+      "default": "Join the fan list"
+    },
+    "fanCaptureMessage": {
+      "type": "text",
+      "default": "Get first access to merch drops, show announcements, discounted shows, and exclusive updates."
+    },
+    "fanCaptureButtonLabel": {
+      "type": "string",
+      "default": "Join Fan List"
+    },
+    "fanCaptureSuccessMessage": {
+      "type": "string",
+      "default": "You're on the list."
+    },
+    "cyberedImagePositionX": {
+      "type": "integer",
+      "default": 50
+    },
+    "cyberedImagePositionY": {
+      "type": "integer",
+      "default": 50
+    },
+    "cyberedImageZoom": {
+      "type": "decimal",
+      "default": 1
+    },
+    "cyberedDesktopPositionX": {
+      "type": "integer"
+    },
+    "cyberedDesktopPositionY": {
+      "type": "integer"
+    },
+    "cyberedDesktopZoom": {
+      "type": "decimal"
+    },
+    "cyberedDesktopFit": {
+      "type": "enumeration",
+      "enum": ["fill", "full"]
+    },
+    "cyberedMobileFit": {
+      "type": "enumeration",
+      "enum": ["fill", "full"]
+    },
+    "showModeStatus": {
+      "type": "enumeration",
+      "enum": ["off", "scheduled", "live"],
+      "default": "off"
+    },
+    "showModeEnabled": {
+      "type": "boolean",
+      "default": false
+    },
+    "showModeType": {
+      "type": "enumeration",
+      "enum": ["manual", "event"],
+      "default": null
+    },
+    "showModeStartedAt": {
+      "type": "datetime"
+    },
+    "showModeEndsAt": {
+      "type": "datetime"
+    },
+    "showModeActivatedAt": {
+      "type": "datetime"
+    },
+    "showModeEventId": {
+      "type": "integer"
+    },
+    "showModeTitle": {
+      "type": "string"
+    },
+    "showModeVenue": {
+      "type": "string"
+    },
+    "showModeCity": {
+      "type": "string"
+    },
+    "showModeRegion": {
+      "type": "string"
+    },
+    "showModeCountry": {
+      "type": "string"
+    },
+    "showModeTimezone": {
+      "type": "string"
+    },
+    "showModeSourceDetail": {
+      "type": "enumeration",
+      "enum": ["manual_dashboard", "event_auto", "qr_poster", "qr_merch_table", "qr_stage_screen", "qr_flyer", "qr_table_tent", "event_page", "unknown"],
+      "default": "unknown"
+    },
+    "showModeCampaignId": {
+      "type": "string"
+    },
+    "showModeLastCampaignId": {
+      "type": "string"
+    },
+    "showModeMetadata": {
+      "type": "json"
+    },
+    "showModeAutoManaged": {
+      "type": "boolean",
+      "default": false
+    },
+    "showModeScheduledStartAt": {
+      "type": "datetime"
+    },
+    "showModeScheduledEndAt": {
+      "type": "datetime"
+    },
+    "showModeLastAutoDeactivatedAt": {
+      "type": "datetime"
+    },
+    "showModeLastManualOverrideAt": {
+      "type": "datetime"
+    },
+    "showModeEndedAt": {
+      "type": "datetime"
+    },
+    "showModePerformanceStartsAt": {
+      "type": "datetime"
+    },
+    "showModePerformanceEndsAt": {
+      "type": "datetime"
+    },
+    "showModeLastDeactivationReason": {
+      "type": "enumeration",
+      "enum": ["manual", "performance_end", "safety_expiry", "auto"]
+    },
+    "showModeLastContext": {
+      "type": "json"
+    },
+    "featuredGallery": {
+      "type": "relation",
+      "relation": "oneToOne",
+      "target": "api::artist-update.artist-update"
+    }
+  }
+}

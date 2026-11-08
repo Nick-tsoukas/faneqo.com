@@ -1,0 +1,33 @@
+{
+  "collectionName": "components_custom_link_button_custom_link_buttons",
+  "info": {
+    "displayName": "Custom Link Button",
+    "icon": "link",
+    "description": "A custom link button with title, subtitle, URL, and optional icon"
+  },
+  "options": {},
+  "attributes": {
+    "title": {
+      "type": "string",
+      "required": true
+    },
+    "subtitle": {
+      "type": "string",
+      "required": false
+    },
+    "url": {
+      "type": "string",
+      "required": true
+    },
+    "iconName": {
+      "type": "string",
+      "required": false
+    },
+    "customIcon": {
+      "type": "media",
+      "multiple": false,
+      "required": false,
+      "allowedTypes": ["images"]
+    }
+  }
+}

@@ -1,0 +1,30 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="800" height="1000" viewBox="0 0 800 1000" role="img" aria-label="Lab fixture: portrait crowd">
+  <defs>
+    <linearGradient id="pc-bg" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#0a0c12"/>
+      <stop offset="100%" stop-color="#050506"/>
+    </linearGradient>
+    <radialGradient id="pc-wash" cx="50%" cy="18%" r="60%">
+      <stop offset="0%" stop-color="#8b6cff" stop-opacity="0.35"/>
+      <stop offset="100%" stop-color="#8b6cff" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+  <rect width="800" height="1000" fill="url(#pc-bg)"/>
+  <rect width="800" height="1000" fill="url(#pc-wash)"/>
+  <rect x="40" y="70" width="720" height="18" fill="#ff4fd8" opacity="0.35"/>
+  <g fill="#1b1e27" opacity="0.92">
+    <circle cx="90" cy="820" r="54"/>
+    <circle cx="190" cy="840" r="62"/>
+    <circle cx="300" cy="810" r="70"/>
+    <circle cx="420" cy="850" r="66"/>
+    <circle cx="540" cy="825" r="58"/>
+    <circle cx="650" cy="845" r="72"/>
+    <circle cx="740" cy="820" r="50"/>
+    <circle cx="140" cy="900" r="48"/>
+    <circle cx="260" cy="920" r="56"/>
+    <circle cx="380" cy="905" r="60"/>
+    <circle cx="510" cy="925" r="52"/>
+    <circle cx="640" cy="910" r="58"/>
+  </g>
+  <rect x="220" y="280" width="360" height="280" rx="6" fill="#12141c" opacity="0.7"/>
+</svg>

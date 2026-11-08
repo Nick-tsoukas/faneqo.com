@@ -1,0 +1,104 @@
+{
+  "kind": "collectionType",
+  "collectionName": "night_recordings",
+  "info": {
+    "singularName": "night-recording",
+    "pluralName": "night-recordings",
+    "displayName": "Night Recording",
+    "description": "Artist-authored audio/video belonging to one ShowRecap Night. Not Gallery media."
+  },
+  "options": {
+    "draftAndPublish": false
+  },
+  "pluginOptions": {},
+  "attributes": {
+    "band": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "api::band.band",
+      "required": true
+    },
+    "showRecap": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "api::show-recap.show-recap",
+      "required": true
+    },
+    "createdByUser": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "plugin::users-permissions.user"
+    },
+    "title": {
+      "type": "string"
+    },
+    "caption": {
+      "type": "text"
+    },
+    "kind": {
+      "type": "enumeration",
+      "enum": ["audio", "video"],
+      "required": true
+    },
+    "source": {
+      "type": "enumeration",
+      "enum": ["upload", "youtube", "spotify", "external"],
+      "required": true
+    },
+    "providerUrl": {
+      "type": "string"
+    },
+    "providerType": {
+      "type": "string"
+    },
+    "providerResourceType": {
+      "type": "string"
+    },
+    "providerResourceId": {
+      "type": "string"
+    },
+    "uploadedMedia": {
+      "type": "media",
+      "multiple": false,
+      "required": false,
+      "allowedTypes": ["audios", "videos"]
+    },
+    "posterImage": {
+      "type": "media",
+      "multiple": false,
+      "required": false,
+      "allowedTypes": ["images"]
+    },
+    "durationSeconds": {
+      "type": "integer",
+      "min": 0
+    },
+    "sortOrder": {
+      "type": "integer",
+      "default": 0,
+      "required": true
+    },
+    "visibility": {
+      "type": "enumeration",
+      "enum": ["public", "fan_list", "show_attendees"],
+      "default": "public",
+      "required": true
+    },
+    "status": {
+      "type": "enumeration",
+      "enum": ["draft", "published"],
+      "default": "draft",
+      "required": true
+    },
+    "publishedAt": {
+      "type": "datetime"
+    },
+    "createIdempotencyKey": {
+      "type": "string",
+      "unique": true,
+      "private": true,
+      "searchable": false,
+      "column": { "unique": true }
+    }
+  }
+}

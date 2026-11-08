@@ -1,0 +1,104 @@
+{
+  "kind": "collectionType",
+  "collectionName": "message_recipients",
+  "info": {
+    "singularName": "message-recipient",
+    "pluralName": "message-recipients",
+    "displayName": "Message Recipient",
+    "description": "Immutable audience snapshot row for a message campaign. Fan relation is identity; email is delivery snapshot."
+  },
+  "options": {
+    "draftAndPublish": false
+  },
+  "pluginOptions": {},
+  "attributes": {
+    "campaign": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "api::message-campaign.message-campaign"
+    },
+    "fan": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "api::fan.fan"
+    },
+    "band": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "api::band.band"
+    },
+    "email": {
+      "type": "email"
+    },
+    "firstName": {
+      "type": "string"
+    },
+    "channel": {
+      "type": "enumeration",
+      "enum": ["email", "in_app"],
+      "default": "email",
+      "required": true
+    },
+    "provider": {
+      "type": "enumeration",
+      "enum": ["resend", "faneqo_inbox"],
+      "default": "resend"
+    },
+    "status": {
+      "type": "enumeration",
+      "enum": [
+        "pending",
+        "sending",
+        "sent",
+        "delivered",
+        "failed",
+        "suppressed",
+        "bounced",
+        "canceled"
+      ],
+      "default": "pending",
+      "required": true
+    },
+    "queuedAt": {
+      "type": "datetime"
+    },
+    "sentAt": {
+      "type": "datetime"
+    },
+    "deliveredAt": {
+      "type": "datetime"
+    },
+    "failedAt": {
+      "type": "datetime"
+    },
+    "suppressedAt": {
+      "type": "datetime"
+    },
+    "bouncedAt": {
+      "type": "datetime"
+    },
+    "openedAt": {
+      "type": "datetime"
+    },
+    "clickedAt": {
+      "type": "datetime"
+    },
+    "failureReason": {
+      "type": "string"
+    },
+    "failureCode": {
+      "type": "string"
+    },
+    "providerMessageId": {
+      "type": "string"
+    },
+    "attemptCount": {
+      "type": "integer",
+      "default": 0
+    },
+    "idempotencyKey": {
+      "type": "string",
+      "private": true
+    }
+  }
+}

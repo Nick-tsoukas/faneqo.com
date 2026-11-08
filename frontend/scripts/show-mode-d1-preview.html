@@ -1,0 +1,1357 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Show Mode D1 owner preview</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <style>
+    :root { color-scheme: dark; }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      background: #050506;
+      color: #f5f5f6;
+      font-family: Poppins, ui-sans-serif, system-ui, sans-serif;
+    }
+    .shot { display: none; min-height: 100vh; padding: 28px 28px 48px; }
+    .shot.on { display: block; }
+    .shot.mobile { padding: 16px 14px 40px; }
+    .frame { width: min(100%, 1080px); margin: 0 auto; }
+    .shot.mobile .frame { width: 390px; max-width: 100%; }
+    .dash-kicker {
+      margin: 0 0 18px;
+      font-size: 11px;
+      font-weight: 700;
+      letter-spacing: 0.16em;
+      text-transform: uppercase;
+      color: rgba(255,255,255,0.38);
+    }
+    .dash-title { margin: 0 0 22px; font-size: 28px; font-weight: 700; letter-spacing: -0.03em; }
+    .shot.mobile .dash-title { font-size: 22px; margin-bottom: 16px; }
+    .neighbor {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-bottom: 12px;
+      padding: 16px 18px;
+      border-radius: 1rem;
+      background: #0b0c10;
+      border: 1px solid rgba(255,255,255,0.08);
+    }
+    .neighbor h2 { margin: 0; font-size: 16px; }
+    .neighbor p { margin: 2px 0 0; font-size: 12.5px; color: rgba(255,255,255,0.5); }
+    .neighbor__icon {
+      width: 40px; height: 40px; border-radius: 12px;
+      background: linear-gradient(135deg, #10b981, #14b8a6);
+    }
+    .neighbor--fans { margin: 12px 0 0; }
+    .neighbor__icon--fans { background: linear-gradient(135deg, #4ca6ff, #39d5ff); }
+    
+/* ---------------------------------------------------------------------------
+ * Shell
+ *
+ * One contained surface. Everything inside is a section of it, separated by
+ * space and hairlines rather than nested cards.
+ * ------------------------------------------------------------------------- */
+/*
+ * Full width on every breakpoint, sharing the dashboard card surface. No
+ * max-width or auto margins: as a flex child those centre it on the cross axis
+ * and cancel `stretch`, which orphans the card from the modules around it.
+ */
+.show-mode-card {
+  width: 100%;
+  padding: 16px;
+  border-radius: 1rem;
+  background: var(--fq-surface, #0b0c10);
+  border: 1px solid var(--fq-border, rgba(255, 255, 255, 0.08));
+  transition: border-color 0.21s ease;
+}
+
+.show-mode-card.compact,
+.show-mode-card.shell-collapsed {
+  padding: 16px;
+}
+
+.idle-view {
+  min-width: 0;
+}
+
+@media (min-width: 768px) {
+  .show-mode-card,
+  .show-mode-card.compact,
+  .show-mode-card.shell-collapsed {
+    padding: 18px 24px;
+  }
+}
+
+/* ---------------------------------------------------------------------------
+ * Header row: identity + state left, state action right
+ * ------------------------------------------------------------------------- */
+.sm-head {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 14px;
+}
+
+.sm-head__left {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  min-width: 0;
+  flex: 1;
+}
+
+.sm-icon {
+  flex-shrink: 0;
+  width: 38px;
+  height: 38px;
+  border-radius: 11px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(255, 255, 255, 0.045);
+  color: rgba(255, 255, 255, 0.5);
+}
+
+.sm-icon svg {
+  width: 18px;
+  height: 18px;
+}
+
+.sm-icon.live {
+  border-color: rgba(69, 227, 174, 0.32);
+  background: rgba(69, 227, 174, 0.1);
+  color: #45e3ae;
+}
+
+.sm-icon.off {
+  border-color: rgba(57, 213, 255, 0.2);
+  background: rgba(57, 213, 255, 0.07);
+  color: #39d5ff;
+}
+
+.sm-icon.scheduled {
+  border-color: rgba(245, 158, 11, 0.26);
+  background: rgba(245, 158, 11, 0.1);
+  color: #fbbf24;
+}
+
+.sm-headings {
+  min-width: 0;
+  flex: 1;
+}
+
+.sm-title-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+
+.sm-title {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  color: #f5f5f6;
+}
+
+.sm-state {
+  margin: 3px 0 0;
+  font-size: 12.5px;
+  line-height: 1.4;
+  color: rgba(255, 255, 255, 0.5);
+}
+
+.sm-title--idle {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: rgba(255, 255, 255, 0.48);
+}
+
+.sm-headline {
+  margin: 5px 0 0;
+  font-size: 15.5px;
+  font-weight: 700;
+  letter-spacing: -0.03em;
+  line-height: 1.28;
+  color: #f5f5f6;
+}
+
+.sm-support {
+  margin: 6px 0 0;
+  font-size: 12.5px;
+  line-height: 1.45;
+  color: rgba(255, 255, 255, 0.52);
+  max-width: 38rem;
+}
+
+.sm-latest {
+  margin: 0;
+  font-size: 12px;
+  line-height: 1.4;
+  color: rgba(255, 255, 255, 0.46);
+}
+
+/* Status is a small signal, not a coloured block. */
+.sm-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 2px 9px 2px 7px;
+  border-radius: 999px;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.05);
+  color: rgba(255, 255, 255, 0.5);
+}
+
+.sm-pill__dot {
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: currentColor;
+}
+
+.sm-pill.live {
+  border-color: rgba(69, 227, 174, 0.34);
+  background: rgba(69, 227, 174, 0.1);
+  color: #45e3ae;
+}
+
+.sm-pill.live .sm-pill__dot {
+  background: #45e3ae;
+  box-shadow: 0 0 8px rgba(69, 227, 174, 0.55);
+  animation: sm-breathe 2.4s ease-in-out infinite;
+}
+
+.sm-pill.scheduled {
+  border-color: rgba(245, 158, 11, 0.28);
+  background: rgba(245, 158, 11, 0.1);
+  color: #fbbf24;
+}
+
+@keyframes sm-breathe {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.45; }
+}
+
+.sm-head__right {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+/* Primary idle CTA: one blue → cyan → mint gradient. */
+.sm-primary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 44px;
+  padding: 0 16px;
+  border-radius: 11px;
+  border: 0;
+  background: linear-gradient(135deg, #4ca6ff 0%, #39d5ff 52%, #45e3ae 100%);
+  color: #04140f;
+  font-size: 13.5px;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  cursor: pointer;
+  width: 100%;
+  transition: filter 0.21s ease, opacity 0.21s ease;
+}
+
+.sm-primary:hover:not(:disabled) {
+  filter: brightness(1.06);
+}
+
+.sm-primary:focus-visible {
+  outline: 2px solid rgba(57, 213, 255, 0.7);
+  outline-offset: 2px;
+}
+
+.sm-primary:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+/* Minimize / Expand: a quiet control, not an equal action. */
+.sm-ghost {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  min-height: 44px;
+  padding: 0 10px;
+  border: 0;
+  border-radius: 10px;
+  background: transparent;
+  color: rgba(255, 255, 255, 0.38);
+  font-size: 12.5px;
+  font-weight: 550;
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: color 0.21s ease, background 0.21s ease;
+}
+
+.sm-ghost:hover {
+  color: rgba(255, 255, 255, 0.8);
+  background: rgba(255, 255, 255, 0.045);
+}
+
+.sm-ghost:focus-visible {
+  outline: 2px solid rgba(57, 213, 255, 0.7);
+  outline-offset: 2px;
+}
+
+.sm-ghost__icon {
+  width: 14px;
+  height: 14px;
+}
+
+@media (min-width: 560px) {
+  .sm-head {
+    flex-direction: row;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 16px;
+  }
+
+  .sm-head__right {
+    flex-shrink: 0;
+  }
+}
+
+/* ---------------------------------------------------------------------------
+ * Idle value card
+ * ------------------------------------------------------------------------- */
+.idle-view {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 14px;
+}
+
+.idle-identity {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  min-width: 0;
+  grid-row: 1;
+}
+
+.idle-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  grid-row: 3;
+}
+
+.idle-actions .sm-ghost {
+  width: 100%;
+}
+
+.sm-chips {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px 10px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  grid-row: 2;
+}
+
+.sm-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+  font-size: 12px;
+  font-weight: 550;
+  line-height: 1.25;
+  color: rgba(255, 255, 255, 0.62);
+}
+
+.sm-chip__mark {
+  flex-shrink: 0;
+  color: #45e3ae;
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.sm-latest {
+  grid-row: 4;
+}
+
+.sm-loop {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 12px;
+  margin: 2px 0 0;
+  padding: 14px 0 0;
+  list-style: none;
+  border-top: 1px solid rgba(255, 255, 255, 0.07);
+  grid-row: 5;
+}
+
+.sm-loop li p {
+  margin: 3px 0 0;
+  font-size: 12.5px;
+  line-height: 1.45;
+  color: rgba(255, 255, 255, 0.58);
+}
+
+.sm-loop__kicker {
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: #39d5ff;
+}
+
+@media (min-width: 768px) {
+  .idle-view {
+    grid-template-columns: 1fr 188px;
+    column-gap: 24px;
+    row-gap: 12px;
+  }
+
+  .idle-identity {
+    grid-column: 1;
+    grid-row: 1;
+  }
+
+  .idle-actions {
+    grid-column: 2;
+    grid-row: 1 / 3;
+    width: 188px;
+    align-self: start;
+  }
+
+  .sm-chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px 18px;
+    grid-column: 1;
+    grid-row: 2;
+  }
+
+  .sm-latest {
+    grid-column: 1 / -1;
+    grid-row: 3;
+  }
+
+  .sm-loop {
+    grid-column: 1 / -1;
+    grid-row: 4;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 16px;
+  }
+
+  .sm-headline {
+    font-size: 16px;
+  }
+}
+
+/* ---------------------------------------------------------------------------
+ * Live / scheduled detail
+ * ------------------------------------------------------------------------- */
+.loading-state {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.75rem;
+  padding: 2rem;
+  font-size: 13px;
+  color: rgba(255, 255, 255, 0.4);
+}
+
+.spinner {
+  width: 18px;
+  height: 18px;
+  border: 2px solid rgba(255, 255, 255, 0.14);
+  border-top-color: rgba(255, 255, 255, 0.7);
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+.card-content {
+  margin-top: 18px;
+}
+
+.description {
+  font-size: 12.5px;
+  line-height: 1.55;
+  color: rgba(255, 255, 255, 0.45);
+  margin: 0 0 14px;
+}
+
+.scheduled-lead {
+  margin: 0 0 4px;
+  font-size: 15px;
+  font-weight: 650;
+  letter-spacing: -0.02em;
+  line-height: 1.35;
+  color: #f5f5f6;
+}
+
+.scheduled-when {
+  margin: 0 0 14px;
+  font-size: 13px;
+  line-height: 1.45;
+  color: #fbbf24;
+}
+
+.live-place {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  margin: 0 0 16px;
+}
+
+.live-place__title {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 700;
+  letter-spacing: -0.03em;
+  line-height: 1.2;
+  color: #f5f5f6;
+}
+
+.live-place__meta {
+  margin: 4px 0 0;
+  font-size: 13px;
+  line-height: 1.4;
+  color: rgba(255, 255, 255, 0.55);
+}
+
+.info-section {
+  margin-bottom: 16px;
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.info-section.is-quiet {
+  margin: 16px 0 0;
+  opacity: 0.78;
+}
+
+.info-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 16px;
+  padding: 9px 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.info-row:last-child {
+  border-bottom: none;
+}
+
+.info-label {
+  font-size: 12.5px;
+  color: rgba(255, 255, 255, 0.42);
+  flex-shrink: 0;
+}
+
+.info-value {
+  font-size: 13px;
+  font-weight: 550;
+  color: #f5f5f6;
+  text-align: right;
+  overflow-wrap: anywhere;
+}
+
+.info-row.highlight .info-value {
+  font-size: 15px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
+
+/* Live counters: numbers carry the weight, no green slab. */
+.session-stats {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  margin: 0 0 16px;
+  padding-top: 2px;
+}
+
+.session-stat {
+  min-width: 0;
+  padding: 0 12px;
+  border-left: 1px solid rgba(255, 255, 255, 0.07);
+}
+
+.session-stat:first-child {
+  padding-left: 0;
+  border-left: 0;
+}
+
+.session-stats .stat-value {
+  display: block;
+  font-size: 25px;
+  font-weight: 700;
+  letter-spacing: -0.03em;
+  line-height: 1;
+  color: #7bf1ca;
+  font-variant-numeric: tabular-nums;
+}
+
+.session-stats .stat-label {
+  display: block;
+  margin-top: 5px;
+  font-size: 11.5px;
+  font-weight: 500;
+  line-height: 1.2;
+  color: rgba(255, 255, 255, 0.42);
+}
+
+/* ---------------------------------------------------------------------------
+ * Buttons
+ * ------------------------------------------------------------------------- */
+.action-buttons {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.action-buttons.dual {
+  flex-direction: row;
+}
+
+.action-buttons.dual .action-btn {
+  flex: 1 1 0;
+}
+
+.action-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 44px;
+  padding: 0 16px;
+  min-width: 0;
+  border: 1px solid transparent;
+  border-radius: 11px;
+  font-size: 13.5px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  text-align: center;
+  text-decoration: none;
+  cursor: pointer;
+  transition: background 0.21s ease, border-color 0.21s ease, color 0.21s ease;
+}
+
+.action-btn:focus-visible {
+  outline: 2px solid rgba(57, 213, 255, 0.7);
+  outline-offset: 2px;
+}
+
+.action-btn:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.action-btn.activate {
+  border-color: rgba(57, 213, 255, 0.36);
+  background: rgba(57, 213, 255, 0.12);
+  color: #7ee7ff;
+}
+
+.action-btn.activate:hover:not(:disabled) {
+  background: rgba(57, 213, 255, 0.18);
+  border-color: rgba(57, 213, 255, 0.5);
+}
+
+.action-btn.live-view {
+  border-color: rgba(57, 213, 255, 0.28);
+  background: rgba(76, 166, 255, 0.16);
+  color: #f5f5f6;
+}
+
+.action-btn.live-view:hover {
+  border-color: rgba(57, 213, 255, 0.42);
+  background: rgba(76, 166, 255, 0.24);
+}
+
+.action-btn.deactivate {
+  border-color: rgba(239, 68, 68, 0.26);
+  background: rgba(239, 68, 68, 0.1);
+  color: #f8a4a4;
+}
+
+.action-btn.deactivate:hover:not(:disabled) {
+  background: rgba(239, 68, 68, 0.16);
+  border-color: rgba(239, 68, 68, 0.38);
+}
+
+.action-btn.deactivate-secondary {
+  border-color: rgba(255, 255, 255, 0.1);
+  background: transparent;
+  color: rgba(255, 255, 255, 0.6);
+}
+
+.action-btn.deactivate-secondary:hover {
+  border-color: rgba(255, 255, 255, 0.2);
+  color: #f5f5f6;
+}
+
+.cancel-btn {
+  flex: 1 1 0;
+  min-height: 44px;
+  padding: 0 16px;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 11px;
+  background: transparent;
+  color: rgba(255, 255, 255, 0.6);
+  font-size: 13.5px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: border-color 0.21s ease, color 0.21s ease;
+}
+
+.cancel-btn:hover {
+  border-color: rgba(255, 255, 255, 0.2);
+  color: #f5f5f6;
+}
+
+.cancel-btn:focus-visible {
+  outline: 2px solid rgba(57, 213, 255, 0.7);
+  outline-offset: 2px;
+}
+
+.btn-spinner {
+  width: 15px;
+  height: 15px;
+  border: 2px solid rgba(255, 255, 255, 0.25);
+  border-top-color: currentColor;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+/* ---------------------------------------------------------------------------
+ * Activation form
+ * ------------------------------------------------------------------------- */
+.activation-form {
+  margin-bottom: 4px;
+  padding-top: 14px;
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.form-field {
+  margin-bottom: 10px;
+}
+
+.form-field label {
+  display: block;
+  margin-bottom: 5px;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  color: rgba(255, 255, 255, 0.42);
+}
+
+.form-field input {
+  width: 100%;
+  min-height: 44px;
+  padding: 0 12px;
+  background: rgba(255, 255, 255, 0.045);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 10px;
+  color: #f5f5f6;
+  font-size: 13.5px;
+}
+
+.form-field input::placeholder {
+  color: rgba(255, 255, 255, 0.28);
+}
+
+.form-field input:focus {
+  outline: none;
+  border-color: rgba(57, 213, 255, 0.5);
+  background: rgba(255, 255, 255, 0.06);
+}
+
+.form-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+
+.show-cover {
+  position: relative;
+}
+
+.show-cover__hint {
+  margin: -2px 0 8px;
+  font-size: 11.5px;
+  line-height: 1.4;
+  color: rgba(255, 255, 255, 0.38);
+}
+
+.show-cover .optional {
+  margin-left: 6px;
+  color: #39d5ff;
+  font-weight: 550;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  font-size: 9.5px;
+}
+
+.show-cover__file {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.show-cover__add,
+.show-cover__btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 44px;
+  padding: 0 12px;
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.05);
+  color: #f5f5f6;
+  font: inherit;
+  font-size: 12.5px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.show-cover__add:focus-visible,
+.show-cover__btn:focus-visible {
+  outline: 2px solid #39d5ff;
+  outline-offset: 2px;
+}
+
+.show-cover__preview {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.show-cover__preview img {
+  width: 72px;
+  height: 96px;
+  object-fit: cover;
+  background: #111722;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.show-cover__actions {
+  display: flex;
+  gap: 6px;
+}
+
+.show-cover__status {
+  width: 100%;
+  margin: 0;
+  font-size: 11.5px;
+  color: rgba(255, 255, 255, 0.42);
+}
+
+.show-cover__status.is-ok {
+  color: #45e3ae;
+}
+
+.show-cover__error {
+  margin: 8px 0 0;
+  color: #f8a4a4;
+  font-size: 12px;
+}
+
+.live-cover {
+  margin: 0 0 12px;
+}
+
+.live-cover img {
+  width: 56px;
+  height: 72px;
+  object-fit: cover;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.form-actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 14px;
+}
+
+/* ---------------------------------------------------------------------------
+ * Post-show recap alert
+ * ------------------------------------------------------------------------- */
+.recap-panel-head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 4px;
+}
+
+.recap-panel-title {
+  font-size: 16px;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  color: #f5f5f6;
+}
+
+.recap-panel-sub {
+  margin: 0 0 14px;
+  font-size: 12.5px;
+  line-height: 1.5;
+  color: rgba(255, 255, 255, 0.45);
+}
+
+.recap-spinner {
+  width: 17px;
+  height: 17px;
+  border: 2px solid rgba(255, 255, 255, 0.14);
+  border-top-color: rgba(255, 255, 255, 0.7);
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+  flex-shrink: 0;
+}
+
+.recap-check {
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  background: rgba(69, 227, 174, 0.12);
+  border: 1px solid rgba(69, 227, 174, 0.3);
+  color: #45e3ae;
+  font-size: 11px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.recap-preview {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  margin: 14px 0 16px;
+}
+
+.recap-stat {
+  min-width: 0;
+  padding: 0 12px;
+  border-left: 1px solid rgba(255, 255, 255, 0.07);
+}
+
+.recap-stat:first-child {
+  padding-left: 0;
+  border-left: 0;
+}
+
+.recap-stat-value {
+  display: block;
+  font-size: 25px;
+  font-weight: 700;
+  letter-spacing: -0.03em;
+  line-height: 1;
+  color: #f5f5f6;
+  font-variant-numeric: tabular-nums;
+}
+
+.recap-stat-label {
+  display: block;
+  margin-top: 5px;
+  font-size: 11.5px;
+  font-weight: 500;
+  color: rgba(255, 255, 255, 0.42);
+}
+
+.recap-actions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.recap-actions .action-btn {
+  flex: 1 1 140px;
+}
+
+.action-btn.recap-primary {
+  border-color: rgba(255, 255, 255, 0.14);
+  background: linear-gradient(135deg, rgba(145, 0, 255, 0.26) 0%, rgba(255, 0, 255, 0.14) 100%);
+  color: #f5f5f6;
+}
+
+.action-btn.recap-primary:hover:not(:disabled) {
+  border-color: rgba(255, 255, 255, 0.24);
+  background: linear-gradient(135deg, rgba(145, 0, 255, 0.36) 0%, rgba(255, 0, 255, 0.2) 100%);
+}
+
+.action-btn.recap-secondary {
+  border-color: rgba(255, 255, 255, 0.14);
+  background: rgba(255, 255, 255, 0.07);
+  color: #f5f5f6;
+}
+
+.action-btn.recap-secondary:hover {
+  background: rgba(255, 255, 255, 0.11);
+  border-color: rgba(255, 255, 255, 0.22);
+}
+
+.recap-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-top: 14px;
+  padding-top: 12px;
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+.recap-history-link {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  font-size: 12.5px;
+  font-weight: 550;
+  color: rgba(255, 255, 255, 0.58);
+  text-decoration: none;
+  transition: color 0.21s ease;
+}
+
+.recap-history-link:hover {
+  color: #f5f5f6;
+}
+
+.recap-dismiss {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  background: none;
+  border: 0;
+  padding: 0 2px;
+  color: rgba(255, 255, 255, 0.5);
+  font-size: 12.5px;
+  cursor: pointer;
+  transition: color 0.21s ease;
+}
+
+.recap-dismiss:hover {
+  color: rgba(255, 255, 255, 0.78);
+}
+
+.recap-history-link:focus-visible,
+.recap-dismiss:focus-visible {
+  outline: 2px solid rgba(57, 213, 255, 0.7);
+  outline-offset: 2px;
+}
+
+/* Timeout state has no footer row, so its Dismiss stands on its own. */
+.recap-panel > .recap-dismiss {
+  display: block;
+  margin: 14px auto 0;
+}
+
+.error-message {
+  margin: 14px 0 0;
+  padding: 10px 12px;
+  background: rgba(239, 68, 68, 0.08);
+  border: 1px solid rgba(239, 68, 68, 0.2);
+  border-radius: 10px;
+  color: #f8a4a4;
+  font-size: 12.5px;
+  text-align: center;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .sm-primary,
+  .sm-ghost,
+  .action-btn,
+  .cancel-btn,
+  .recap-history-link,
+  .recap-dismiss {
+    transition: none;
+  }
+
+  .sm-pill.live .sm-pill__dot {
+    animation: none;
+  }
+}
+
+  </style>
+</head>
+<body>
+  <article id="s1" class="shot on">
+    <div class="frame">
+      <p class="dash-kicker">Dashboard · desktop inactive</p>
+      <h1 class="dash-title">Dashboard</h1>
+      
+  <aside class="neighbor">
+    <div class="neighbor__icon"></div>
+    <div>
+      <h2>Artist Pages</h2>
+      <p>Your public presence</p>
+    </div>
+  </aside>
+  <div class="show-mode-card shell-collapsed ">
+        <div class="idle-view">
+          
+        <div class="idle-identity">
+          <span class="sm-icon off" aria-hidden="true"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.7" d="M4.93 19.07a10 10 0 010-14.14M7.76 16.24a6 6 0 010-8.48M16.24 7.76a6 6 0 010 8.48M19.07 4.93a10 10 0 010 14.14" /><circle cx="12" cy="12" r="1.55" fill="currentColor" stroke="none" /></svg></span>
+          <div class="sm-headings">
+            <h3 class="sm-title sm-title--idle">Show Mode</h3>
+            <p class="sm-headline">Turn tonight's crowd into fans you can reach again.</p>
+            <p class="sm-support">Fans check in from their phones. Faneqo remembers who was there so you can message them after the show and keep the relationship going.</p>
+          </div>
+        </div>
+          <div class="idle-actions">
+            <button type="button" class="sm-primary">Set up Show Mode</button>
+            <button type="button" class="sm-ghost">Expand</button>
+          </div>
+          
+      <ul class="sm-chips" aria-label="What Show Mode does">
+        <li class="sm-chip"><span class="sm-chip__mark">✓</span> Fan check-ins</li>
+        <li class="sm-chip"><span class="sm-chip__mark">✓</span> Capture real fans</li>
+        <li class="sm-chip"><span class="sm-chip__mark">✓</span> Message the room</li>
+        <li class="sm-chip"><span class="sm-chip__mark">✓</span> Recap + memories</li>
+      </ul>
+          <p class="sm-latest">Last show: Test night · Zen</p>
+        </div>
+      
+  </div>
+  <aside class="neighbor neighbor--fans">
+    <div class="neighbor__icon neighbor__icon--fans"></div>
+    <div>
+      <h2>Fan Intelligence</h2>
+      <p>The fans you've built</p>
+    </div>
+  </aside>
+    </div>
+  </article>
+
+  <article id="s2" class="shot mobile">
+    <div class="frame">
+      <p class="dash-kicker">Dashboard · 390px inactive</p>
+      <h1 class="dash-title">Dashboard</h1>
+      
+  <aside class="neighbor">
+    <div class="neighbor__icon"></div>
+    <div>
+      <h2>Artist Pages</h2>
+      <p>Your public presence</p>
+    </div>
+  </aside>
+  <div class="show-mode-card shell-collapsed ">
+        <div class="idle-view">
+          
+        <div class="idle-identity">
+          <span class="sm-icon off" aria-hidden="true"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.7" d="M4.93 19.07a10 10 0 010-14.14M7.76 16.24a6 6 0 010-8.48M16.24 7.76a6 6 0 010 8.48M19.07 4.93a10 10 0 010 14.14" /><circle cx="12" cy="12" r="1.55" fill="currentColor" stroke="none" /></svg></span>
+          <div class="sm-headings">
+            <h3 class="sm-title sm-title--idle">Show Mode</h3>
+            <p class="sm-headline">Turn tonight's crowd into fans you can reach again.</p>
+            <p class="sm-support">Fans check in from their phones. Faneqo remembers who was there so you can message them after the show and keep the relationship going.</p>
+          </div>
+        </div>
+          <div class="idle-actions">
+            <button type="button" class="sm-primary">Set up Show Mode</button>
+            <button type="button" class="sm-ghost">Expand</button>
+          </div>
+          
+      <ul class="sm-chips" aria-label="What Show Mode does">
+        <li class="sm-chip"><span class="sm-chip__mark">✓</span> Fan check-ins</li>
+        <li class="sm-chip"><span class="sm-chip__mark">✓</span> Capture real fans</li>
+        <li class="sm-chip"><span class="sm-chip__mark">✓</span> Message the room</li>
+        <li class="sm-chip"><span class="sm-chip__mark">✓</span> Recap + memories</li>
+      </ul>
+          <p class="sm-latest">Last show: Test night · Zen</p>
+        </div>
+      
+  </div>
+  <aside class="neighbor neighbor--fans">
+    <div class="neighbor__icon neighbor__icon--fans"></div>
+    <div>
+      <h2>Fan Intelligence</h2>
+      <p>The fans you've built</p>
+    </div>
+  </aside>
+    </div>
+  </article>
+
+  <article id="s3" class="shot">
+    <div class="frame">
+      <p class="dash-kicker">Dashboard · see how it works</p>
+      <h1 class="dash-title">Dashboard</h1>
+      
+  <aside class="neighbor">
+    <div class="neighbor__icon"></div>
+    <div>
+      <h2>Artist Pages</h2>
+      <p>Your public presence</p>
+    </div>
+  </aside>
+  <div class="show-mode-card shell-collapsed ">
+        <div class="idle-view">
+          
+        <div class="idle-identity">
+          <span class="sm-icon off" aria-hidden="true"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.7" d="M4.93 19.07a10 10 0 010-14.14M7.76 16.24a6 6 0 010-8.48M16.24 7.76a6 6 0 010 8.48M19.07 4.93a10 10 0 010 14.14" /><circle cx="12" cy="12" r="1.55" fill="currentColor" stroke="none" /></svg></span>
+          <div class="sm-headings">
+            <h3 class="sm-title sm-title--idle">Show Mode</h3>
+            <p class="sm-headline">Turn tonight's crowd into fans you can reach again.</p>
+            <p class="sm-support">Fans check in from their phones. Faneqo remembers who was there so you can message them after the show and keep the relationship going.</p>
+          </div>
+        </div>
+          <div class="idle-actions">
+            <button type="button" class="sm-primary">Set up Show Mode</button>
+            <button type="button" class="sm-ghost">Collapse</button>
+          </div>
+          <p class="sm-latest">Last show: Test night · Zen</p>
+          <ol class="sm-loop">
+            <li><span class="sm-loop__kicker">At the show</span><p>Fans scan/check in.</p></li>
+            <li><span class="sm-loop__kicker">After the show</span><p>You know who was there.</p></li>
+            <li><span class="sm-loop__kicker">Keep the connection</span><p>Message the room, share photos, and let the night live in Passport.</p></li>
+          </ol>
+        </div>
+      
+  </div>
+  <aside class="neighbor neighbor--fans">
+    <div class="neighbor__icon neighbor__icon--fans"></div>
+    <div>
+      <h2>Fan Intelligence</h2>
+      <p>The fans you've built</p>
+    </div>
+  </aside>
+    </div>
+  </article>
+
+  <article id="s4" class="shot">
+    <div class="frame">
+      <p class="dash-kicker">Dashboard · setup form</p>
+      <h1 class="dash-title">Dashboard</h1>
+      <div class="show-mode-card">
+        <div class="expanded-view">
+          <div class="sm-head">
+            <div class="sm-head__left">
+              <span class="sm-icon off"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.7" d="M4.93 19.07a10 10 0 010-14.14M7.76 16.24a6 6 0 010-8.48M16.24 7.76a6 6 0 010 8.48M19.07 4.93a10 10 0 010 14.14" /><circle cx="12" cy="12" r="1.55" fill="currentColor" stroke="none" /></svg></span>
+              <div class="sm-headings">
+                <h3 class="sm-title">Show Mode</h3>
+                <p class="sm-state">Add tonight's details, then activate.</p>
+              </div>
+            </div>
+            <div class="sm-head__right">
+              <button type="button" class="sm-ghost">Minimize</button>
+            </div>
+          </div>
+          <div class="card-content">
+            <p class="description">Add tonight's details, then activate. Auto-expires tomorrow at 6:00 AM.</p>
+            <div class="activation-form">
+              <div class="form-field"><label>Show Title (optional)</label><input type="text" placeholder="e.g. Album Release Party" value="Test night"></div>
+              <div class="form-field"><label>Venue (optional)</label><input type="text" placeholder="e.g. The Roxy" value="Zen"></div>
+              <div class="form-row">
+                <div class="form-field"><label>City (optional)</label><input type="text" value="Nashville"></div>
+                <div class="form-field"><label>Region (optional)</label><input type="text" value="TN"></div>
+              </div>
+              <div class="form-field"><label>Country (optional)</label><input type="text" value="USA"></div>
+              <div class="form-field show-cover">
+                <label>Show cover <span class="optional">Optional</span></label>
+                <p class="show-cover__hint">Add a poster, flyer, or photo for this show.</p>
+                <button type="button" class="show-cover__add">Add cover</button>
+              </div>
+              <div class="form-actions">
+                <button type="button" class="cancel-btn">Cancel</button>
+                <button type="button" class="action-btn activate">Activate Show Mode</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </article>
+
+  <article id="s5" class="shot">
+    <div class="frame">
+      <p class="dash-kicker">Dashboard · live</p>
+      <h1 class="dash-title">Dashboard</h1>
+      <div class="show-mode-card">
+        <div class="expanded-view">
+          <div class="sm-head">
+            <div class="sm-head__left">
+              <span class="sm-icon live"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.7" d="M4.93 19.07a10 10 0 010-14.14M7.76 16.24a6 6 0 010-8.48M16.24 7.76a6 6 0 010 8.48M19.07 4.93a10 10 0 010 14.14" /><circle cx="12" cy="12" r="1.55" fill="currentColor" stroke="none" /></svg></span>
+              <div class="sm-headings">
+                <div class="sm-title-row">
+                  <h3 class="sm-title">Show Mode</h3>
+                  <span class="sm-pill live"><span class="sm-pill__dot"></span>LIVE</span>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="card-content">
+            <div class="live-place">
+              <div class="live-place__text">
+                <p class="live-place__title">Test night</p>
+                <p class="live-place__meta">Zen · Nashville, TN</p>
+              </div>
+            </div>
+            <div class="session-stats">
+              <div class="session-stat"><div class="stat-value">47</div><div class="stat-label">checked in tonight</div></div>
+              <div class="session-stat"><div class="stat-value">18</div><div class="stat-label">new fans captured</div></div>
+            </div>
+            <div class="action-buttons">
+              <a class="action-btn live-view">Open Live Show View</a>
+              <button type="button" class="action-btn deactivate">Turn Off Show Mode</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </article>
+
+  <article id="s6" class="shot">
+    <div class="frame">
+      <p class="dash-kicker">Dashboard · recap ready</p>
+      <h1 class="dash-title">Dashboard</h1>
+      <div class="show-mode-card">
+        <div class="recap-panel">
+          <div class="recap-panel-head">
+            <span class="recap-check">✓</span>
+            <span class="recap-panel-title">Show recap ready.</span>
+          </div>
+          <div class="recap-preview">
+            <div class="recap-stat"><span class="recap-stat-value">47</span><span class="recap-stat-label">Check-ins</span></div>
+            <div class="recap-stat"><span class="recap-stat-value">18</span><span class="recap-stat-label">New fans</span></div>
+          </div>
+          <div class="recap-actions">
+            <a class="action-btn recap-primary">View Recap</a>
+            <a class="action-btn recap-secondary">Message the Room</a>
+          </div>
+          <div class="recap-footer">
+            <a class="recap-history-link">Show All Recaps</a>
+            <button type="button" class="recap-dismiss">Dismiss</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </article>
+  <script>
+    function showShot() {
+      const id = location.hash.replace('#', '') || 's1'
+      document.querySelectorAll('.shot').forEach((el) => el.classList.toggle('on', el.id === id))
+      window.scrollTo(0, 0)
+    }
+    showShot()
+    window.addEventListener('hashchange', showShot)
+  </script>
+</body>
+</html>

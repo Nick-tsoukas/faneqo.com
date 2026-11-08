@@ -1,0 +1,28 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="1000" viewBox="0 0 1600 1000" role="img" aria-label="Lab fixture: wide stage">
+  <defs>
+    <linearGradient id="g-sky" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#07080c"/>
+      <stop offset="55%" stop-color="#101218"/>
+      <stop offset="100%" stop-color="#050506"/>
+    </linearGradient>
+    <radialGradient id="g-spot-l" cx="28%" cy="18%" r="45%">
+      <stop offset="0%" stop-color="#39d5ff" stop-opacity="0.55"/>
+      <stop offset="55%" stop-color="#39d5ff" stop-opacity="0.08"/>
+      <stop offset="100%" stop-color="#39d5ff" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="g-spot-r" cx="78%" cy="22%" r="42%">
+      <stop offset="0%" stop-color="#ff4fd8" stop-opacity="0.42"/>
+      <stop offset="60%" stop-color="#7c3aed" stop-opacity="0.12"/>
+      <stop offset="100%" stop-color="#7c3aed" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+  <rect width="1600" height="1000" fill="url(#g-sky)"/>
+  <rect width="1600" height="1000" fill="url(#g-spot-l)"/>
+  <rect width="1600" height="1000" fill="url(#g-spot-r)"/>
+  <rect x="0" y="640" width="1600" height="360" fill="#000" opacity="0.72"/>
+  <rect x="180" y="210" width="420" height="560" rx="8" fill="#15171d" opacity="0.55"/>
+  <rect x="980" y="180" width="380" height="620" rx="8" fill="#12141a" opacity="0.45"/>
+  <circle cx="800" cy="430" r="118" fill="#1a1c24"/>
+  <circle cx="800" cy="430" r="86" fill="#0c0d12"/>
+  <circle cx="800" cy="430" r="52" fill="#39d5ff" opacity="0.18"/>
+</svg>

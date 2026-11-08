@@ -1,0 +1,55 @@
+{
+  "kind": "collectionType",
+  "collectionName": "fan_visitors",
+  "info": {
+    "singularName": "fan-visitor",
+    "pluralName": "fan-visitors",
+    "displayName": "Fan Visitor",
+    "description": "Anonymous first-party browser identity for fan recognition (hashed opaque token)."
+  },
+  "options": {
+    "draftAndPublish": false
+  },
+  "pluginOptions": {},
+  "attributes": {
+    "visitorKeyHash": {
+      "type": "string",
+      "required": true,
+      "unique": true,
+      "private": true
+    },
+    "firstSeenAt": {
+      "type": "datetime",
+      "required": true
+    },
+    "lastSeenAt": {
+      "type": "datetime",
+      "required": true
+    },
+    "visitCount": {
+      "type": "integer",
+      "default": 1
+    },
+    "lastPromptAt": {
+      "type": "datetime"
+    },
+    "lastPromptTrigger": {
+      "type": "string"
+    },
+    "dismissCount": {
+      "type": "integer",
+      "default": 0
+    },
+    "fans": {
+      "type": "relation",
+      "relation": "oneToMany",
+      "target": "api::fan.fan",
+      "mappedBy": "visitor"
+    },
+    "accountUser": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "plugin::users-permissions.user"
+    }
+  }
+}

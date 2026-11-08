@@ -1,0 +1,84 @@
+{
+  "kind": "collectionType",
+  "collectionName": "albums",
+  "info": {
+    "singularName": "album",
+    "pluralName": "albums",
+    "displayName": "Album",
+    "description": ""
+  },
+  "options": {
+    "draftAndPublish": true
+  },
+  "attributes": {
+    "title": {
+      "type": "string",
+      "required": true
+    },
+    "releaseDate": {
+      "type": "date",
+      "required": true
+    },
+    "cover": {
+      "type": "media",
+      "multiple": false,
+      "required": false,
+      "allowedTypes": [
+        "images"
+      ]
+    },
+    "songs": {
+      "type": "component",
+      "repeatable": true,
+      "component": "album.song"
+    },
+    "band": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "api::band.band",
+      "inversedBy": "albums"
+    },
+    "users_permissions_user": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "plugin::users-permissions.user",
+      "inversedBy": "albums"
+    },
+    "streamingService": {
+      "type": "enumeration",
+      "enum": [
+        "Spotify",
+        "Apple Music",
+        "YouTube Music",
+        "Amazon Music",
+        "Tidal",
+        "Deezer"
+      ]
+    },
+    "albumId": {
+      "type": "string"
+    },
+    "albumUrl": {
+      "type": "string"
+    },
+    "embedUrl": {
+      "type": "string"
+    },
+    "isApproved": {
+      "type": "boolean",
+      "default": true
+    },
+    "type": {
+      "type": "string"
+    },
+    "gallery": {
+      "displayName": "gallery",
+      "type": "component",
+      "repeatable": true,
+      "component": "gallery.gallery"
+    },
+    "biotagline": {
+      "type": "string"
+    }
+  }
+}

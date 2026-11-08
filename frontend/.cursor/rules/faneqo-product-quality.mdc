@@ -1,0 +1,37 @@
+---
+description: Faneqo product quality — artist/fan value, mobile, failure states
+globs:
+  - pages/**/*.vue
+  - layouts/**/*.vue
+  - components/**/*.vue
+  - assets/**/*.{css,scss}
+  - app.vue
+  - tailwind.config.js
+  - public/**/*.{png,svg,ico,webmanifest}
+alwaysApply: false
+---
+
+# Faneqo product quality
+
+Every feature needs concrete artist or fan value. Domain-specific experience over generic SaaS UI.
+
+Visual tokens and brand: `.cursor/rules/10-faneqo-design.mdc`  
+Language + gallery lab: `docs/design/FANEQO_VISUAL_LANGUAGE.md`, `/labs/gallery`
+
+## Experience
+
+- Mobile-first. Desktop-only validation is not complete. Test 320, 360, 375, 390, 414, 430, plus 768 / 1024 / 1280+ where relevant.
+- Accessibility: keyboard, focus, contrast, `prefers-reduced-motion`
+- Ownership and visibility integrity: attendee galleries, Passport, shares
+- Rive for meaning. CSS/Vue for layout and polish. PhotoSwipe for photo physics.
+
+## Design for failure
+
+Ask what happens when it fails (partial uploads, dropped network, duplicate publish, stale provider, job runs twice). Design realistic failure states.
+
+## After a phase
+
+- Performance awareness: query count, N+1, payload, no provider in interactive paths
+- Product self-critique
+- Up to five improvements, classified DO NOW / NEXT PHASE / LATER / REJECT
+- Do not automatically implement discovered ideas

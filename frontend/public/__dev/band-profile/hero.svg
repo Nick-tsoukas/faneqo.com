@@ -1,0 +1,32 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1600" height="1000" viewBox="0 0 1600 1000" role="img" aria-label="NEON STATIC stage fixture">
+  <defs>
+    <linearGradient id="sky" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#07080c"/>
+      <stop offset="55%" stop-color="#101218"/>
+      <stop offset="100%" stop-color="#050506"/>
+    </linearGradient>
+    <radialGradient id="spotL" cx="28%" cy="18%" r="45%">
+      <stop offset="0%" stop-color="#39d5ff" stop-opacity="0.55"/>
+      <stop offset="55%" stop-color="#39d5ff" stop-opacity="0.08"/>
+      <stop offset="100%" stop-color="#39d5ff" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="spotR" cx="78%" cy="22%" r="42%">
+      <stop offset="0%" stop-color="#ff4fd8" stop-opacity="0.42"/>
+      <stop offset="60%" stop-color="#7c3aed" stop-opacity="0.12"/>
+      <stop offset="100%" stop-color="#7c3aed" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="haze" x1="0" y1="1" x2="0" y2="0">
+      <stop offset="0%" stop-color="#000" stop-opacity="0.85"/>
+      <stop offset="100%" stop-color="#000" stop-opacity="0"/>
+    </linearGradient>
+  </defs>
+  <rect width="1600" height="1000" fill="url(#sky)"/>
+  <rect width="1600" height="1000" fill="url(#spotL)"/>
+  <rect width="1600" height="1000" fill="url(#spotR)"/>
+  <rect x="0" y="620" width="1600" height="380" fill="url(#haze)"/>
+  <rect x="180" y="210" width="420" height="560" rx="8" fill="#15171d" opacity="0.55"/>
+  <rect x="980" y="180" width="380" height="620" rx="8" fill="#12141a" opacity="0.45"/>
+  <circle cx="800" cy="430" r="118" fill="#1a1c24"/>
+  <circle cx="800" cy="430" r="86" fill="#0c0d12"/>
+  <circle cx="800" cy="430" r="52" fill="#39d5ff" opacity="0.18"/>
+</svg>

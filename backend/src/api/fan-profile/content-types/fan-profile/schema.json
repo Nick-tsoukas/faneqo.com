@@ -1,0 +1,49 @@
+{
+  "kind": "collectionType",
+  "collectionName": "fan_profiles",
+  "info": {
+    "singularName": "fan-profile",
+    "pluralName": "fan-profiles",
+    "displayName": "Fan Profile",
+    "description": "Lightweight global fan layer on a users-permissions identity. Artists may also have a fan profile."
+  },
+  "options": {
+    "draftAndPublish": false
+  },
+  "pluginOptions": {},
+  "attributes": {
+    "user": {
+      "type": "relation",
+      "relation": "oneToOne",
+      "target": "plugin::users-permissions.user"
+    },
+    "claimedArtistCount": {
+      "type": "integer",
+      "default": 0
+    },
+    "lastClaimedAt": {
+      "type": "datetime"
+    },
+    "displayName": {
+      "type": "string",
+      "maxLength": 40
+    },
+    "firstName": {
+      "type": "string",
+      "maxLength": 50
+    },
+    "lastName": {
+      "type": "string",
+      "maxLength": 50
+    },
+    "avatar": {
+      "type": "media",
+      "multiple": false,
+      "required": false,
+      "allowedTypes": ["images"]
+    },
+    "profileCompletedAt": {
+      "type": "datetime"
+    }
+  }
+}

@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Static QR Test</title>
+  <style>
+    body { background: #000; color: #fff; font-family: sans-serif; text-align: center; padding: 40px; }
+    .qr-box { background: #fff; padding: 20px; display: inline-block; margin: 20px; border-radius: 10px; }
+    img { display: block; }
+    h2 { margin-top: 40px; }
+  </style>
+</head>
+<body>
+  <h1>Static QR Test - No JavaScript</h1>
+  <p>These QRs are loaded as images from external API - no JS libraries involved</p>
+  
+  <h2>Test 1: Google URL (from QR Server API)</h2>
+  <div class="qr-box">
+    <img src="https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=https://google.com" alt="Google QR">
+  </div>
+  <p>Should open: https://google.com</p>
+
+  <h2>Test 2: MBQ DirectQR (from QR Server API)</h2>
+  <div class="qr-box">
+    <img src="https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=https://musicbizqr.com/directqr?id=46" alt="DirectQR">
+  </div>
+  <p>Should open: https://musicbizqr.com/directqr?id=46</p>
+
+  <h2>Test 3: This Page (from QR Server API)</h2>
+  <div class="qr-box">
+    <img src="https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=https://musicbizqr.com/test-qr-static.html" alt="This page QR">
+  </div>
+  <p>Should open: https://musicbizqr.com/test-qr-static.html</p>
+
+  <hr style="margin: 40px 0; border-color: #333;">
+  <p style="color: #888;">If these work but /test-qr doesn't, the JS QR libraries are broken.</p>
+  <p style="color: #888;">If these also don't work, something else on the site is breaking QRs.</p>
+</body>
+</html>

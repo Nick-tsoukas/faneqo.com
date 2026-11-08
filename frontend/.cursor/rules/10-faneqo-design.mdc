@@ -1,0 +1,93 @@
+---
+description: Faneqo elite brand system and UI consistency for visual work
+globs:
+  - pages/**/*.vue
+  - layouts/**/*.vue
+  - components/**/*.vue
+  - assets/**/*.{css,scss}
+  - app.vue
+  - tailwind.config.js
+  - public/**/*.{png,svg,ico,webmanifest}
+alwaysApply: false
+---
+
+# Faneqo design system
+
+Faneqo is a music relationship product, not generic SaaS.
+
+Character: cinematic, editorial, music-native, emotional, premium, confident, dark, alive, personal, slightly futuristic.
+
+Not: sci-fi dashboard, gaming HUD, crypto, Instagram clone, Linktree clone.
+
+Meaning order: **Artist → music / photography / memory → relationship → context → action → chrome.**
+
+For substantial frontend/UI/design work, read `docs/FANEQO_DESIGN_NORTH_STAR.md` before editing. Then `docs/FANEQO_MASTER_PRODUCT_ROADMAP.md`, `docs/FANEQO_CURRENT_PHASE.md`, and `docs/FANEQO_NEXT_AGENT_HANDOFF.md`. Token lookup in `docs/design/FANEQO_VISUAL_LANGUAGE.md` must not override the North Star.
+
+Do not use neon green as current brand identity. Near-white is the primary action. Faneqo color is earned, not wallpaper.
+
+Taste sources: `docs/design/FANEQO_VISUAL_REFERENCES.md`  
+Gallery proving ground: `/labs/gallery` (see `docs/design/FANEQO_GALLERY_LAB.md`)
+
+## Decision order
+
+Every important UI choice, in this order:
+
+1. **Story** — understand, remember, or feel?
+2. **Hierarchy** — eye first, second, third?
+3. **Media** — can photography / artwork / music carry more?
+4. **Typography** — can type replace a container?
+5. **Space** — can rhythm replace another box?
+6. **Interaction** — is the action obvious?
+7. **Motion** — does it explain state or meaning?
+8. **Decoration** — borders, gradients, shadows, glows last
+
+Do not design this backwards.
+
+## Tokens (reuse — do not invent a second brand)
+
+- Type: **Poppins** (`tailwind.config.js`; Noto Sans Thai for `th` in `app.vue`). Do not add font families for a feature.
+- Artist / memory surfaces: `--faneqo-obsidian` `#050608`, `--faneqo-raised` `#0B0E14`, `--faneqo-surface` `#111722`
+- App / messages surfaces: `--fq-app-bg`, `--fq-surface` (`utils/ui/faneqoBrand.js`). Public artist pages must not inherit messaging materials.
+- Accents: magenta / violet for artist-world; cyan / teal for live / progress / relationship where meaningful. Neon green `#39FF14` is **legacy**, not current brand identity.
+- Borders: hairlines `rgba(255,255,255,0.07)`–`0.11`. Radius on chrome, **0 on gallery prints**.
+- Motion: `utils/ui/motionTokens.js` (0.14 / 0.21 / 0.28). Respect `prefers-reduced-motion`.
+- Brand gradients (selective): pink → fuchsia → purple; fan/echo cyan → emerald.
+
+## Photography
+
+When media is emotionally important, let it dominate. Prefer large fields, mixed native ratios, subject-safe crop. Do not shrink concert photos into 120px SaaS cards. Do not force every image to 1:1 or 4:5.
+
+MediaItem (`mediaId`, `aspectRatio`, derivatives) is shared. Wrappers differ. Cover = first ordered item. Do not reopen the media architecture.
+
+05B.3 compositions live on `FaneqoMediaGrid` `variant="gallery"` with deterministic rules in `utils/media/faneqoGalleryLayout.js`: 1 editorial · 2 pair · 3 hero + support · 4 mosaic · 5+ cover + count. Bubble variant is unchanged for DMs.
+
+## Rules
+
+1. Inspect the target page and reusable components before designing anything new.
+2. Reuse tokens, type, buttons, and media primitives. One visual language.
+3. Typography and space before boxes, pills, and nested cards.
+4. One dominant moment per view. Do not make every fact visually equal.
+5. No generic SaaS illustrations or generic AI-looking artwork.
+6. Avoid excessive glass, glow, gradient-on-gradient, and card-in-card.
+7. Contrast, ≥44px touch targets, keyboard, focus; no hover-only critical actions.
+8. Motion only when it explains state, relationship, or meaning.
+9. Prefer a small, cohesive improvement over an unrequested full redesign.
+10. Do not rewrite a working page for a minor visual tweak.
+11. Do not unhide Artist Updates or Show Photos from a design lab.
+
+## Anti-patterns
+
+Generic SaaS cards on concert photos · Instagram 3-up as the only gallery · equal-weight dashboards · nested cards · glow as personality · new font / hex / radius “just for this feature” · screen-specific fields on MediaItem · masonry dumps · custom cursors / scroll prisons / parallax spectacle.
+
+## Reference implementations
+
+- Marketing: `pages/index.vue`, `components/marketing/CinematicArtistWorld.vue`
+- Shell: `components/Header.vue`, `layouts/default.vue`
+- Artist pages: `components/band/BandPageCompact.vue` and siblings
+- Media primitives: `components/media/FaneqoMediaGrid.vue`, `FaneqoMediaLightbox.vue`
+- Gallery rules: `utils/media/faneqoGalleryLayout.js`
+- Lab: `/labs/gallery`, `/__dev/gallery`
+
+## Legacy styling (do not extend unless fixing that area)
+
+`.btn` (neon-green), `.mdc-*` form classes, and `musicbizqr` in `layouts/default.vue` title template are legacy MBQ-era patterns. Match current Faneqo homepage and band-page quality instead.

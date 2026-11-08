@@ -1,0 +1,52 @@
+{
+  "kind": "collectionType",
+  "collectionName": "conversation_participants",
+  "info": {
+    "singularName": "conversation-participant",
+    "pluralName": "conversation-participants",
+    "displayName": "Conversation Participant",
+    "description": "Per-side Inbox state (read/block). One band + one fan per conversation."
+  },
+  "options": {
+    "draftAndPublish": false
+  },
+  "pluginOptions": {},
+  "attributes": {
+    "conversation": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "api::conversation.conversation",
+      "required": true
+    },
+    "side": {
+      "type": "enumeration",
+      "enum": ["band", "fan"],
+      "required": true
+    },
+    "accountUser": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "plugin::users-permissions.user"
+    },
+    "conversationSideKey": {
+      "type": "string",
+      "required": true,
+      "unique": true,
+      "private": true,
+      "searchable": false
+    },
+    "lastReadAt": {
+      "type": "datetime"
+    },
+    "lastReadMessageId": {
+      "type": "integer"
+    },
+    "blockedAt": {
+      "type": "datetime"
+    },
+    "joinedAt": {
+      "type": "datetime",
+      "required": true
+    }
+  }
+}

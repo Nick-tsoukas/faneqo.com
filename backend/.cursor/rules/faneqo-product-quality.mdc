@@ -1,0 +1,19 @@
+---
+description: Faneqo product quality — backend obligations toward artist/fan experience
+alwaysApply: true
+---
+
+# Faneqo product quality (backend)
+
+Every feature needs concrete artist or fan value. The backend's job is to make that value true, authorized, and durable.
+
+- Ownership and visibility integrity: attendee galleries, Passport, shares, protected media. Frontend visibility is not authorization.
+- Design for failure: partial uploads, dropped network, duplicate publish, stale provider, a job that runs twice. Fail closed and stay idempotent.
+- Performance: query count, N+1, payload size. No external provider APIs on normal interactive paths.
+- Never let a response assert a relationship fact that is not server-derived (attendance, show ordinal, returning, counts).
+
+Frontend experience rules (viewports, accessibility, visual language) are owned by `musicbizqr/.cursor/rules/faneqo-product-quality.mdc` and `musicbizqr/docs/FANEQO_DESIGN_NORTH_STAR.md`.
+
+## After a phase
+
+Product self-critique, then up to five improvements classified DO NOW / NEXT PHASE / LATER / REJECT. Do not implement discovered ideas automatically.

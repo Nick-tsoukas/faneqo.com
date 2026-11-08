@@ -1,0 +1,141 @@
+{
+  "kind": "collectionType",
+  "collectionName": "fan_show_attendances",
+  "info": {
+    "singularName": "fan-show-attendance",
+    "pluralName": "fan-show-attendances",
+    "displayName": "Fan Show Attendance",
+    "description": "Verified fan attendance records for live shows - foundation for badges and fan passport"
+  },
+  "options": {
+    "draftAndPublish": false
+  },
+  "pluginOptions": {},
+  "attributes": {
+    "fan": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "api::fan.fan"
+    },
+    "band": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "api::band.band"
+    },
+    "event": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "api::event.event"
+    },
+    "campaignId": {
+      "type": "string"
+    },
+    "checkedInAt": {
+      "type": "datetime",
+      "required": true
+    },
+    "venue": {
+      "type": "string"
+    },
+    "city": {
+      "type": "string"
+    },
+    "region": {
+      "type": "string"
+    },
+    "country": {
+      "type": "string"
+    },
+    "timezone": {
+      "type": "string"
+    },
+    "showTitle": {
+      "type": "string"
+    },
+    "showDate": {
+      "type": "date"
+    },
+    "verificationLevel": {
+      "type": "enumeration",
+      "enum": [
+        "self_reported",
+        "show_mode_live",
+        "event_qr_scan",
+        "geo_supported",
+        "staff_verified"
+      ],
+      "default": "self_reported"
+    },
+    "checkInSource": {
+      "type": "enumeration",
+      "enum": [
+        "show_banner",
+        "fan_capture_followup",
+        "direct_checkin_button",
+        "qr_scan",
+        "recap_link",
+        "event_page"
+      ],
+      "default": "direct_checkin_button"
+    },
+    "eventStatus": {
+      "type": "enumeration",
+      "enum": [
+        "before_show",
+        "during_show",
+        "after_show",
+        "unknown"
+      ],
+      "default": "unknown"
+    },
+    "showModeSessionId": {
+      "type": "string"
+    },
+    "confidenceScore": {
+      "type": "integer",
+      "default": 50,
+      "min": 0,
+      "max": 100
+    },
+    "isNewFanAtCheckIn": {
+      "type": "boolean",
+      "default": false
+    },
+    "fanInteraction": {
+      "type": "relation",
+      "relation": "oneToOne",
+      "target": "api::fan-interaction.fan-interaction"
+    },
+    "campaignIdentityKey": {
+      "type": "string",
+      "private": true,
+      "unique": true,
+      "maxLength": 64,
+      "column": { "unique": true }
+    },
+    "eventIdentityKey": {
+      "type": "string",
+      "private": true,
+      "unique": true,
+      "maxLength": 64,
+      "column": { "unique": true }
+    },
+    "suppressedDuplicate": {
+      "type": "boolean",
+      "default": false
+    },
+    "badgeEligible": {
+      "type": "boolean",
+      "default": true
+    },
+    "badgeIssuedAt": {
+      "type": "datetime"
+    },
+    "timelineLabel": {
+      "type": "string"
+    },
+    "metadata": {
+      "type": "json"
+    }
+  }
+}

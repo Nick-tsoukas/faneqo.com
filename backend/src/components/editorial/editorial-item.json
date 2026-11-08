@@ -1,0 +1,52 @@
+{
+  "collectionName": "components_editorial_editorial_items",
+  "info": {
+    "displayName": "Editorial Item",
+    "icon": "book",
+    "description": "A curated editorial showcase entry for publications and media profiles"
+  },
+  "options": {},
+  "attributes": {
+    "contentType": {
+      "type": "enumeration",
+      "enum": [
+        "article",
+        "video",
+        "interview",
+        "concert_review",
+        "music_news",
+        "photo_gallery",
+        "album_review"
+      ],
+      "required": true,
+      "default": "article"
+    },
+    "title": {
+      "type": "string",
+      "required": true
+    },
+    "url": {
+      "type": "string",
+      "required": true
+    },
+    "image": {
+      "type": "media",
+      "multiple": false,
+      "required": false,
+      "allowedTypes": ["images"]
+    },
+    "category": {
+      "type": "string",
+      "required": false
+    },
+    "excerpt": {
+      "type": "string",
+      "maxLength": 160,
+      "required": false
+    },
+    "isFeatured": {
+      "type": "boolean",
+      "default": false
+    }
+  }
+}

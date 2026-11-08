@@ -1,0 +1,214 @@
+{
+  "kind": "collectionType",
+  "collectionName": "show_recaps",
+  "info": {
+    "singularName": "show-recap",
+    "pluralName": "show-recaps",
+    "displayName": "Show Recap",
+    "description": "Post-show recap of fan growth and engagement metrics"
+  },
+  "options": {
+    "draftAndPublish": false
+  },
+  "pluginOptions": {},
+  "attributes": {
+    "band": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "api::band.band"
+    },
+    "eventId": {
+      "type": "integer"
+    },
+    "campaignId": {
+      "type": "string",
+      "required": true
+    },
+    "showTitle": {
+      "type": "string"
+    },
+    "venue": {
+      "type": "string"
+    },
+    "city": {
+      "type": "string"
+    },
+    "region": {
+      "type": "string"
+    },
+    "country": {
+      "type": "string"
+    },
+    "timezone": {
+      "type": "string"
+    },
+    "showModeType": {
+      "type": "enumeration",
+      "enum": ["manual", "event"],
+      "default": "manual"
+    },
+    "showStartedAt": {
+      "type": "datetime"
+    },
+    "showEndedAt": {
+      "type": "datetime"
+    },
+    "performanceStartsAt": {
+      "type": "datetime"
+    },
+    "performanceEndsAt": {
+      "type": "datetime"
+    },
+    "recapGeneratedAt": {
+      "type": "datetime",
+      "required": true
+    },
+    "fansCaptured": {
+      "type": "integer",
+      "default": 0
+    },
+    "fansCapturedDuringShowMode": {
+      "type": "integer",
+      "default": 0
+    },
+    "topCaptureSurface": {
+      "type": "string"
+    },
+    "topCaptureSurfaceCount": {
+      "type": "integer",
+      "default": 0
+    },
+    "topCity": {
+      "type": "string"
+    },
+    "topCityCount": {
+      "type": "integer",
+      "default": 0
+    },
+    "spotifyClicks": {
+      "type": "integer",
+      "default": 0
+    },
+    "appleMusicClicks": {
+      "type": "integer",
+      "default": 0
+    },
+    "youtubeClicks": {
+      "type": "integer",
+      "default": 0
+    },
+    "ticketClicks": {
+      "type": "integer",
+      "default": 0
+    },
+    "merchClicks": {
+      "type": "integer",
+      "default": 0
+    },
+    "shareClicks": {
+      "type": "integer",
+      "default": 0
+    },
+    "followClicks": {
+      "type": "integer",
+      "default": 0
+    },
+    "saveClicks": {
+      "type": "integer",
+      "default": 0
+    },
+    "featuredSongPlays": {
+      "type": "integer",
+      "default": 0
+    },
+    "videoClicks": {
+      "type": "integer",
+      "default": 0
+    },
+    "checkedInShowCount": {
+      "type": "integer",
+      "default": 0
+    },
+    "averageEngagementScore": {
+      "type": "decimal",
+      "default": 0
+    },
+    "superfanSignalCount": {
+      "type": "integer",
+      "default": 0
+    },
+    "engagedFanCount": {
+      "type": "integer",
+      "default": 0
+    },
+    "warmFanCount": {
+      "type": "integer",
+      "default": 0
+    },
+    "newFanCount": {
+      "type": "integer",
+      "default": 0
+    },
+    "interactionCount": {
+      "type": "integer",
+      "default": 0
+    },
+    "captureSurfaceBreakdown": {
+      "type": "json"
+    },
+    "cityBreakdown": {
+      "type": "json"
+    },
+    "interactionBreakdown": {
+      "type": "json"
+    },
+    "messagesSentCount": {
+      "type": "integer",
+      "default": 0
+    },
+    "lastMessageSentAt": {
+      "type": "datetime"
+    },
+    "lastMessageRecipientCount": {
+      "type": "integer",
+      "default": 0
+    },
+    "metadata": {
+      "type": "json"
+    },
+    "publicStory": {
+      "type": "text"
+    },
+    "privateArtistNote": {
+      "type": "text"
+    },
+    "lineup": {
+      "type": "json"
+    },
+    "nightSlug": {
+      "type": "string"
+    },
+    "coverImage": {
+      "type": "media",
+      "multiple": false,
+      "required": false,
+      "allowedTypes": [
+        "images"
+      ]
+    },
+    "heroImage": {
+      "type": "media",
+      "multiple": false,
+      "required": false,
+      "allowedTypes": [
+        "images"
+      ]
+    },
+    "heroFocalX": {
+      "type": "decimal"
+    },
+    "heroFocalY": {
+      "type": "decimal"
+    }
+  }
+}

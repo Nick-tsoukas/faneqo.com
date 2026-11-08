@@ -1,0 +1,58 @@
+{
+  "kind": "collectionType",
+  "collectionName": "passport_gallery_saves",
+  "info": {
+    "singularName": "passport-gallery-save",
+    "pluralName": "passport-gallery-saves",
+    "displayName": "Passport Gallery Save",
+    "description": "A fan-owned reference to an accessible Artist Update gallery. Media is never copied."
+  },
+  "options": {
+    "draftAndPublish": false
+  },
+  "pluginOptions": {},
+  "attributes": {
+    "accountUser": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "plugin::users-permissions.user",
+      "required": true
+    },
+    "artistUpdate": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "api::artist-update.artist-update",
+      "required": true
+    },
+    "band": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "api::band.band",
+      "required": true
+    },
+    "event": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "api::event.event"
+    },
+    "showRecap": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "api::show-recap.show-recap"
+    },
+    "savedAt": {
+      "type": "datetime",
+      "required": true
+    },
+    "saveKey": {
+      "type": "string",
+      "required": true,
+      "unique": true,
+      "private": true,
+      "searchable": false,
+      "column": {
+        "unique": true
+      }
+    }
+  }
+}

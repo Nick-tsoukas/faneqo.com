@@ -1,0 +1,74 @@
+{
+  "kind": "collectionType",
+  "collectionName": "seo_pages",
+  "info": {
+    "singularName": "seo-page",
+    "pluralName": "seo-pages",
+    "displayName": "seo-page",
+    "description": ""
+  },
+  "options": {
+    "draftAndPublish": true
+  },
+  "pluginOptions": {},
+  "attributes": {
+    "title": {
+      "type": "string"
+    },
+    "slug": {
+      "type": "uid",
+      "targetField": "title"
+    },
+    "metaTitle": {
+      "type": "string"
+    },
+    "metaDescription": {
+      "type": "string"
+    },
+    "ogImage": {
+      "type": "media",
+      "multiple": false,
+      "required": false,
+      "allowedTypes": [
+        "images",
+        "files",
+        "videos",
+        "audios"
+      ]
+    },
+    "content": {
+      "type": "richtext"
+    },
+    "featured": {
+      "type": "boolean"
+    },
+    "keywords": {
+      "type": "string"
+    },
+    "category": {
+      "type": "enumeration",
+      "enum": [
+        "qr-code-strategy",
+        "smart-links",
+        "fan-funnels",
+        "touring-events",
+        "music-marketing",
+        "merch-growth",
+        "analytics",
+        "case-studies"
+      ]
+    },
+    "jsonLd": {
+      "type": "json"
+    },
+    "isPillar": {
+      "type": "boolean"
+    },
+    "executiveSummary": {
+      "type": "richtext"
+    },
+    "executiveSummaryTakeaways": {
+      "type": "json"
+    }
+  }
+}

@@ -1,0 +1,102 @@
+/**
+ * Faneqo messaging Lucide vocabulary.
+ * Import from here instead of reaching into @lucide/vue in every component.
+ * MoreHorizontal was renamed to Ellipsis in current Lucide.
+ */
+import {
+  ArrowDown,
+  ArrowLeft,
+  Ban,
+  Bell,
+  BellOff,
+  Check,
+  CheckCheck,
+  ChevronLeft,
+  ChevronRight,
+  CircleAlert,
+  CircleCheck,
+  Clock,
+  Copy,
+  Ellipsis,
+  ExternalLink,
+  Eye,
+  Globe,
+  Image,
+  ImagePlus,
+  Images,
+  Inbox,
+  Loader,
+  Mail,
+  Maximize2,
+  Megaphone,
+  MessageCircle,
+  Plus,
+  RefreshCw,
+  Reply,
+  Search,
+  Send,
+  Share2,
+  Smile,
+  Ticket,
+  TriangleAlert,
+  User,
+  Users,
+  X,
+  ZoomIn,
+  ZoomOut,
+} from '@lucide/vue'
+
+export const FANEQO_ICON_STROKE = 1.75
+
+export const FANEQO_ICON_SIZES = {
+  sm: 16,
+  md: 18,
+  lg: 20,
+}
+
+export const faneqoIcons = {
+  send: Send,
+  smile: Smile,
+  reply: Reply,
+  search: Search,
+  more: Ellipsis,
+  back: ChevronLeft,
+  chevronRight: ChevronRight,
+  arrowLeft: ArrowLeft,
+  close: X,
+  share: Share2,
+  zoomIn: ZoomIn,
+  zoomOut: ZoomOut,
+  fit: Maximize2,
+  check: Check,
+  checkCheck: CheckCheck,
+  ban: Ban,
+  bell: Bell,
+  bellOff: BellOff,
+  refresh: RefreshCw,
+  copy: Copy,
+  inbox: Inbox,
+  mail: Mail,
+  megaphone: Megaphone,
+  message: MessageCircle,
+  plus: Plus,
+  user: User,
+  users: Users,
+  alert: TriangleAlert,
+  external: ExternalLink,
+  arrowDown: ArrowDown,
+  image: ImagePlus,
+  photo: Image,
+  images: Images,
+  globe: Globe,
+  ticket: Ticket,
+  eye: Eye,
+  circleCheck: CircleCheck,
+  circleAlert: CircleAlert,
+  clock: Clock,
+  loader: Loader,
+}
+
+export function faneqoIcon(name) {
+  return faneqoIcons[name] || null
+}

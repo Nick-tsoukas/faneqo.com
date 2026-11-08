@@ -1,0 +1,79 @@
+{
+  "kind": "collectionType",
+  "collectionName": "band_shares",
+  "info": {
+    "singularName": "band-share",
+    "pluralName": "band-shares",
+    "displayName": "Band Share",
+    "description": "Tracks band share events including shareable cards"
+  },
+  "options": {
+    "draftAndPublish": false
+  },
+  "pluginOptions": {},
+  "attributes": {
+    "band": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "api::band.band",
+      "required": true
+    },
+    "visitorId": {
+      "type": "string"
+    },
+    "sessionId": {
+      "type": "string"
+    },
+    "shareChannel": {
+      "type": "enumeration",
+      "enum": [
+        "WEB_SHARE",
+        "COPY",
+        "DOWNLOAD",
+        "COPY_LINK",
+        "COPY_CAPTION",
+        "DOWNLOAD_IMAGE",
+        "INSTAGRAM_KIT",
+        "FACEBOOK_SHARE",
+        "OTHER"
+      ]
+    },
+    "placement": {
+      "type": "enumeration",
+      "enum": [
+        "FOOTER",
+        "FAN_MOMENT_SECTION",
+        "DASHBOARD",
+        "DRAWER"
+      ],
+      "required": true
+    },
+    "sharedAt": {
+      "type": "datetime",
+      "required": true
+    },
+    "shareableId": {
+      "type": "string"
+    },
+    "cardType": {
+      "type": "string"
+    },
+    "window": {
+      "type": "string"
+    },
+    "accent": {
+      "type": "string"
+    },
+    "captionStyle": {
+      "type": "enumeration",
+      "enum": [
+        "hype",
+        "grateful",
+        "tease"
+      ]
+    },
+    "context": {
+      "type": "json"
+    }
+  }
+}

@@ -1,0 +1,66 @@
+{
+  "kind": "collectionType",
+  "collectionName": "conversations",
+  "info": {
+    "singularName": "conversation",
+    "pluralName": "conversations",
+    "displayName": "Conversation",
+    "description": "One band ↔ verified fan-account Inbox thread. Not a campaign."
+  },
+  "options": {
+    "draftAndPublish": false
+  },
+  "pluginOptions": {},
+  "attributes": {
+    "band": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "api::band.band",
+      "required": true
+    },
+    "fanAccountUser": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "plugin::users-permissions.user",
+      "required": true
+    },
+    "originFan": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "api::fan.fan"
+    },
+    "pairKey": {
+      "type": "string",
+      "required": true,
+      "unique": true,
+      "private": true,
+      "searchable": false
+    },
+    "status": {
+      "type": "enumeration",
+      "enum": ["active", "closed"],
+      "default": "active",
+      "required": true
+    },
+    "originType": {
+      "type": "enumeration",
+      "enum": ["artist_direct", "campaign_reply", "fan_request"],
+      "default": "artist_direct",
+      "required": true
+    },
+    "lastMessageAt": {
+      "type": "datetime"
+    },
+    "lastMessagePreview": {
+      "type": "string",
+      "maxLength": 180
+    },
+    "lastMessageSenderSide": {
+      "type": "enumeration",
+      "enum": ["band", "fan"]
+    },
+    "lastMessageId": {
+      "type": "integer"
+    }
+  }
+}

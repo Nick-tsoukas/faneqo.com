@@ -1,0 +1,50 @@
+# Faneqo agent guide
+
+Repos: `musicbizqr` (Nuxt frontend) · `qrserver` (Strapi backend). Specialist backend docs live in `qrserver/docs/`.
+
+Faneqo is music relationship software for artists, bands, and their fans — not generic SaaS, not a link-in-bio clone. Product identity and stack: `.cursor/rules/00-faneqo-core.mdc`.
+
+Work modes, the signature design loop, rendered-evidence rules, tool doctrine, and the handoff standard live in one place: `docs/FANEQO_CURSOR_OPERATING_SYSTEM.md`. Read it before design work or before writing a handoff.
+
+## Source precedence
+
+When instructions disagree, the higher item wins:
+
+1. **Repository and runtime truth** — what the code, config, tests, and rendered app actually do
+2. **The active task brief** — what the user asked for in this session
+3. **Current phase** — `docs/FANEQO_CURRENT_PHASE.md`; inside a specialist feature, that feature's `*_CURRENT_PHASE.md`, which narrows the company phase and may never override it
+4. **Locked doctrine and decisions** — `docs/FANEQO_DESIGN_NORTH_STAR.md`, `docs/FANEQO_RELATIONSHIP_PLATFORM.md` architecture invariants, feature `*_DECISIONS.md`, `docs/FANEQO_MASTER_PRODUCT_ROADMAP.md` for durable direction
+5. **Specialist skills and agents** — `.cursor/skills/`, `.cursor/agents/`
+6. **Global rules** — `.cursor/rules/*.mdc` and this file
+7. **Current handoff** — `docs/FANEQO_NEXT_AGENT_HANDOFF.md`: the next step, not a constitution
+8. **Historical docs** — older audits, briefs, lab handoffs, prompts. History, not authority.
+
+Two limits on this ladder:
+
+- Precedence resolves *guidance* conflicts. Nothing on it authorizes weakening authorization, privacy, fan-identity truth, data integrity, or idempotency. Those change only by an explicit, written decision.
+- If a lower document contradicts a higher one, say so in your report instead of silently obeying either.
+
+## Operating loop
+
+1. Read the phase and handoff, then inspect the actual implementation before coding
+2. Classify what you find: REUSE / EXTEND / REPLACE / DO NOT USE
+3. Say what you found, what you propose, the risks, and how you will verify — then implement the smallest coherent slice
+4. Keep canonical truth, derived data, read models, and presentation separate
+5. Check authorization and N+1 on every data path; challenge every new persisted object
+6. Add no speculative infrastructure (no Redis / Kafka / microservices / V1 `MediaAsset`) without measured need
+7. Verify in the mode's own currency (tests, browser, rendered evidence), then report
+8. End substantial phases with a handoff and up to five improvements classified DO NOW / NEXT PHASE / LATER / REJECT — do not implement discovered ideas automatically
+
+## Safety and scope
+
+- Preserve locked decisions and locked compositions. A lock reopens for a real defect, not for taste.
+- Do not commit, push, deploy, reset, restore, stash, or clean unless explicitly instructed.
+- Run `git status --short` before and after substantial work and protect unrelated dirty work in both repos.
+- Backend boot-critical changes need a boot/require test; after a backend deploy, `GET /api/health` → 200 **and** read the Railway startup logs.
+- Reuse the running dev servers (frontend `:3000`, backend `:1337`). Do not start duplicates or blanket-kill Node.
+
+## Pointers
+
+- Frontend map (QR, PWA, auth, payments): `docs/FANEQO_ARCHITECTURE.md`
+- Large multi-slice features: `docs/FANEQO_ATOMIC_FEATURE_TEMPLATE.md`
+- Visual creation: `.cursor/skills/faneqo-ui-director/SKILL.md` · independent review: `.cursor/agents/faneqo-visual-critic.md`

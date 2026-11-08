@@ -1,0 +1,82 @@
+{
+  "kind": "collectionType",
+  "collectionName": "fan_interactions",
+  "info": {
+    "singularName": "fan-interaction",
+    "pluralName": "fan-interactions",
+    "displayName": "Fan Interaction",
+    "description": "Tracks fan interactions with bands for analytics and engagement scoring"
+  },
+  "options": {
+    "draftAndPublish": false
+  },
+  "pluginOptions": {},
+  "attributes": {
+    "fan": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "api::fan.fan"
+    },
+    "band": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "api::band.band"
+    },
+    "eventId": {
+      "type": "integer"
+    },
+    "interactionType": {
+      "type": "enumeration",
+      "enum": [
+        "joined_fan_list",
+        "viewed_band_page",
+        "viewed_show_mode_page",
+        "clicked_spotify",
+        "clicked_apple_music",
+        "clicked_youtube",
+        "clicked_ticket_link",
+        "clicked_merch",
+        "clicked_share",
+        "clicked_follow",
+        "clicked_save",
+        "played_featured_song",
+        "clicked_video",
+        "checked_in_show",
+        "opened_follow_modal"
+      ],
+      "required": true
+    },
+    "interactionContext": {
+      "type": "enumeration",
+      "enum": ["normal", "show_mode", "release_mode", "merch_mode"],
+      "default": "normal"
+    },
+    "surface": {
+      "type": "enumeration",
+      "enum": ["band_page", "follow_modal", "qr_poster", "qr_merch_table", "qr_stage_screen", "qr_flyer", "event_page", "direct_link", "unknown"],
+      "default": "unknown"
+    },
+    "timestamp": {
+      "type": "datetime",
+      "required": true
+    },
+    "city": {
+      "type": "string"
+    },
+    "region": {
+      "type": "string"
+    },
+    "country": {
+      "type": "string"
+    },
+    "timezone": {
+      "type": "string"
+    },
+    "campaignId": {
+      "type": "string"
+    },
+    "metadata": {
+      "type": "json"
+    }
+  }
+}

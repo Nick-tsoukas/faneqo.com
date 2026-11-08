@@ -1,0 +1,7 @@
+User-agent: *
+Allow: /
+Disallow: /api/
+Disallow: /directqr
+Disallow: /article/null/
+
+Sitemap: https://faneqo.com/sitemap.xml

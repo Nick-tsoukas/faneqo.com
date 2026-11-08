@@ -1,0 +1,14 @@
+{
+  "name": "mbq-cron",
+  "version": "1.0.0",
+  "description": "MBQ Cron Job Runner - Triggers auto-moment and recap evaluators",
+  "main": "run.js",
+  "scripts": {
+    "start": "node run.js"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "keywords": ["cron", "mbq", "musicbizqr"],
+  "private": true
+}

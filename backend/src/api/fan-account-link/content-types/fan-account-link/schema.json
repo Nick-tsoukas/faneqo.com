@@ -1,0 +1,58 @@
+{
+  "kind": "collectionType",
+  "collectionName": "fan_account_links",
+  "info": {
+    "singularName": "fan-account-link",
+    "pluralName": "fan-account-links",
+    "displayName": "Fan Account Link",
+    "description": "One-time hashed magic-link tokens for fan account verification (Lane 1 transactional)."
+  },
+  "options": {
+    "draftAndPublish": false
+  },
+  "pluginOptions": {},
+  "attributes": {
+    "email": {
+      "type": "email",
+      "required": true
+    },
+    "tokenHash": {
+      "type": "string",
+      "required": true,
+      "unique": true,
+      "private": true,
+      "searchable": false
+    },
+    "visitorKeyHash": {
+      "type": "string",
+      "private": true,
+      "searchable": false
+    },
+    "status": {
+      "type": "enumeration",
+      "enum": ["pending", "used", "expired"],
+      "default": "pending",
+      "required": true
+    },
+    "expiresAt": {
+      "type": "datetime",
+      "required": true
+    },
+    "usedAt": {
+      "type": "datetime"
+    },
+    "trigger": {
+      "type": "string"
+    },
+    "requestFingerprint": {
+      "type": "string",
+      "private": true,
+      "searchable": false
+    },
+    "returnTo": {
+      "type": "string",
+      "private": true,
+      "searchable": false
+    }
+  }
+}

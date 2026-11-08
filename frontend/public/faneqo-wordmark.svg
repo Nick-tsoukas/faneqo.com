@@ -1,0 +1,24 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 956 358" role="img" aria-label="Faneqo">
+  <defs>
+    <linearGradient id="fqBody" gradientUnits="userSpaceOnUse" x1="38" y1="0" x2="837.3" y2="0">
+      <stop offset="0%" stop-color="#ffffff"/>
+      <stop offset="30%" stop-color="#f472b6"/>
+      <stop offset="62%" stop-color="#e879f9"/>
+      <stop offset="100%" stop-color="#c084fc"/>
+    </linearGradient>
+    <linearGradient id="fqAccent" gradientUnits="userSpaceOnUse" x1="0" y1="116.7" x2="0" y2="240.6">
+      <stop offset="0%" stop-color="#67e8f9"/>
+      <stop offset="100%" stop-color="#6ee7b7"/>
+    </linearGradient>
+  </defs>
+  <text x="38" y="240.6"
+    font-family="Poppins, 'Segoe UI', Arial, sans-serif" font-weight="800"
+    font-size="240" letter-spacing="-5">
+    <tspan fill="url(#fqBody)">Fan</tspan><tspan fill="url(#fqAccent)">e</tspan><tspan fill="url(#fqBody)">qo</tspan>
+  </text>
+  <g fill="none" stroke-linecap="round">
+    <path d="M 799.6 113.8 A 74 74 0 0 1 799.6 243.4" stroke="rgb(103,232,249)" stroke-width="12" opacity="0.9"/>
+    <path d="M 829.2 88.9 A 110.9 110.9 0 0 1 829.2 268.4" stroke="rgb(107,232,216)" stroke-width="8.2" opacity="0.58"/>
+    <path d="M 865.2 70.8 A 147.9 147.9 0 0 1 865.2 286.5" stroke="rgb(110,231,183)" stroke-width="5.3" opacity="0.32"/>
+  </g>
+</svg>

@@ -1,0 +1,93 @@
+{
+  "kind": "collectionType",
+  "collectionName": "fan_moments",
+  "info": {
+    "singularName": "fan-moment",
+    "pluralName": "fan-moments",
+    "displayName": "Fan Moment",
+    "description": "Shareable fan participation moments"
+  },
+  "options": {
+    "draftAndPublish": false
+  },
+  "pluginOptions": {},
+  "attributes": {
+    "band": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "api::band.band"
+    },
+    "visitorId": {
+      "type": "string",
+      "private": true
+    },
+    "sessionId": {
+      "type": "string"
+    },
+    "momentType": {
+      "type": "enumeration",
+      "enum": [
+        "I_WAS_THERE",
+        "FUELED_MOMENTUM",
+        "PULSE_SURGE",
+        "CITY_HEAT",
+        "MOMENT_MATTERED",
+        "AFTER_SHOW_RECAP"
+      ],
+      "required": true
+    },
+    "actionType": {
+      "type": "enumeration",
+      "enum": [
+        "qr_scan",
+        "follow",
+        "payment",
+        "link_click",
+        "event_view",
+        "AUTO"
+      ],
+      "required": true
+    },
+    "expiresAt": {
+      "type": "datetime",
+      "required": true
+    },
+    "context": {
+      "type": "json"
+    },
+    "triggerReason": {
+      "type": "string",
+      "default": null
+    },
+    "milestone": {
+      "type": "json"
+    },
+    "fanPosition": {
+      "type": "integer"
+    },
+    "shareTitle": {
+      "type": "string"
+    },
+    "shareText": {
+      "type": "text"
+    },
+    "shareSubtitle": {
+      "type": "string"
+    },
+    "shareEmoji": {
+      "type": "string"
+    },
+    "shareCallToAction": {
+      "type": "string"
+    },
+    "shareImageUrl": {
+      "type": "string"
+    },
+    "sharedAt": {
+      "type": "datetime"
+    },
+    "shareChannel": {
+      "type": "string"
+    }
+  }
+}

@@ -1,0 +1,15 @@
+services:
+  postgres:
+    image: postgres:16
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_USER: faneqo
+      POSTGRES_PASSWORD: faneqo
+      POSTGRES_DB: faneqo_dev
+    volumes:
+      - faneqo_pg:/var/lib/postgresql/data
+      - ./docker/postgres-init.sql:/docker-entrypoint-initdb.d/01-init.sql:ro
+
+volumes:
+  faneqo_pg:

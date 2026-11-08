@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="700" height="1000" viewBox="0 0 700 1000" role="img" aria-label="Lab fixture: poster field">
+  <defs>
+    <linearGradient id="vp-bg" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#0b0e14"/>
+      <stop offset="100%" stop-color="#050608"/>
+    </linearGradient>
+  </defs>
+  <rect width="700" height="1000" fill="url(#vp-bg)"/>
+  <rect x="64" y="90" width="220" height="14" fill="#f7f9fc" opacity="0.9"/>
+  <rect x="64" y="130" width="480" height="8" fill="#9aa6b5" opacity="0.55"/>
+  <rect x="64" y="160" width="360" height="8" fill="#9aa6b5" opacity="0.35"/>
+  <rect x="64" y="280" width="572" height="540" fill="#111722"/>
+  <rect x="64" y="280" width="572" height="540" fill="#8b6cff" opacity="0.12"/>
+  <rect x="64" y="860" width="160" height="10" fill="#ff4fd8" opacity="0.7"/>
+</svg>

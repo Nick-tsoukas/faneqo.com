@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="800" height="1200" viewBox="0 0 800 1200" role="img" aria-label="Lab fixture: portrait figure">
+  <defs>
+    <linearGradient id="pf-bg" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#120818"/>
+      <stop offset="100%" stop-color="#050506"/>
+    </linearGradient>
+    <radialGradient id="pf-spot" cx="48%" cy="28%" r="42%">
+      <stop offset="0%" stop-color="#ff4fd8" stop-opacity="0.4"/>
+      <stop offset="100%" stop-color="#ff4fd8" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+  <rect width="800" height="1200" fill="url(#pf-bg)"/>
+  <rect width="800" height="1200" fill="url(#pf-spot)"/>
+  <ellipse cx="400" cy="980" rx="210" ry="40" fill="#000" opacity="0.45"/>
+  <rect x="330" y="430" width="140" height="420" rx="70" fill="#15131c"/>
+  <circle cx="400" cy="360" r="78" fill="#1a1622"/>
+  <rect x="300" y="620" width="70" height="260" rx="32" fill="#121018" transform="rotate(-18 335 750)"/>
+  <rect x="430" y="620" width="70" height="260" rx="32" fill="#121018" transform="rotate(16 465 750)"/>
+</svg>

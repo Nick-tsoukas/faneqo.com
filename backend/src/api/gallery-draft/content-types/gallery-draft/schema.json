@@ -1,0 +1,99 @@
+{
+  "kind": "collectionType",
+  "collectionName": "gallery_drafts",
+  "info": {
+    "singularName": "gallery-draft",
+    "pluralName": "gallery-drafts",
+    "displayName": "Gallery Draft",
+    "description": "Server-side durable gallery upload session. Staging only — artist-update stays the published truth."
+  },
+  "options": {
+    "draftAndPublish": false
+  },
+  "pluginOptions": {},
+  "attributes": {
+    "sessionId": {
+      "type": "string",
+      "required": true,
+      "unique": true,
+      "column": { "unique": true }
+    },
+    "band": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "api::band.band",
+      "required": true
+    },
+    "createdByUser": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "plugin::users-permissions.user",
+      "required": true
+    },
+    "kind": {
+      "type": "enumeration",
+      "enum": ["show", "general"],
+      "default": "general"
+    },
+    "mode": {
+      "type": "enumeration",
+      "enum": ["create", "edit"],
+      "default": "create"
+    },
+    "editingUpdate": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "api::artist-update.artist-update"
+    },
+    "event": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "api::event.event"
+    },
+    "showRecap": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "api::show-recap.show-recap"
+    },
+    "visibility": {
+      "type": "enumeration",
+      "enum": ["public", "fan_list", "show_attendees"],
+      "default": "public"
+    },
+    "audienceLocked": {
+      "type": "boolean",
+      "default": false
+    },
+    "title": {
+      "type": "string"
+    },
+    "caption": {
+      "type": "text"
+    },
+    "mediaOrder": {
+      "type": "json"
+    },
+    "mediaCaptions": {
+      "type": "json"
+    },
+    "coverMediaId": {
+      "type": "integer"
+    },
+    "status": {
+      "type": "enumeration",
+      "enum": ["active", "published", "discarded"],
+      "default": "active"
+    },
+    "publishedUpdate": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "api::artist-update.artist-update"
+    },
+    "returnContext": {
+      "type": "json"
+    },
+    "lastActivityAt": {
+      "type": "datetime"
+    }
+  }
+}

@@ -1,0 +1,53 @@
+---
+description: Faneqo product identity, stack, high-risk areas, and production safety
+alwaysApply: true
+---
+
+# Faneqo (Fan Echo) — core rules
+
+## Product
+
+Faneqo is a premium, music-first platform for artists, bands, and their fans — not a generic link-in-bio clone.
+Positioning: **"Bands don't need more links. They need fans."**
+Public brand: **Faneqo**. Legacy **MusicBizQR** infrastructure may remain intentionally.
+
+## Stack (this repo)
+
+Nuxt 3 + Vue 3 + TypeScript (partial) + Tailwind + Pinia + Nitro server routes.
+External Strapi v4 backend (`STRAPI_URL`, repo `qrserver`) is the data/API source of truth for bands, QRs, fans, events, billing, and most analytics. Do not assume backend code lives in this workspace.
+
+Domains:
+
+- Frontend: `https://faneqo.com` (default `BASE_URL`)
+- QR gateways (compatibility): `qr.faneqo.com`, `qr.musicbizqr.com`, `musicbizqr.com/directqr`
+- New QR encodes: `https://qr.faneqo.com/directqr?id=...`
+- Never bulk-convert existing QR URLs; preserve the stored gateway URL on edit.
+
+## Safety defaults
+
+- Smallest safe change; inspect and reuse before creating.
+- Preserve SSR, Nuxt conventions, Strapi API contracts, analytics events, auth, payments, QR resolution, legacy domains, and PWA behavior.
+- Do not update dependencies, `.env`, DNS, Railway, Cloudflare, Firebase, Stripe, or Resend config unless explicitly asked.
+- Do not commit, push, deploy, or run destructive/bulk DB commands without explicit permission.
+- Ask before broad architectural changes.
+
+## High-risk areas
+
+**QR:** `server/routes/directqr.ts`, `server/middleware/qr-gateway.ts`, `utils/qr.ts`, `components/EditQrCode.client.vue`, admin repair endpoints.
+**Subscriptions:** Stripe customer/trial via `server/utils/stripe-trial.ts`, Strapi `/api/stripe/*` — separate from Connect.
+**Connect payouts:** Strapi `bands/:id/payments/onboard` — do not mix with subscription logic.
+**PWA:** Do not re-enable the broken offline navigate fallback; do not force-clear caches or unregister SWs without a migration plan.
+**Rebrand:** Classify each `MusicBizQR`/`musicbizqr` occurrence — visible branding vs intentional legacy vs docs vs uncertain.
+
+## Key paths
+
+- Homepage `pages/index.vue` · Artist page `pages/[bandSlug]/index.vue` · Dashboard `pages/dashboard.vue`
+- Auth: `middleware/auth.ts`, `composables/useFirebase.ts`, `server/api/stripe/confirm-social.ts`
+- Config: `nuxt.config.ts`, `runtimeConfig`
+- Fuller frontend map: `docs/FANEQO_ARCHITECTURE.md`
+
+## How to work
+
+Source precedence, operating loop, and git safety: `AGENTS.md`.
+Work modes, signature design loop, rendered evidence, tools, handoff standard: `docs/FANEQO_CURSOR_OPERATING_SYSTEM.md`.
+Design doctrine: `docs/FANEQO_DESIGN_NORTH_STAR.md`. Architecture invariants: `.cursor/rules/faneqo-architecture.mdc`.

@@ -1,0 +1,57 @@
+name: Backend CI
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+
+permissions:
+  contents: read
+
+concurrency:
+  group: backend-ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test-and-build:
+    name: Focused tests and Strapi build
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      NODE_ENV: development
+      STRAPI_DISABLE_UPDATE_NOTIFICATION: true
+      APP_KEYS: ci-app-key-1,ci-app-key-2
+      API_TOKEN_SALT: ci-api-token-salt
+      ADMIN_JWT_SECRET: ci-admin-jwt-secret
+      TRANSFER_TOKEN_SALT: ci-transfer-token-salt
+      JWT_SECRET: ci-jwt-secret
+      DATABASE_FILENAME: /tmp/faneqo-ci.db
+      AWS_BUCKET: ci-private-bucket
+      AWS_REGION: us-east-1
+      AWS_ACCESS_KEY_ID: ci-access-key
+      AWS_ACCESS_SECRET: ci-secret-key
+      STRIPE_SECRET_KEY: sk_test_ci_only
+      RESEND_API_KEY: re_ci_only
+      EMAIL_DEFAULT_FROM: Faneqo CI <noreply@example.com>
+      EMAIL_DEFAULT_REPLY_TO: Faneqo CI <noreply@example.com>
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Use Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci --no-audit --no-fund
+
+      - name: Run focused messaging, media, and relationship tests
+        run: npm test
+
+      - name: Build Strapi admin
+        # Build even when a focused test fails, so every PR still proves the app builds
+        if: ${{ !cancelled() }}
+        run: npm run build

@@ -1,0 +1,159 @@
+{
+  "kind": "collectionType",
+  "collectionName": "fans",
+  "info": {
+    "singularName": "fan",
+    "pluralName": "fans",
+    "displayName": "Fan",
+    "description": "Fan list entries for bands"
+  },
+  "options": {
+    "draftAndPublish": false
+  },
+  "pluginOptions": {},
+  "attributes": {
+    "email": {
+      "type": "string",
+      "required": true
+    },
+    "firstName": {
+      "type": "string"
+    },
+    "lastName": {
+      "type": "string"
+    },
+    "status": {
+      "type": "enumeration",
+      "enum": ["subscribed", "unsubscribed", "removed"],
+      "default": "subscribed",
+      "required": true
+    },
+    "source": {
+      "type": "enumeration",
+      "enum": ["band_page", "follow_modal", "import", "manual", "show_mode", "other"],
+      "default": "other",
+      "required": true
+    },
+    "subscribedAt": {
+      "type": "datetime",
+      "required": true
+    },
+    "band": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "api::band.band",
+      "inversedBy": "fans"
+    },
+    "visitor": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "api::fan-visitor.fan-visitor",
+      "inversedBy": "fans"
+    },
+    "accountUser": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "plugin::users-permissions.user"
+    },
+    "notes": {
+      "type": "text"
+    },
+    "importBatchId": {
+      "type": "string"
+    },
+    "metadata": {
+      "type": "json"
+    },
+    "city": {
+      "type": "string"
+    },
+    "region": {
+      "type": "string"
+    },
+    "country": {
+      "type": "string"
+    },
+    "timezone": {
+      "type": "string"
+    },
+    "firstSeenAt": {
+      "type": "datetime"
+    },
+    "lastSeenAt": {
+      "type": "datetime"
+    },
+    "capturedDuringShowMode": {
+      "type": "boolean",
+      "default": false
+    },
+    "capturedAtEventId": {
+      "type": "integer"
+    },
+    "captureContext": {
+      "type": "enumeration",
+      "enum": ["normal", "show_mode", "release_mode", "merch_mode"],
+      "default": "normal"
+    },
+    "captureSurface": {
+      "type": "enumeration",
+      "enum": ["band_page", "follow_modal", "qr_poster", "qr_merch_table", "qr_stage_screen", "qr_flyer", "event_page", "direct_link", "unknown"],
+      "default": "unknown"
+    },
+    "captureCampaignId": {
+      "type": "string"
+    },
+    "captureBandPageVariant": {
+      "type": "string"
+    },
+    "consentVersion": {
+      "type": "string"
+    },
+    "consentTextSnapshot": {
+      "type": "text"
+    },
+    "sourceDetail": {
+      "type": "string"
+    },
+    "checkedInShowCount": {
+      "type": "integer",
+      "default": 0
+    },
+    "lastCheckedInAt": {
+      "type": "datetime"
+    },
+    "demo": {
+      "type": "boolean",
+      "default": false
+    },
+    "canonicalIdentityKey": {
+      "type": "string",
+      "private": true,
+      "unique": true,
+      "maxLength": 64,
+      "column": { "unique": true }
+    },
+    "unsubscribeToken": {
+      "type": "string",
+      "private": true
+    },
+    "unsubscribedAt": {
+      "type": "datetime"
+    },
+    "followedAt": {
+      "type": "datetime"
+    },
+    "unfollowedAt": {
+      "type": "datetime"
+    },
+    "lastMessagedAt": {
+      "type": "datetime"
+    },
+    "lastInboxBroadcastAt": {
+      "type": "datetime"
+    },
+    "suppressionReason": {
+      "type": "enumeration",
+      "enum": ["manual", "bounced", "complained"]
+    }
+  }
+}

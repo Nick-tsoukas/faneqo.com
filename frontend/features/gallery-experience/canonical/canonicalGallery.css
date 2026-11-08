@@ -1,0 +1,67 @@
+/**
+ * Canonical gallery viewer surface.
+ *
+ * Namespaced `.fq-cg` so these overrides can never collide with the other
+ * PhotoSwipe surface in this repo (`.fq-pv`).
+ *
+ * Almost everything here is subtraction. PhotoSwipe ships a full UI; we use
+ * none of it, because the photograph owns the screen and every control in
+ * this viewer is ours. Pure `#000` is the baseline (LG-D003) — a photograph
+ * on a tinted matte is a photograph someone has already edited for you.
+ */
+
+.pswp.fq-cg {
+  --pswp-bg: #000;
+  --pswp-placeholder-bg: #000;
+  --pswp-icon-color: rgba(247, 249, 252, 0.94);
+  --pswp-icon-color-secondary: transparent;
+  --pswp-icon-stroke-width: 0;
+  z-index: 100000;
+}
+
+.pswp.fq-cg .pswp__bg {
+  background: #000;
+}
+
+/* The library's own chrome stays off. Ours is teleported in instead. */
+.pswp.fq-cg .pswp__button--close,
+.pswp.fq-cg .pswp__button--arrow,
+.pswp.fq-cg .pswp__button--zoom,
+.pswp.fq-cg .pswp__counter,
+.pswp.fq-cg .pswp__preloader {
+  display: none !important;
+}
+
+.pswp.fq-cg .pswp__img {
+  /* Uncropped, always. The stage reserves do the framing. */
+  object-fit: contain;
+}
+
+/*
+ * Keep the previous photograph until the next is display-ready rather than
+ * flashing black between frames.
+ */
+.pswp.fq-cg .pswp__img--placeholder {
+  opacity: 1;
+}
+
+.pswp.fq-cg .pswp__error-msg {
+  color: rgba(247, 249, 252, 0.72);
+  font-size: 14px;
+  letter-spacing: -0.005em;
+}
+
+.pswp.fq-cg .pswp__error-msg a {
+  color: rgba(247, 249, 252, 0.94);
+}
+
+/* Reduced motion: a clean dissolve, no spatial movement. */
+@media (prefers-reduced-motion: reduce) {
+  .pswp.fq-cg,
+  .pswp.fq-cg .pswp__bg,
+  .pswp.fq-cg .pswp__container,
+  .pswp.fq-cg .pswp__img {
+    transition-duration: 1ms !important;
+    animation-duration: 1ms !important;
+  }
+}

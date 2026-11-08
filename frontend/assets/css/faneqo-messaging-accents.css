@@ -1,0 +1,17 @@
+/**
+ * Messaging-local color system.
+ * Homepage Messaging + fan login language — not the old lime inbox.
+ * Attach `.fq-msg-accents` to a messaging root. Do not promote to a global theme.
+ */
+.fq-msg-accents {
+  --fq-accent-blue: #4CA6FF;
+  --fq-accent-cyan: #39D5FF;
+  --fq-accent-mint: #45E3AE;
+  --fq-accent-mint-hover: #7BF1CA;
+  --fq-accent-gradient: linear-gradient(90deg, #4CA6FF 0%, #39D5FF 50%, #45E3AE 100%);
+  --fq-accent-selected-wash: rgba(57, 213, 255, 0.06);
+  --fq-accent-cyan-soft: rgba(57, 213, 255, 0.14);
+  --fq-accent-mint-soft: rgba(69, 227, 174, 0.1);
+  --fq-accent-focus: #39D5FF;
+  --fq-ink-on-accent: #04140F;
+}

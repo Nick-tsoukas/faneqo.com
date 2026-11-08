@@ -1,0 +1,131 @@
+{
+  "kind": "collectionType",
+  "collectionName": "support_moments",
+  "info": {
+    "singularName": "support-moment",
+    "pluralName": "support-moments",
+    "displayName": "Support Moment",
+    "description": ""
+  },
+  "options": {
+    "draftAndPublish": true
+  },
+  "pluginOptions": {},
+  "attributes": {
+    "band": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "api::band.band",
+      "inversedBy": "support_moments"
+    },
+    "bandNameSnapshot": {
+      "type": "string"
+    },
+    "bandSlugSnapshot": {
+      "type": "string"
+    },
+    "bandImageSnapshot": {
+      "type": "string"
+    },
+    "buttonKey": {
+      "type": "string"
+    },
+    "supportLabel": {
+      "type": "string"
+    },
+    "badgeId": {
+      "type": "string"
+    },
+    "amount": {
+      "type": "integer"
+    },
+    "currency": {
+      "type": "string"
+    },
+    "status": {
+      "type": "enumeration",
+      "enum": [
+        "pending",
+        "paid",
+        "partially_refunded",
+        "refunded",
+        "disputed",
+        "failed",
+        "canceled"
+      ],
+      "default": "pending"
+    },
+    "paidAt": {
+      "type": "datetime"
+    },
+    "stripeCheckoutSessionId": {
+      "type": "string"
+    },
+    "stripePaymentIntentId": {
+      "type": "string"
+    },
+    "stripeChargeId": {
+      "type": "string"
+    },
+    "fanDisplayName": {
+      "type": "string"
+    },
+    "fanHandle": {
+      "type": "string"
+    },
+    "fanMessage": {
+      "type": "string"
+    },
+    "fanEmail": {
+      "type": "string"
+    },
+    "shareOptIn": {
+      "type": "boolean",
+      "default": false
+    },
+    "showAmountOnShare": {
+      "type": "boolean",
+      "default": false
+    },
+    "supporterWallOptIn": {
+      "type": "boolean",
+      "default": false
+    },
+    "source": {
+      "type": "string",
+      "default": "band-profile"
+    },
+    "qrId": {
+      "type": "string"
+    },
+    "eventId": {
+      "type": "string"
+    },
+    "amountCents": {
+      "type": "integer"
+    },
+    "refundedAmountCents": {
+      "type": "integer",
+      "default": 0
+    },
+    "refundedAt": {
+      "type": "datetime"
+    },
+    "platformFeeCents": {
+      "type": "integer"
+    },
+    "stripeFeeCents": {
+      "type": "integer"
+    },
+    "netCents": {
+      "type": "integer"
+    },
+    "disputeStatus": {
+      "type": "string"
+    },
+    "receiptToken": {
+      "type": "string",
+      "private": true
+    }
+  }
+}

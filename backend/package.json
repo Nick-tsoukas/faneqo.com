@@ -1,0 +1,63 @@
+{
+  "name": "qrdb",
+  "private": true,
+  "version": "0.1.0",
+  "description": "A Strapi application",
+  "scripts": {
+    "develop": "strapi develop",
+    "start": "strapi start",
+    "backfill:insights": "node scripts/backfill-band-insights.js",
+    "build": "strapi build",
+    "strapi": "strapi",
+    "test": "npm run test:payments && npm run test:campaigns && npm run test:inbox && npm run test:media && npm run test:relationship && npm run test:analytics && npm run test:fan && npm run test:boot",
+    "test:boot": "node scripts/test-single-strapi-utils.js && node scripts/test-labs-boot-requires.js && node scripts/test-creative-boot-requires.js && node scripts/test-social-login-jwt-guard.js && node scripts/test-public-route-lockdown.js && node scripts/test-api-lockdown-2026-10.js && node scripts/test-security-phase1-2026-11.js && node scripts/test-lifetime-pro-billing.js && node scripts/test-public-route-snapshot.js && node scripts/check-show-time.js && node scripts/test-show-mode-timing.js && node scripts/test-artist-sitemap.js",
+    "test:fan": "node scripts/test-fan-account-conversion.js && node scripts/test-fan-email-normalization.js && node scripts/test-fan-intelligence-band-scope.js && node scripts/test-multi-city-attendees.js && node scripts/test-fan-profile-identity.js && node scripts/test-fan-profile-uniqueness.js && node scripts/test-fan-profile-avatar.js && node scripts/test-fan-account-lifecycle.js && node scripts/test-fan-return-to.js && node scripts/test-editorial-entitlement.js",
+    "audit:fan-profile": "node scripts/audit-fan-profile-uniqueness.js",
+    "test:payments": "node scripts/test-billing-truth.js && node scripts/test-payments-reporting.js && node scripts/test-platform-fee.js && node scripts/test-payments-hardening.js && node scripts/test-payout-onboarding.js",
+    "test:analytics": "node scripts/test-dashboard-glance.js && node scripts/test-image-proxy-guard.js",
+    "test:campaigns": "node scripts/check-svix-signature.js && node scripts/check-campaign-worker-suppression.js && node scripts/test-in-app-campaign-audience.js && node scripts/test-gallery-reference-campaigns.js && node scripts/check-stuck-sending-reclaim.js && node scripts/test-provider-event-state.js && node scripts/test-campaign-integrity-audit.js",
+    "test:inbox": "node scripts/test-direct-messaging.js && node scripts/test-conversation-requests.js && node scripts/test-inbox-uniqueness-ownership.js && node scripts/test-gallery-reference-messaging.js && node scripts/test-inbox-fan-identity.js",
+    "test:media": "node scripts/test-protected-media.js && node scripts/test-gallery-visibility-contract.js && node scripts/test-public-night-share.js && node scripts/test-artist-updates.js && node scripts/test-gallery-draft-lifecycle.js && node scripts/test-rocksnaps-contract.js",
+    "test:relationship": "node scripts/test-relationship-events.js && node scripts/test-canonical-show-summary.js && node scripts/test-show-moments.js && node scripts/test-milestones.js && node scripts/test-artist-fan-progression.js && node scripts/test-artist-fan-relationship-route.js && node scripts/test-fan-passport.js && node scripts/test-show-mode-cover.js && node scripts/test-show-mode-event-activation.js && node scripts/check-show-time.js && node scripts/test-show-mode-timing.js",
+    "audit:campaigns": "node scripts/audit-message-campaign-integrity.js"
+  },
+  "dependencies": {
+    "@aws-sdk/client-s3": "^3.658.0",
+    "@strapi/plugin-cloud": "4.24.4",
+    "@strapi/plugin-documentation": "4.24.4",
+    "@strapi/plugin-i18n": "4.24.4",
+    "@strapi/plugin-users-permissions": "4.24.4",
+    "@strapi/provider-upload-aws-s3": "^4.25.11",
+    "@strapi/strapi": "4.24.4",
+    "@types/stripe": "^8.0.416",
+    "better-sqlite3": "8.6.0",
+    "chart.js": "^4.4.3",
+    "heic-decode": "^2.1.0",
+    "pg": "^8.12.0",
+    "pg-connection-string": "^2.6.4",
+    "react": "^18.0.0",
+    "react-dom": "^18.0.0",
+    "react-router-dom": "5.3.4",
+    "slugify": "^1.6.6",
+    "strapi-plugin-oembed": "^1.2.1",
+    "strapi-provider-email-resend": "^1.0.4",
+    "stripe": "^17.6.0",
+    "styled-components": "5.3.3",
+    "transliteration": "^2.3.5",
+    "vue-chartjs": "^5.3.1"
+  },
+  "author": {
+    "name": "A Strapi developer"
+  },
+  "strapi": {
+    "uuid": "9db8f683-76e7-4914-8f10-d5120e281f5c"
+  },
+  "engines": {
+    "node": ">=18.0.0 <=20.x.x",
+    "npm": ">=6.0.0"
+  },
+  "license": "MIT",
+  "devDependencies": {
+    "@nuxtjs/date-fns": "^1.5.0"
+  }
+}

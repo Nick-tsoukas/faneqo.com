@@ -1,0 +1,64 @@
+{
+  "kind": "collectionType",
+  "collectionName": "conversation_messages",
+  "info": {
+    "singularName": "conversation-message",
+    "pluralName": "conversation-messages",
+    "displayName": "Conversation Message",
+    "description": "Plain-text Inbox message. Independent of email campaigns."
+  },
+  "options": {
+    "draftAndPublish": false
+  },
+  "pluginOptions": {},
+  "attributes": {
+    "conversation": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "api::conversation.conversation",
+      "required": true
+    },
+    "senderParticipant": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "api::conversation-participant.conversation-participant",
+      "required": true
+    },
+    "senderUser": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "plugin::users-permissions.user",
+      "required": true
+    },
+    "senderSide": {
+      "type": "enumeration",
+      "enum": ["band", "fan"],
+      "required": true
+    },
+    "bodyText": {
+      "type": "text",
+      "required": false
+    },
+    "attachmentMedia": {
+      "type": "media",
+      "multiple": false,
+      "required": false,
+      "allowedTypes": ["images"]
+    },
+    "attachmentGallery": {
+      "type": "media",
+      "multiple": true,
+      "required": false,
+      "allowedTypes": ["images"]
+    },
+    "clientMessageId": {
+      "type": "string"
+    },
+    "idempotencyKey": {
+      "type": "string",
+      "unique": true,
+      "private": true,
+      "searchable": false
+    }
+  }
+}

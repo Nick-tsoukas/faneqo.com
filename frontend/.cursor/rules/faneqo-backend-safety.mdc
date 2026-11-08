@@ -1,0 +1,36 @@
+---
+description: Faneqo backend safety — inspect first, fail closed, no speculative infra
+globs:
+  - server/**/*
+  - composables/**/*
+alwaysApply: false
+---
+
+# Faneqo backend safety
+
+Inspect existing implementation before modifying it. Smallest safe change.
+
+Canonical backend is `qrserver`. This Nuxt app must not invent a second source of truth.
+
+## Database
+
+- No destructive production DB work casually
+- No auto-merging fans — classify SAFE / CONFLICTING / UNKNOWN
+- Audit / dry-run before risky migrations
+- Preserve idempotency
+- Fail closed
+
+## Boot and deploy
+
+- Boot-critical new Strapi modules/imports need a basic require/boot test (`qrserver/scripts/test-labs-boot-requires.js` is the pattern)
+- Before backend deploy: relevant tests + boot/import test
+- After backend deploy: `GET /api/health` → 200 **and** inspect Railway startup logs
+- GitHub/deploy success alone does not prove Strapi is healthy
+
+## Performance and scope
+
+- Avoid N+1; prefer grouped/bulk helpers
+- No external provider APIs on normal interactive dashboard paths
+- No Redis, Kafka, materialized views, or microservices without measured need
+- No broad refactors outside the current phase
+- Do not commit, push, deploy, reset, restore, or stash unless explicitly instructed

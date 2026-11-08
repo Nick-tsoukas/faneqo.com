@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="800" viewBox="0 0 1200 800" role="img" aria-label="Lab fixture: room">
+  <defs>
+    <linearGradient id="rm-bg" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#11141c"/>
+      <stop offset="100%" stop-color="#07080a"/>
+    </linearGradient>
+  </defs>
+  <rect width="1200" height="800" fill="url(#rm-bg)"/>
+  <rect x="90" y="110" width="420" height="280" fill="#39d5ff" opacity="0.12"/>
+  <rect x="110" y="130" width="380" height="240" fill="#0c1018"/>
+  <rect x="620" y="90" width="480" height="620" fill="#161820" opacity="0.8"/>
+  <rect x="90" y="470" width="480" height="240" fill="#12141a"/>
+  <rect x="90" y="470" width="480" height="6" fill="#ff4fd8" opacity="0.35"/>
+</svg>

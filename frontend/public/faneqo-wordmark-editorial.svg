@@ -1,0 +1,40 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="917" height="268" viewBox="18 36 909 268" role="img" aria-label="Faneqo">
+  <title>Faneqo</title>
+  <!-- Font-independent editorial wordmark. Paths are outlined Comfortaa Regular glyphs. -->
+  <defs>
+    <clipPath id="wordmarkBody">
+      <path transform="translate(42 238) scale(.21 -.21)" d="M38 39V742Q38 759 49.5 770Q61 781 77 781H546Q563 781 574 770Q585 759 585 743Q585 727 574 716.5Q563 706 546 706H116V430H429Q446 430 457 419.5Q468 409 468 392Q468 376 457 365Q446 354 429 354H116V39Q116 23 105 11.5Q94 0 77 0Q61 0 49.5 11.5Q38 23 38 39Z"/>
+      <path transform="translate(167.75 238) scale(.21 -.21)" d="M617 273V38Q617 22 606 11Q595 0 578 0Q561 0 550 10.5Q539 21 539 38V98Q504 50 450 22.5Q396 -5 331 -5Q255 -5 193.5 31.5Q132 68 96.5 131.5Q61 195 61 273Q61 351 97.5 415Q134 479 197.5 515.5Q261 552 339 552Q417 552 480.5 515.5Q544 479 580.5 415Q617 351 617 273ZM541 273Q541 332 514.5 379.5Q488 427 442 454.5Q396 482 339 482Q282 482 235.5 454.5Q189 427 162.5 379.5Q136 332 136 273Q136 214 162.5 166.5Q189 119 235.5 92Q282 65 339 65Q396 65 442 92Q488 119 514.5 166.5Q541 214 541 273Z"/>
+      <path transform="translate(304.42 238) scale(.21 -.21)" d="M597 298V38Q597 22 586 11Q575 0 559 0Q542 0 531 11Q520 22 520 38V298Q520 387 470.5 433.5Q421 480 341 480Q292 480 252.5 461Q213 442 190 408.5Q167 375 167 334V38Q167 21 156.5 10.5Q146 0 129 0Q112 0 101 10.5Q90 21 90 38V508Q90 525 101 536Q112 547 129 547Q146 547 156.5 536Q167 525 167 508V474Q200 511 247 532Q294 553 349 553Q420 553 476.5 523Q533 493 565 435.5Q597 378 597 298Z"/>
+      <path transform="translate(564.53 238) scale(.21 -.21)" d="M617 38Q617 32 616 29V-195Q616 -212 605.5 -223Q595 -234 578 -234Q561 -234 550 -223Q539 -212 539 -195V98Q504 50 450 22.5Q396 -5 331 -5Q255 -5 193.5 31.5Q132 68 96.5 131.5Q61 195 61 273Q61 351 97.5 415Q134 479 197.5 515.5Q261 552 339 552Q417 552 480.5 515.5Q544 479 580.5 415Q617 351 617 273ZM539 243Q539 246 540 248Q541 256 541 273Q541 332 514.5 379.5Q488 427 442 454.5Q396 482 339 482Q282 482 235.5 454.5Q189 427 162.5 379.5Q136 332 136 273Q136 214 162.5 166.5Q189 119 235.5 92Q282 65 339 65Q418 65 473.5 115Q529 165 539 243Z"/>
+      <path transform="translate(707.5 238) scale(.21 -.21)" d="M61 273Q61 352 97 416Q133 480 196.5 516Q260 552 339 552Q418 552 481 516Q544 480 580.5 416Q617 352 617 273Q617 194 581 130.5Q545 67 481.5 31Q418 -5 339 -5Q260 -5 196.5 31Q133 67 97 130.5Q61 194 61 273ZM541 273Q541 333 515 380.5Q489 428 443 455Q397 482 339 482Q282 482 235.5 455Q189 428 162.5 380.5Q136 333 136 273Q136 214 162.5 166.5Q189 119 235.5 92Q282 65 339 65Q397 65 443 92Q489 119 515 166.5Q541 214 541 273Z"/>
+    </clipPath>
+    <clipPath id="wordmarkAccent">
+      <path transform="translate(441.09 238) scale(.21 -.21)" d="M574 283Q574 267 564 257.5Q554 248 538 248H134Q142 166 198 115Q254 64 338 64Q374 64 410.5 76.5Q447 89 469 108Q482 118 496 118Q507 118 518 110Q531 98 531 83Q531 70 520 60Q487 32 436 13.5Q385 -5 338 -5Q258 -5 195 30.5Q132 66 96.5 129.5Q61 193 61 273Q61 354 94.5 417.5Q128 481 187.5 516.5Q247 552 323 552Q397 552 454 517.5Q511 483 542.5 422Q574 361 574 283ZM136 312H502Q494 389 446 436Q398 483 323 483Q247 483 197 436Q147 389 136 312Z"/>
+    </clipPath>
+    <linearGradient id="body" gradientUnits="userSpaceOnUse" x1="42" y1="0" x2="849.67" y2="0">
+      <stop offset="0%" stop-color="#FFF2FC"/>
+      <stop offset="18%" stop-color="#F58ACD"/>
+      <stop offset="39%" stop-color="#E367D6"/>
+      <stop offset="58%" stop-color="#B974FF"/>
+      <stop offset="82%" stop-color="#B184FF"/>
+      <stop offset="100%" stop-color="#95ACFF"/>
+    </linearGradient>
+    <linearGradient id="mint" gradientUnits="userSpaceOnUse" x1="0" y1="108" x2="0" y2="238">
+      <stop offset="0%" stop-color="#2EE4AD"/>
+      <stop offset="100%" stop-color="#56D9DE"/>
+    </linearGradient>
+    <linearGradient id="echoGradient" gradientUnits="userSpaceOnUse" x1="840.69" y1="100.56" x2="898.69" y2="270.56">
+      <stop offset="0%" stop-color="#42F0D3"/>
+      <stop offset="48%" stop-color="#3BDFF5"/>
+      <stop offset="100%" stop-color="#478DFA"/>
+    </linearGradient>
+  </defs>
+  <rect x="18" y="36" width="909" height="268" fill="url(#body)" clip-path="url(#wordmarkBody)"/>
+  <rect x="18" y="36" width="909" height="268" fill="url(#mint)" clip-path="url(#wordmarkAccent)"/>
+  <g fill="none" stroke="url(#echoGradient)" stroke-linecap="round">
+    <path d="M818.26 124.04 A69 69 0 0 1 818.26 237.09" stroke-width="3.1" opacity=".98"/>
+    <path d="M835.43 113.30 A88 88 0 0 1 835.43 247.83" stroke-width="2.25" opacity=".66"/>
+    <path d="M854.71 103.85 A108 108 0 0 1 854.71 257.28" stroke-width="1.55" opacity=".38"/>
+  </g>
+</svg>

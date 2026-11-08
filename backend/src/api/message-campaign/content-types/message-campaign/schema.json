@@ -1,0 +1,128 @@
+{
+  "kind": "collectionType",
+  "collectionName": "message_campaigns",
+  "info": {
+    "singularName": "message-campaign",
+    "pluralName": "message-campaigns",
+    "displayName": "Message Campaign",
+    "description": "Faneqo broadcast/campaign foundation (Message the Room, Fan List, future announcements)."
+  },
+  "options": {
+    "draftAndPublish": false
+  },
+  "pluginOptions": {},
+  "attributes": {
+    "band": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "api::band.band"
+    },
+    "createdByUser": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "plugin::users-permissions.user"
+    },
+    "showRecap": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "api::show-recap.show-recap"
+    },
+    "artistUpdate": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "api::artist-update.artist-update"
+    },
+    "name": {
+      "type": "string"
+    },
+    "subject": {
+      "type": "string",
+      "required": true
+    },
+    "bodyHtml": {
+      "type": "text"
+    },
+    "bodyText": {
+      "type": "text",
+      "required": true
+    },
+    "audienceType": {
+      "type": "enumeration",
+      "enum": ["show_attendees", "all_fans"],
+      "required": true
+    },
+    "audienceReference": {
+      "type": "string"
+    },
+    "audienceConfig": {
+      "type": "json"
+    },
+    "channel": {
+      "type": "enumeration",
+      "enum": ["email", "in_app"],
+      "default": "email",
+      "required": true
+    },
+    "status": {
+      "type": "enumeration",
+      "enum": [
+        "draft",
+        "queued",
+        "sending",
+        "completed",
+        "partially_failed",
+        "failed",
+        "canceled"
+      ],
+      "default": "draft",
+      "required": true
+    },
+    "recipientCount": {
+      "type": "integer",
+      "default": 0
+    },
+    "sentCount": {
+      "type": "integer",
+      "default": 0
+    },
+    "deliveredCount": {
+      "type": "integer",
+      "default": 0
+    },
+    "failedCount": {
+      "type": "integer",
+      "default": 0
+    },
+    "suppressedCount": {
+      "type": "integer",
+      "default": 0
+    },
+    "bouncedCount": {
+      "type": "integer",
+      "default": 0
+    },
+    "skippedCount": {
+      "type": "integer",
+      "default": 0
+    },
+    "replyTo": {
+      "type": "email"
+    },
+    "queuedAt": {
+      "type": "datetime"
+    },
+    "startedAt": {
+      "type": "datetime"
+    },
+    "completedAt": {
+      "type": "datetime"
+    },
+    "workerLockAt": {
+      "type": "datetime"
+    },
+    "workerLockToken": {
+      "type": "string",
+      "private": true
+    }
+  }
+}

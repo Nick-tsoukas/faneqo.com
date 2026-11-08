@@ -1,0 +1,1076 @@
+/* Faneqo Living Gallery — black foundation. PhotoSwipe is plumbing. */
+
+.fq-lg {
+  /* Shared optical edge for viewport-anchored chrome. */
+  --fq-lg-edge-x: 16px;
+  --pswp-bg: #000;
+  --pswp-placeholder-bg: #000;
+  --pswp-root-z-index: 100000;
+  --pswp-icon-color: transparent;
+  --pswp-icon-color-secondary: transparent;
+  --pswp-icon-stroke-color: transparent;
+  --pswp-icon-stroke-width: 0px;
+}
+
+.fq-lg .pswp__bg {
+  background: #000;
+}
+
+.fq-lg .pswp__bg::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  opacity: var(--fq-al-opacity, 0);
+  transition: opacity 0.18s ease;
+  background:
+    radial-gradient(
+      ellipse var(--fq-al-hl-spread, 70%) 55% at var(--fq-al-hx, 50%) var(--fq-al-hy, 40%),
+      var(--fq-al-highlight, transparent) 0%,
+      transparent 58%
+    ),
+    radial-gradient(
+      ellipse var(--fq-al-haze-spread, 100%) 80% at var(--fq-al-hx, 50%) var(--fq-al-hy, 40%),
+      var(--fq-al-haze, transparent) 0%,
+      transparent 70%
+    ),
+    linear-gradient(
+      90deg,
+      var(--fq-al-left, transparent) 0%,
+      transparent var(--fq-al-edge-reach, 34%),
+      transparent calc(100% - var(--fq-al-edge-reach, 34%)),
+      var(--fq-al-right, transparent) 100%
+    );
+}
+
+.fq-lg.is-arriving .pswp__bg::after {
+  transition: opacity 0.16s ease;
+}
+
+.fq-lg.fq-lg--stage .pswp__bg {
+  background: transparent;
+}
+
+.fq-lg.fq-lg--stage .pswp__bg::after {
+  opacity: 0;
+}
+
+.fq-lg-matte-host {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+}
+
+.fq-lg .pswp__scroll-wrap {
+  z-index: 1;
+}
+
+.fq-lg .pswp__ui {
+  display: none !important;
+}
+
+.fq-lg .pswp__item {
+  overflow: hidden;
+}
+
+.fq-lg.fq-lg--black .pswp__item {
+  background: transparent;
+}
+
+.fq-lg .pswp__content,
+.fq-lg .pswp__zoom-wrap {
+  background: transparent;
+}
+
+.fq-lg .pswp__top-bar,
+.fq-lg .pswp__button--zoom,
+.fq-lg .pswp__button--arrow--prev,
+.fq-lg .pswp__button--arrow--next,
+.fq-lg .pswp__counter,
+.fq-lg .pswp__preloader,
+.fq-lg .pswp__button--close {
+  display: none !important;
+}
+
+.fq-lg .pswp__img,
+.fq-lg .pswp__img--placeholder {
+  background: transparent;
+  border-radius: 0;
+  outline: none;
+  border: 0;
+  /* Microscopic suspension — not a card, not a frame. */
+  box-shadow:
+    0 0 0 1px rgba(247, 249, 252, 0.045),
+    0 18px 48px rgba(0, 0, 0, 0.55),
+    0 2px 8px rgba(0, 0, 0, 0.35);
+}
+
+/* Photographic continuity: keep the placeholder print visible until decode. */
+.fq-lg .pswp__img--placeholder {
+  opacity: 1;
+  filter: none;
+}
+
+/*
+ * A photograph that cannot load states it once, quietly, in the gallery's own
+ * type. Without this it inherits the library's default styling, which reads as
+ * borrowed chrome at the exact moment the product should feel considered.
+ */
+.fq-lg .pswp__error-msg {
+  margin: 0;
+  padding: 0 var(--fq-lg-edge-x, 16px);
+  color: rgba(247, 249, 252, 0.56);
+  font-family: Poppins, ui-sans-serif, system-ui, sans-serif;
+  font-size: 0.72rem;
+  font-weight: 400;
+  letter-spacing: 0.06em;
+  line-height: 1.5;
+  text-align: center;
+}
+
+.fq-lg .pswp__error-msg a {
+  color: inherit;
+}
+
+.fq-lg .pswp__img {
+  transition: opacity 0.12s ease;
+}
+
+.fq-lg .pswp__error-msg {
+  color: rgba(247, 249, 252, 0.55);
+  font-family: Poppins, ui-sans-serif, system-ui, sans-serif;
+  font-size: 0.92rem;
+}
+
+.fq-lg-chrome-root,
+.fq-lg-residue-host {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+
+.fq-lg-afterlight {
+  display: none;
+}
+
+.fq-lg-residue-host {
+  z-index: 3;
+}
+
+.fq-lg-residue {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+.fq-lg-chrome {
+  position: absolute;
+  inset: 0;
+  z-index: 4;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.22s ease, transform 0.22s ease;
+  transform: translateY(3px);
+}
+
+.fq-lg-chrome.is-on {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .fq-lg-chrome {
+    transition: none;
+    transform: none;
+  }
+}
+
+.fq-lg-live {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+.fq-lg-region {
+  position: absolute;
+  z-index: 5;
+  pointer-events: none;
+}
+
+/*
+ * Top chrome is one optical row. Close glyph and count share a 48px band and the
+ * same 16px optical edge, so neither drifts against the other.
+ */
+.fq-lg-region--top-left {
+  top: max(0.15rem, env(safe-area-inset-top, 0px));
+  display: flex;
+  align-items: center;
+  height: 48px;
+  /* Pull the 48px target out so the 18px glyph lands on the optical edge. */
+  left: calc(env(safe-area-inset-left, 0px) + var(--fq-lg-edge-x, 16px) - 15px);
+}
+
+.fq-lg-chrome.is-on .fq-lg-region {
+  pointer-events: none;
+}
+
+.fq-lg-chrome.is-on .fq-lg-ctrl {
+  pointer-events: auto;
+}
+
+.fq-lg-ctrl {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  width: 48px;
+  height: 48px;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: rgba(247, 249, 252, 0.72);
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+}
+
+.fq-lg-ctrl__glyph {
+  display: block;
+  flex: 0 0 auto;
+}
+
+.fq-lg-ctrl.is-pressed {
+  color: #f7f9fc;
+  opacity: 0.92;
+}
+
+.fq-lg-ctrl.is-active {
+  color: #f7f9fc;
+}
+
+.fq-lg-ctrl:focus-visible {
+  outline: 1px solid rgba(247, 249, 252, 0.55);
+  outline-offset: -8px;
+}
+
+.fq-lg-ctrl:disabled {
+  opacity: 0.28;
+  cursor: default;
+}
+
+@media (hover: hover) {
+  .fq-lg-ctrl:hover:not(:disabled) {
+    color: #f7f9fc;
+  }
+}
+
+.fq-lg-pure-index {
+  position: absolute;
+  z-index: 4;
+  margin: 0;
+  left: calc(env(safe-area-inset-left, 0px) + var(--fq-lg-edge-x, 16px));
+  top: calc(var(--fq-lg-photo-top, 40%) + var(--fq-lg-photo-height, 0px) + 0.55rem);
+  color: rgba(247, 249, 252, 0.38);
+  font-family: Poppins, ui-sans-serif, system-ui, sans-serif;
+  font-size: 0.6rem;
+  font-weight: 500;
+  letter-spacing: 0.16em;
+  font-variant-numeric: tabular-nums;
+  pointer-events: none;
+}
+
+/* Interface type — index, actions, technical navigation */
+.fq-lg-type--interface {
+  font-family: Poppins, ui-sans-serif, system-ui, sans-serif;
+  font-weight: 500;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+
+/* Memory / editorial type — artist, venue, city/date, caption */
+.fq-lg-type--editorial {
+  font-family: Poppins, ui-sans-serif, system-ui, sans-serif;
+  font-weight: 500;
+  letter-spacing: 0.04em;
+  text-transform: none;
+}
+
+.fq-lg-stage-identity {
+  position: absolute;
+  z-index: 5;
+  left: 0;
+  right: 0;
+  pointer-events: none;
+  padding-inline:
+    calc(env(safe-area-inset-left, 0px) + var(--fq-lg-edge-x, 16px))
+    calc(env(safe-area-inset-right, 0px) + var(--fq-lg-edge-x, 16px));
+  opacity: 0;
+  transform: translateY(5px);
+  transition: opacity 0.14s ease, transform 0.14s ease;
+}
+
+.fq-lg-stage-identity.is-settled {
+  opacity: 1;
+  transform: translateY(0);
+  transition:
+    opacity 0.16s ease 0.05s,
+    transform 0.16s ease 0.05s;
+}
+
+/*
+ * ===========================================================================
+ * DESKTOP — image-anchored composition
+ * ===========================================================================
+ * On a large display the difference between "designed" and "responsively
+ * generated" is what the chrome is measured from. Everything hangs off the
+ * photograph's own rect, so the print behaves like a hung object rather than
+ * a picture floating in browser furniture.
+ */
+
+/*
+ * Editorial column — portrait hands its leftover width a real job. Type is set
+ * in sentence case at a reading size, because this is the one region in the
+ * gallery that is genuinely meant to be read rather than glanced at.
+ *
+ * The block sits on the print's baseline, which is where a label sits under a
+ * hung photograph. Flush to the top it left three short lines stranded above
+ * several hundred pixels of nothing; at the foot, the darkness above the label
+ * is the same interval the photograph already has on the phone, and every
+ * desktop orientation ends up with its words on the print's lower edge.
+ */
+.fq-lg-stage-identity--context-column {
+  left: var(--fq-lg-stage-col-left, 60%);
+  right: auto;
+  width: var(--fq-lg-stage-col-width, 22rem);
+  top: var(--fq-lg-stage-photo-top, 10%);
+  bottom: auto;
+  height: var(--fq-lg-stage-photo-height, auto);
+  padding-inline: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  text-transform: none;
+}
+
+.fq-lg-stage-col__eyebrow {
+  margin: 0;
+  font-size: 0.62rem;
+  font-weight: 500;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: rgba(247, 249, 252, 0.4);
+}
+
+.fq-lg-stage-col__artist {
+  margin: 1.5rem 0 0;
+  font-size: 1.62rem;
+  font-weight: 600;
+  letter-spacing: -0.005em;
+  line-height: 1.12;
+  text-transform: none;
+  color: rgba(247, 249, 252, 0.94);
+  max-width: none;
+}
+
+.fq-lg-stage-col__venue {
+  margin: 0.72rem 0 0;
+  font-size: 0.86rem;
+  font-weight: 500;
+  letter-spacing: 0.01em;
+  text-transform: none;
+  color: rgba(247, 249, 252, 0.72);
+  max-width: none;
+}
+
+.fq-lg-stage-col__place {
+  margin: 0.2rem 0 0;
+  font-size: 0.76rem;
+  font-weight: 400;
+  letter-spacing: 0.01em;
+  text-transform: none;
+  color: rgba(247, 249, 252, 0.5);
+  max-width: none;
+}
+
+/*
+ * The caption follows the identity block after bounded air, and only the credit
+ * is anchored to the print's foot. Pushing the caption itself to the bottom tied
+ * the column to both edges but left a void through the middle of the spread.
+ */
+.fq-lg-stage-col__caption {
+  margin: 2.4rem 0 0;
+  font-size: 0.92rem;
+  font-weight: 400;
+  line-height: 1.58;
+  letter-spacing: 0.004em;
+  text-transform: none;
+  color: rgba(247, 249, 252, 0.8);
+  max-width: 32ch;
+}
+
+/*
+ * The column's foot carries the credit and the sequence position, so the two
+ * quietest facts sit together on the print's baseline instead of one of them
+ * floating at the top of the display.
+ */
+.fq-lg-stage-col__foot {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 1.5rem;
+  margin: 0;
+  padding-top: 1.35rem;
+}
+
+.fq-lg-stage-col__credit,
+.fq-lg-stage-col__index {
+  margin: 0;
+  font-size: 0.6875rem;
+  font-weight: 400;
+  letter-spacing: 0.07em;
+  text-transform: none;
+  color: rgba(247, 249, 252, 0.42);
+  max-width: none;
+}
+
+.fq-lg-stage-col__index {
+  flex: 0 0 auto;
+  margin-left: auto;
+  letter-spacing: 0.16em;
+  font-variant-numeric: tabular-nums;
+  color: rgba(247, 249, 252, 0.36);
+}
+
+/*
+ * Close joins the print rather than the browser window: it sits just above the
+ * photograph's upper-left corner, so the control belongs to the object it
+ * closes. Chrome that is sized for a thumb is a speck on a monitor, so the
+ * whole system steps up — glyph, target, type and spacing together.
+ */
+/*
+ * Close sits in the display's own corner rather than on the print's. Anchored
+ * to the photograph it either lands on the image when the print is tall, or
+ * jumps sideways as you move between a portrait and a landscape frame; chrome
+ * that moves while the photographs change is chrome you have to re-find.
+ */
+.fq-lg-chrome--desktop .fq-lg-region--top-left,
+.fq-lg-chrome--ultrawide .fq-lg-region--top-left {
+  left: 15px;
+  top: 12px;
+  height: 56px;
+}
+
+.fq-lg-chrome--ultrawide .fq-lg-region--top-left {
+  left: 23px;
+  top: 20px;
+}
+
+.fq-lg-chrome--desktop .fq-lg-ctrl,
+.fq-lg-chrome--ultrawide .fq-lg-ctrl {
+  width: 56px;
+  height: 56px;
+  color: rgba(247, 249, 252, 0.62);
+}
+
+/*
+ * The contact sheet is aligned to the print's width and the frames grow, since
+ * a desktop sheet is read at a distance rather than thumbed. Both the sheet and
+ * the controls stay inside the print's column so the shelf belongs to the
+ * photograph rather than spanning the whole display.
+ */
+.fq-lg-dock--desktop .fq-lg-thumbs,
+.fq-lg-dock--ultrawide .fq-lg-thumbs {
+  --fq-lg-thumb-h: 66px;
+  --fq-lg-thumb-h-active: 92px;
+  height: 108px;
+  gap: 14px;
+  padding-top: 8px;
+  padding-bottom: 8px;
+}
+
+.fq-lg-dock--ultrawide .fq-lg-thumbs {
+  --fq-lg-thumb-h: 76px;
+  --fq-lg-thumb-h-active: 104px;
+  height: 122px;
+  gap: 16px;
+}
+
+.fq-lg-dock--desktop .fq-lg-dock__bar,
+.fq-lg-dock--ultrawide .fq-lg-dock__bar {
+  min-height: 58px;
+  gap: 1.75rem;
+}
+
+.fq-lg-dock--ultrawide .fq-lg-dock__bar {
+  min-height: 62px;
+  gap: 2rem;
+}
+
+.fq-lg-dock--desktop .fq-lg-word__label,
+.fq-lg-dock--ultrawide .fq-lg-word__label {
+  font-size: 0.9375rem;
+}
+
+.fq-lg-dock--ultrawide .fq-lg-word__label {
+  font-size: 1rem;
+}
+
+.fq-lg-dock--desktop .fq-lg-plate,
+.fq-lg-dock--ultrawide .fq-lg-plate {
+  padding-bottom: 0.7rem;
+}
+
+.fq-lg-dock--desktop .fq-lg-plate__caption,
+.fq-lg-dock--ultrawide .fq-lg-plate__caption {
+  font-size: 1.0625rem;
+  max-width: 46ch;
+}
+
+.fq-lg-dock--desktop .fq-lg-plate__identity,
+.fq-lg-dock--ultrawide .fq-lg-plate__identity {
+  font-size: 0.625rem;
+  letter-spacing: 0.2em;
+}
+
+.fq-lg-dock--desktop .fq-lg-plate.is-lead-identity .fq-lg-plate__identity,
+.fq-lg-dock--ultrawide .fq-lg-plate.is-lead-identity .fq-lg-plate__identity {
+  font-size: 0.875rem;
+}
+
+.fq-lg-dock--desktop .fq-lg-plate__place,
+.fq-lg-dock--desktop .fq-lg-plate__index,
+.fq-lg-dock--ultrawide .fq-lg-plate__place,
+.fq-lg-dock--ultrawide .fq-lg-plate__index {
+  font-size: 0.625rem;
+}
+
+.fq-lg-dock--desktop .fq-lg-dock__info,
+.fq-lg-dock--ultrawide .fq-lg-dock__info {
+  margin: 0;
+  max-width: min(52rem, var(--fq-lg-stage-photo-width, 100%));
+  padding-inline: var(--fq-lg-shelf-left, 16px) var(--fq-lg-shelf-right, 16px);
+}
+
+.fq-lg-dock--desktop .fq-lg-info__caption,
+.fq-lg-dock--ultrawide .fq-lg-info__caption {
+  font-size: 1.18rem;
+}
+
+.fq-lg-dock--desktop .fq-lg-info__artist,
+.fq-lg-dock--ultrawide .fq-lg-info__artist {
+  font-size: 0.8125rem;
+}
+
+.fq-lg-dock--desktop .fq-lg-info__venue,
+.fq-lg-dock--desktop .fq-lg-info__place,
+.fq-lg-dock--ultrawide .fq-lg-info__venue,
+.fq-lg-dock--ultrawide .fq-lg-info__place {
+  font-size: 0.75rem;
+}
+
+/*
+ * The editorial column is read across a desk, not at arm's length, so on the
+ * largest displays the whole column steps up together. Holding phone type in a
+ * 400px column on a 4K panel is what makes a layout look generated.
+ */
+.fq-lg-stage-identity--on-ultrawide .fq-lg-stage-col__eyebrow {
+  font-size: 0.6875rem;
+  letter-spacing: 0.22em;
+}
+
+.fq-lg-stage-identity--on-ultrawide .fq-lg-stage-col__artist {
+  margin-top: 1.8rem;
+  font-size: 2.05rem;
+}
+
+.fq-lg-stage-identity--on-ultrawide .fq-lg-stage-col__venue {
+  font-size: 1rem;
+}
+
+.fq-lg-stage-identity--on-ultrawide .fq-lg-stage-col__place {
+  font-size: 0.875rem;
+}
+
+.fq-lg-stage-identity--on-ultrawide .fq-lg-stage-col__caption {
+  margin-top: 2.8rem;
+  font-size: 1.0625rem;
+  line-height: 1.6;
+  max-width: 38ch;
+}
+
+.fq-lg-stage-identity--on-ultrawide .fq-lg-stage-col__credit,
+.fq-lg-stage-identity--on-ultrawide .fq-lg-stage-col__index {
+  font-size: 0.78125rem;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .fq-lg-stage-identity,
+  .fq-lg-stage-identity.is-settled {
+    transition: none;
+    transform: none;
+    opacity: 1;
+  }
+}
+
+/* Fixed Gallery Dock — bottom edge never moves. Expands upward only. */
+.fq-lg-dock {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 6;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  align-items: stretch;
+  pointer-events: none;
+  opacity: 0;
+  transform: translateY(4px);
+  transition: opacity 0.22s ease, transform 0.22s ease;
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+}
+
+.fq-lg-dock.is-on {
+  opacity: 1;
+  transform: translateY(0);
+  pointer-events: none;
+}
+
+.fq-lg-dock.is-on .fq-lg-dock__bar,
+.fq-lg-dock.is-on .fq-lg-dock__expand {
+  pointer-events: auto;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .fq-lg-dock {
+    transition: none;
+    transform: none;
+  }
+}
+
+/*
+ * ===========================================================================
+ * THE GALLERY SHELF
+ * ===========================================================================
+ * Caption plate, contact sheet, actions — one composed block at the foot of
+ * the screen, hung on the photograph's own column. The composition reserves
+ * its height, so the print never moves when the shelf appears.
+ *
+ * `--fq-lg-shelf-left` / `--fq-lg-shelf-right` resolve to the print's edges on
+ * a large display and to the shared optical edge on a phone, where the print
+ * is already full-bleed.
+ */
+.fq-lg-dock__bar {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 1.35rem;
+  min-height: 56px;
+  padding:
+    0.1rem
+    var(--fq-lg-shelf-right, 16px)
+    0.35rem
+    var(--fq-lg-shelf-left, 16px);
+}
+
+/* An action is a word. Touch height comes from padding, not from a caption. */
+.fq-lg-word {
+  display: inline-flex;
+  align-items: center;
+  min-height: 46px;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: rgba(247, 249, 252, 0.5);
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+  transition: color 0.14s ease;
+}
+
+.fq-lg-word__label {
+  font-family: Poppins, ui-sans-serif, system-ui, sans-serif;
+  font-size: 0.8125rem;
+  font-weight: 500;
+  letter-spacing: 0.015em;
+  line-height: 1;
+  color: inherit;
+}
+
+.fq-lg-word.is-active,
+.fq-lg-word.is-pressed {
+  color: #f7f9fc;
+}
+
+.fq-lg-word:disabled {
+  opacity: 0.3;
+  cursor: default;
+}
+
+.fq-lg-word:focus-visible {
+  outline: 1px solid rgba(247, 249, 252, 0.6);
+  outline-offset: 5px;
+}
+
+@media (hover: hover) {
+  .fq-lg-word:hover:not(:disabled) {
+    color: #f7f9fc;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .fq-lg-word {
+    transition: none;
+  }
+}
+
+/*
+ * The caption plate. It leads with the photograph's own words at a reading
+ * size, then drops to tracked caps for identity — two type voices instead of
+ * three stacked metadata fields, and the count sits with them rather than
+ * floating opposite the close control.
+ */
+.fq-lg-plate {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 1.25rem;
+  padding:
+    0.2rem
+    var(--fq-lg-shelf-right, 16px)
+    0.55rem
+    var(--fq-lg-shelf-left, 16px);
+}
+
+.fq-lg-plate__text {
+  min-width: 0;
+}
+
+.fq-lg-plate p {
+  margin: 0;
+  font-family: Poppins, ui-sans-serif, system-ui, sans-serif;
+}
+
+.fq-lg-plate__caption {
+  font-size: 0.9375rem;
+  font-weight: 400;
+  line-height: 1.34;
+  letter-spacing: 0.002em;
+  color: rgba(247, 249, 252, 0.93);
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.fq-lg-plate__identity {
+  margin-top: 0.34rem;
+  font-size: 0.5625rem;
+  font-weight: 600;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  line-height: 1.3;
+  color: rgba(247, 249, 252, 0.52);
+}
+
+/* Without a caption the identity is the plate, so it is set as the lead. */
+.fq-lg-plate.is-lead-identity .fq-lg-plate__identity {
+  margin-top: 0;
+  font-size: 0.75rem;
+  letter-spacing: 0.14em;
+  color: rgba(247, 249, 252, 0.88);
+}
+
+.fq-lg-plate__place {
+  margin-top: 0.16rem;
+  font-size: 0.5625rem;
+  font-weight: 400;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  line-height: 1.3;
+  color: rgba(247, 249, 252, 0.36);
+}
+
+.fq-lg-plate__index {
+  flex: 0 0 auto;
+  padding-bottom: 0.1rem;
+  font-size: 0.5625rem;
+  font-weight: 500;
+  letter-spacing: 0.16em;
+  line-height: 1.3;
+  font-variant-numeric: tabular-nums;
+  color: rgba(247, 249, 252, 0.4);
+}
+
+/*
+ * Info and a raised contact sheet must stay readable over a bright frame. The
+ * shelf is black — the same material as the field — raised behind the dock
+ * with a soft upper edge so no hard band cuts across the photograph.
+ */
+.fq-lg-dock.is-info::before,
+.fq-lg-dock.is-photos::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background: linear-gradient(
+    to top,
+    #000 0,
+    #000 calc(100% - 30px),
+    rgba(0, 0, 0, 0) 100%
+  );
+}
+
+.fq-lg-dock__expand,
+.fq-lg-dock__bar {
+  position: relative;
+}
+
+.fq-lg-dock__expand {
+  width: 100%;
+}
+
+.fq-lg-dock__rail {
+  padding-top: 0.35rem;
+}
+
+/* Resident on the shelf: its height is already reserved by the composition. */
+.fq-lg-dock__rail.is-resident {
+  padding-top: 0;
+}
+
+.fq-lg-dock__info {
+  max-width: min(38rem, 100%);
+  margin: 0;
+  padding:
+    0.9rem
+    var(--fq-lg-shelf-right, 16px)
+    0.95rem
+    var(--fq-lg-shelf-left, 16px);
+  color: rgba(247, 249, 252, 0.72);
+  font-family: Poppins, ui-sans-serif, system-ui, sans-serif;
+  pointer-events: auto;
+  overflow-x: hidden;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior: contain;
+  /* A long caption fades out; it must never shear a line of type in half. */
+  mask-image: linear-gradient(to bottom, #000 0, #000 calc(100% - 15px), transparent 100%);
+  -webkit-mask-image: linear-gradient(to bottom, #000 0, #000 calc(100% - 15px), transparent 100%);
+}
+
+/*
+ * Info is editorial context under a print: caption, then who / where / when.
+ * Hierarchy is carried by size, weight and value — never by field labels.
+ */
+.fq-lg-info__line {
+  margin: 0;
+}
+
+.fq-lg-info__caption {
+  font-size: 1.02rem;
+  font-weight: 500;
+  letter-spacing: 0.005em;
+  line-height: 1.34;
+  color: rgba(247, 249, 252, 0.92);
+}
+
+.fq-lg-info__artist {
+  margin-top: 0.72rem;
+  font-size: 0.74rem;
+  font-weight: 600;
+  letter-spacing: 0.1em;
+  color: rgba(247, 249, 252, 0.82);
+}
+
+.fq-lg-info__venue {
+  margin-top: 0.24rem;
+  font-size: 0.66rem;
+  font-weight: 500;
+  letter-spacing: 0.08em;
+  color: rgba(247, 249, 252, 0.62);
+}
+
+.fq-lg-info__place {
+  margin-top: 0.12rem;
+  font-size: 0.66rem;
+  font-weight: 400;
+  letter-spacing: 0.08em;
+  color: rgba(247, 249, 252, 0.5);
+}
+
+.fq-lg-info__credit {
+  margin-top: 0.62rem;
+  font-size: 0.62rem;
+  font-weight: 400;
+  letter-spacing: 0.05em;
+  color: rgba(247, 249, 252, 0.44);
+}
+
+.fq-lg-info__title {
+  margin-top: 0.3rem;
+  font-size: 0.66rem;
+  font-weight: 500;
+  letter-spacing: 0.08em;
+  color: rgba(247, 249, 252, 0.62);
+}
+
+.fq-lg-dock__info-empty p {
+  margin: 0;
+  text-transform: uppercase;
+  letter-spacing: 0.14em;
+  font-size: 0.58rem;
+  font-weight: 500;
+  color: rgba(247, 249, 252, 0.42);
+}
+
+.fq-lg-dock__info-empty p + p {
+  margin-top: 0.28rem;
+  color: rgba(247, 249, 252, 0.28);
+  font-size: 0.5rem;
+}
+
+/*
+ * Contact sheet on a fixed track. The track height never depends on which
+ * photograph is active, so selecting a portrait after a landscape cannot move
+ * the sheet. Frames keep true orientation; the active frame is always tallest.
+ */
+.fq-lg-thumbs {
+  --fq-lg-thumb-h: 46px;
+  --fq-lg-thumb-h-active: 62px;
+  display: flex;
+  align-items: flex-end;
+  gap: 9px;
+  overflow-x: auto;
+  overflow-y: hidden;
+  height: 76px;
+  /* A contact sheet is read from its first frame, not from the middle. */
+  justify-content: flex-start;
+  /* The sheet hangs on the photograph's own column. */
+  padding:
+    6px
+    var(--fq-lg-shelf-right, 16px)
+    8px
+    var(--fq-lg-shelf-left, 16px);
+  scroll-padding-inline:
+    var(--fq-lg-shelf-left, 16px)
+    var(--fq-lg-shelf-right, 16px);
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+  touch-action: pan-x;
+}
+
+.fq-lg-thumbs::-webkit-scrollbar {
+  display: none;
+}
+
+.fq-lg-thumbs__item {
+  position: relative;
+  flex: 0 0 auto;
+  width: auto;
+  height: var(--fq-lg-thumb-h, 44px);
+  aspect-ratio: var(--fq-lg-thumb-aspect, 0.75);
+  min-width: 26px;
+  max-width: 132px;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  opacity: 0.34;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+  transition: opacity 0.14s ease, height 0.14s ease;
+}
+
+/*
+ * A contact sheet shows every frame. The active one is already carried by
+ * height and the underline, so the rest can stay legible instead of dissolving
+ * — dark stage photography at 44px disappears entirely below about 0.5.
+ */
+.fq-lg-thumbs__item.is-ready {
+  opacity: 0.58;
+}
+
+.fq-lg-thumbs__item.is-neighbor.is-ready {
+  opacity: 0.72;
+}
+
+.fq-lg-thumbs__item.is-active,
+.fq-lg-thumbs__item[aria-current='true'] {
+  opacity: 1;
+  height: var(--fq-lg-thumb-h-active, 62px);
+}
+
+.fq-lg-thumbs__item:focus-visible {
+  outline: 1px solid rgba(247, 249, 252, 0.7);
+  outline-offset: 5px;
+}
+
+.fq-lg-thumbs__item:active {
+  opacity: 0.88;
+}
+
+.fq-lg-thumbs__item img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  object-position: center bottom;
+  opacity: 0.35;
+  background: transparent;
+}
+
+.fq-lg-thumbs__item.is-ready img {
+  opacity: 1;
+}
+
+/*
+ * The chosen frame is ringed, the way a frame is marked up on a real contact
+ * sheet. An underline beneath it was tab language — it described a navigation
+ * control rather than a selected print.
+ */
+.fq-lg-thumbs__item.is-active::after {
+  content: '';
+  position: absolute;
+  inset: -4px;
+  border: 1px solid rgba(247, 249, 252, 0.62);
+  pointer-events: none;
+}
+
+@media (hover: hover) {
+  .fq-lg-thumbs__item:hover:not(.is-active) {
+    opacity: 0.92;
+  }
+
+  .fq-lg-thumbs__item:hover:not(.is-active)::after {
+    content: '';
+    position: absolute;
+    inset: -4px;
+    border: 1px solid rgba(247, 249, 252, 0.22);
+    pointer-events: none;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .fq-lg-chrome,
+  .fq-lg-dock,
+  .fq-lg-thumbs__item,
+  .fq-lg-thumbs__item img {
+    transition: none;
+  }
+}
+
+/* Source print stays in the page for zoom bounds; hide it so the photograph does not double. */
+[data-gx-continuity='hidden'] {
+  opacity: 0 !important;
+  pointer-events: none !important;
+}

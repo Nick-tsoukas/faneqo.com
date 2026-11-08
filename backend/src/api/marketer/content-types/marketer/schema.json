@@ -1,0 +1,60 @@
+{
+  "kind": "collectionType",
+  "collectionName": "marketers",
+  "info": {
+    "singularName": "marketer",
+    "pluralName": "marketers",
+    "displayName": "Marketer",
+    "description": "Marketing partners for referral attribution"
+  },
+  "options": {
+    "draftAndPublish": false
+  },
+  "pluginOptions": {},
+  "attributes": {
+    "name": {
+      "type": "string",
+      "required": true
+    },
+    "slug": {
+      "type": "uid",
+      "targetField": "name"
+    },
+    "email": {
+      "type": "email",
+      "required": true
+    },
+    "commissionPercent": {
+      "type": "integer",
+      "default": 10,
+      "min": 0,
+      "max": 100
+    },
+    "isActive": {
+      "type": "boolean",
+      "default": true
+    },
+    "code": {
+      "type": "string",
+      "unique": true,
+      "required": true
+    },
+    "referredUsers": {
+      "type": "relation",
+      "relation": "oneToMany",
+      "target": "plugin::users-permissions.user",
+      "mappedBy": "referredByMarketer"
+    },
+    "totalClicks": {
+      "type": "integer",
+      "default": 0
+    },
+    "clicksToday": {
+      "type": "integer",
+      "default": 0
+    },
+    "lastClickDate": {
+      "type": "date"
+    }
+  }
+}

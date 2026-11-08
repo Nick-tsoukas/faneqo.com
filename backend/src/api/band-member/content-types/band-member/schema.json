@@ -1,0 +1,45 @@
+{
+  "kind": "collectionType",
+  "collectionName": "band_members",
+  "info": {
+    "singularName": "band-member",
+    "pluralName": "band-members",
+    "displayName": "Band Member",
+    "description": "Team membership for a band page (owner / manager / viewer). Page access only — not equity or company ownership."
+  },
+  "options": {
+    "draftAndPublish": false
+  },
+  "pluginOptions": {},
+  "attributes": {
+    "band": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "api::band.band"
+    },
+    "user": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "plugin::users-permissions.user"
+    },
+    "role": {
+      "type": "enumeration",
+      "enum": ["owner", "manager", "viewer"],
+      "required": true
+    },
+    "status": {
+      "type": "enumeration",
+      "enum": ["active", "removed"],
+      "default": "active",
+      "required": true
+    },
+    "invitedBy": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "plugin::users-permissions.user"
+    },
+    "acceptedAt": {
+      "type": "datetime"
+    }
+  }
+}

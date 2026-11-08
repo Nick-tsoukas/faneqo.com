@@ -1,0 +1,86 @@
+{
+  "kind": "collectionType",
+  "collectionName": "creatives",
+  "info": {
+    "singularName": "creative",
+    "pluralName": "creatives",
+    "displayName": "Creative",
+    "description": "Private Creative Studio records: one saved instance of a social template with its frozen artist snapshot."
+  },
+  "options": {
+    "draftAndPublish": false
+  },
+  "pluginOptions": {},
+  "attributes": {
+    "title": {
+      "type": "string",
+      "required": true,
+      "maxLength": 160
+    },
+    "templateId": {
+      "type": "string",
+      "required": true,
+      "maxLength": 40
+    },
+    "kind": {
+      "type": "enumeration",
+      "enum": ["post", "ad"],
+      "default": "post",
+      "required": true
+    },
+    "status": {
+      "type": "enumeration",
+      "enum": ["draft", "ready"],
+      "default": "draft",
+      "required": true
+    },
+    "formats": {
+      "type": "json"
+    },
+    "primaryFormat": {
+      "type": "string",
+      "maxLength": 16
+    },
+    "variant": {
+      "type": "string",
+      "maxLength": 40
+    },
+    "content": {
+      "type": "json"
+    },
+    "snapshot": {
+      "type": "json"
+    },
+    "rightsStatus": {
+      "type": "enumeration",
+      "enum": ["clear", "needs_permission"],
+      "default": "clear"
+    },
+    "sceneCount": {
+      "type": "integer",
+      "default": 1
+    },
+    "bandId": {
+      "type": "integer"
+    },
+    "bandSlug": {
+      "type": "string",
+      "maxLength": 120
+    },
+    "artistName": {
+      "type": "string",
+      "maxLength": 160
+    },
+    "ownerEmail": {
+      "type": "string",
+      "required": true,
+      "maxLength": 254,
+      "private": true
+    },
+    "owner": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "plugin::users-permissions.user"
+    }
+  }
+}

@@ -1,0 +1,22 @@
+---
+description: Faneqo server-side safety for Nitro routes and data access in this repo
+globs:
+  - server/**/*
+  - composables/**/*
+alwaysApply: false
+---
+
+# Faneqo server safety (frontend repo)
+
+Inspect the existing route, composable, and Strapi contract before modifying. Smallest safe change.
+
+`qrserver` (Strapi) is the canonical backend. This Nuxt app must not become a second source of truth: no duplicated business rules, no client-invented relationship facts (attendance, show ordinal, returning, counts), no schema decisions taken here.
+
+- Fail closed on auth, billing, and protected-media paths. Never let a UI state assert something the server did not confirm.
+- Preserve idempotency on anything that can be retried or double-submitted.
+- Do not put external provider APIs (Stripe, Spotify, Resend, Firebase admin) on normal interactive dashboard paths.
+- Avoid N+1 fan-out from server routes; prefer one grouped call to Strapi.
+- Do not change `.env`, provider config, or dependencies unless explicitly asked.
+- Do not commit, push, deploy, reset, restore, or stash unless explicitly instructed.
+
+Backend-side rules — database safety, boot/require tests, deploy verification (`GET /api/health` plus Railway logs) — are owned by `qrserver/.cursor/rules/faneqo-backend-safety.mdc` and `qrserver/AGENTS.md`. Follow those when the change lands in `qrserver`.

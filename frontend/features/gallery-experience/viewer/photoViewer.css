@@ -1,0 +1,450 @@
+/**
+ * Faneqo Photo Viewer.
+ *
+ * The photograph owns the display. Everything below is a hairline, a numeral or
+ * a word, anchored to a display edge, sized by the room it is standing in.
+ *
+ * No glow, no gradient wallpaper, no blur panels. The only non-flat value in
+ * this file is a drop-shadow on the close glyph and the caption, and it exists
+ * for one reason: a frame can reach the display edge, and a control that sits
+ * on a photograph still has to be readable.
+ */
+
+.pswp.fq-pv {
+  --pswp-bg: #000;
+  --pswp-placeholder-bg: #000;
+  --fq-pv-ink: 247, 249, 252;
+
+  /* Written by the viewer from viewerGeometry.js. Never guessed in CSS. */
+  --fq-pv-edge: 0px;
+  --fq-pv-top: 12px;
+  --fq-pv-foot: 64px;
+  --fq-pv-sheet: 62px;
+  --fq-pv-safe-top: 0px;
+  --fq-pv-safe-bottom: 0px;
+  --fq-pv-print-x: 0px;
+  --fq-pv-print-y: 0px;
+  --fq-pv-print-w: 0px;
+  --fq-pv-print-h: 0px;
+
+  --fq-pv-caption: 15px;
+  --fq-pv-index: 12px;
+  --fq-pv-credit: 11px;
+  --fq-pv-glyph: 20px;
+  --fq-pv-hit: 44px;
+  --fq-pv-inset: 8px;
+
+  font-family: Poppins, ui-sans-serif, system-ui, sans-serif;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.pswp.fq-pv .pswp__bg {
+  background: #000;
+}
+
+/* The cut. Opacity only — PhotoSwipe owns every transform in this subtree. */
+.pswp.fq-pv .pswp__container {
+  transition: opacity 240ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.pswp.fq-pv.is-cut .pswp__container {
+  opacity: 0;
+  transition: opacity 155ms linear;
+}
+
+.pswp.fq-pv .pswp__error-msg {
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 400;
+  letter-spacing: -0.01em;
+  color: rgba(var(--fq-pv-ink), 0.62);
+}
+
+/* ------------------------------------------------------------------ *
+ * device steps
+ * ------------------------------------------------------------------ */
+
+.pswp.fq-pv[data-device='tablet'] {
+  --fq-pv-caption: 15px;
+  --fq-pv-index: 12px;
+  --fq-pv-credit: 11px;
+  --fq-pv-glyph: 21px;
+  --fq-pv-inset: 14px;
+}
+
+.pswp.fq-pv[data-device='desktop'] {
+  --fq-pv-caption: 16px;
+  --fq-pv-index: 13px;
+  --fq-pv-credit: 11.5px;
+  --fq-pv-glyph: 22px;
+  --fq-pv-hit: 48px;
+  --fq-pv-inset: 18px;
+}
+
+.pswp.fq-pv[data-device='wall'] {
+  --fq-pv-caption: 19px;
+  --fq-pv-index: 15px;
+  --fq-pv-credit: 13px;
+  --fq-pv-glyph: 26px;
+  --fq-pv-hit: 56px;
+  --fq-pv-inset: 26px;
+}
+
+/* ------------------------------------------------------------------ *
+ * chrome shell
+ * ------------------------------------------------------------------ */
+
+.fq-pv-chrome {
+  position: absolute;
+  inset: 0;
+  z-index: 12;
+  pointer-events: none;
+}
+
+.fq-pv-chrome > * {
+  transition: opacity 200ms ease, transform 240ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+/* Peace: the photograph, and nothing else at all. */
+.pswp.fq-pv.is-peace .fq-pv-chrome > * {
+  opacity: 0 !important;
+  pointer-events: none !important;
+}
+
+.fq-pv-live {
+  position: absolute;
+  width: 1px;
+  height: 1px
+  ;
+  margin: -1px;
+  padding: 0;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* ------------------------------------------------------------------ *
+ * close
+ * ------------------------------------------------------------------ */
+
+.fq-pv-close {
+  position: absolute;
+  top: calc(var(--fq-pv-safe-top) + var(--fq-pv-inset));
+  left: calc(var(--fq-pv-inset));
+  width: var(--fq-pv-hit);
+  height: var(--fq-pv-hit);
+  display: grid;
+  place-items: center;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: rgba(var(--fq-pv-ink), 0.78);
+  pointer-events: auto;
+  cursor: pointer;
+  transition: color 160ms ease, opacity 200ms ease;
+}
+
+.fq-pv-close svg {
+  width: var(--fq-pv-glyph);
+  height: var(--fq-pv-glyph);
+  /* A frame may reach this corner. Legibility, not decoration. */
+  filter: drop-shadow(0 1px 10px rgba(0, 0, 0, 0.7));
+}
+
+.fq-pv-close:hover,
+.fq-pv-close:focus-visible {
+  color: #fff;
+}
+
+.fq-pv-close:focus-visible {
+  outline: 1px solid rgba(var(--fq-pv-ink), 0.5);
+  outline-offset: -8px;
+  border-radius: 2px;
+}
+
+/* ------------------------------------------------------------------ *
+ * foot — caption, credit, position
+ * ------------------------------------------------------------------ */
+
+.fq-pv-foot {
+  position: absolute;
+  left: calc(var(--fq-pv-edge) + var(--fq-pv-inset));
+  right: calc(var(--fq-pv-edge) + var(--fq-pv-inset));
+  bottom: calc(var(--fq-pv-safe-bottom) + 18px);
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 28px;
+  pointer-events: none;
+}
+
+.pswp.fq-pv[data-device='wall'] .fq-pv-foot {
+  bottom: calc(var(--fq-pv-safe-bottom) + 26px);
+}
+
+.fq-pv-foot__text {
+  min-width: 0;
+  max-width: 62ch;
+}
+
+.fq-pv-caption {
+  margin: 0;
+  font-size: var(--fq-pv-caption);
+  font-weight: 400;
+  line-height: 1.34;
+  letter-spacing: -0.012em;
+  color: rgba(var(--fq-pv-ink), 0.95);
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  overflow: hidden;
+  text-shadow: 0 1px 14px rgba(0, 0, 0, 0.68);
+}
+
+.fq-pv-credit {
+  margin: 6px 0 0;
+  font-size: var(--fq-pv-credit);
+  font-weight: 500;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  color: rgba(var(--fq-pv-ink), 0.4);
+  text-shadow: 0 1px 12px rgba(0, 0, 0, 0.7);
+}
+
+.fq-pv-index {
+  flex: none;
+  display: flex;
+  align-items: baseline;
+  gap: 0.34em;
+  font-size: var(--fq-pv-index);
+  font-weight: 500;
+  letter-spacing: 0.14em;
+  font-variant-numeric: tabular-nums;
+  text-shadow: 0 1px 12px rgba(0, 0, 0, 0.7);
+  white-space: nowrap;
+}
+
+.fq-pv-index__now {
+  color: rgba(var(--fq-pv-ink), 0.92);
+}
+
+.fq-pv-index__of {
+  color: rgba(var(--fq-pv-ink), 0.34);
+}
+
+/* When a photograph is enlarged, position stops mattering and scale starts. */
+.fq-pv-index.is-zoom .fq-pv-index__now {
+  color: rgba(var(--fq-pv-ink), 0.62);
+}
+
+/* ------------------------------------------------------------------ *
+ * film rule — where you are in the set, at two pixels
+ * ------------------------------------------------------------------ */
+
+.fq-pv-rule {
+  position: absolute;
+  left: calc(var(--fq-pv-edge) + var(--fq-pv-inset));
+  right: calc(var(--fq-pv-edge) + var(--fq-pv-inset));
+  bottom: calc(var(--fq-pv-safe-bottom) + 6px);
+  height: 2px;
+  overflow: hidden;
+  background: rgba(var(--fq-pv-ink), 0.09);
+}
+
+.fq-pv-rule__on {
+  height: 100%;
+  background: rgba(var(--fq-pv-ink), 0.55);
+  transition: transform 420ms cubic-bezier(0.22, 1, 0.36, 1);
+  will-change: transform;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .fq-pv-rule__on {
+    transition: none;
+  }
+}
+
+/* ------------------------------------------------------------------ *
+ * step zones — desktop navigation without a button bar
+ * ------------------------------------------------------------------ */
+
+.fq-pv-step {
+  position: absolute;
+  top: var(--fq-pv-safe-top);
+  bottom: calc(var(--fq-pv-safe-bottom) + var(--fq-pv-foot));
+  width: clamp(76px, 8vw, 168px);
+  display: grid;
+  place-items: center;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: rgba(var(--fq-pv-ink), 0.85);
+  pointer-events: auto;
+  cursor: pointer;
+  opacity: 0;
+  transition: opacity 220ms ease;
+}
+
+.fq-pv-step--prev {
+  left: 0;
+}
+
+.fq-pv-step--next {
+  right: 0;
+}
+
+.fq-pv-step svg {
+  width: calc(var(--fq-pv-glyph) + 6px);
+  height: calc(var(--fq-pv-glyph) + 6px);
+  filter: drop-shadow(0 1px 12px rgba(0, 0, 0, 0.75));
+}
+
+.fq-pv-step:hover,
+.fq-pv-step:focus-visible {
+  opacity: 1;
+}
+
+.fq-pv-step:focus-visible {
+  outline: none;
+}
+
+.fq-pv-step[disabled] {
+  cursor: default;
+  opacity: 0 !important;
+}
+
+/* ------------------------------------------------------------------ *
+ * contact sheet
+ * ------------------------------------------------------------------ */
+
+.fq-pv-sheet {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  padding: 14px 0 calc(var(--fq-pv-safe-bottom) + 12px);
+  background: rgba(0, 0, 0, 0.9);
+  border-top: 1px solid rgba(var(--fq-pv-ink), 0.07);
+  pointer-events: auto;
+  transform: translate3d(0, 100%, 0);
+  opacity: 0;
+}
+
+.pswp.fq-pv[data-device='desktop'] .fq-pv-sheet,
+.pswp.fq-pv[data-device='wall'] .fq-pv-sheet {
+  padding: 20px 0 calc(var(--fq-pv-safe-bottom) + 18px);
+}
+
+.fq-pv-sheet.is-open {
+  transform: translate3d(0, 0, 0);
+  opacity: 1;
+}
+
+.fq-pv-sheet__track {
+  display: flex;
+  align-items: flex-end;
+  gap: 8px;
+  overflow-x: auto;
+  overflow-y: hidden;
+  padding: 0 calc(var(--fq-pv-edge) + var(--fq-pv-inset));
+  scrollbar-width: none;
+  -webkit-overflow-scrolling: touch;
+  scroll-behavior: smooth;
+}
+
+.fq-pv-sheet__track::-webkit-scrollbar {
+  display: none;
+}
+
+.pswp.fq-pv[data-device='desktop'] .fq-pv-sheet__track,
+.pswp.fq-pv[data-device='wall'] .fq-pv-sheet__track {
+  gap: 12px;
+}
+
+.fq-pv-frame {
+  flex: none;
+  position: relative;
+  height: var(--fq-pv-sheet);
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  cursor: pointer;
+  opacity: 0.46;
+  transition: opacity 180ms ease;
+}
+
+.fq-pv-frame img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  vertical-align: top;
+}
+
+.fq-pv-frame:hover {
+  opacity: 0.8;
+}
+
+.fq-pv-frame.is-active {
+  opacity: 1;
+}
+
+.fq-pv-frame.is-active::after {
+  content: '';
+  position: absolute;
+  inset: -4px;
+  border: 1px solid rgba(var(--fq-pv-ink), 0.9);
+  pointer-events: none;
+}
+
+.fq-pv-frame:focus-visible {
+  outline: 1px solid rgba(var(--fq-pv-ink), 0.55);
+  outline-offset: 3px;
+}
+
+/* ------------------------------------------------------------------ *
+ * neighbours — the wall this photograph came off
+ * ------------------------------------------------------------------ */
+
+.fq-pv-near {
+  position: absolute;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  pointer-events: auto;
+  cursor: pointer;
+  opacity: 0.19;
+  transition: opacity 320ms ease;
+}
+
+.fq-pv-near img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  object-position: bottom;
+  vertical-align: top;
+}
+
+.fq-pv-near:hover {
+  opacity: 0.44;
+}
+
+.fq-pv-near:focus-visible {
+  outline: 1px solid rgba(var(--fq-pv-ink), 0.4);
+  outline-offset: 6px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pswp.fq-pv .pswp__container,
+  .fq-pv-chrome > *,
+  .fq-pv-sheet,
+  .fq-pv-near {
+    transition-duration: 1ms;
+  }
+}

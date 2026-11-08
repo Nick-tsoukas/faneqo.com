@@ -1,0 +1,62 @@
+{
+  "kind": "collectionType",
+  "collectionName": "milestones",
+  "info": {
+    "singularName": "milestone",
+    "pluralName": "milestones",
+    "displayName": "Milestone",
+    "description": "Durable semantic interpretation that a relationship crossed a meaningful threshold. Canonical domain rows remain truth. Do not store presentation copy."
+  },
+  "options": {
+    "draftAndPublish": false
+  },
+  "pluginOptions": {},
+  "attributes": {
+    "type": {
+      "type": "string",
+      "required": true
+    },
+    "value": {
+      "type": "integer"
+    },
+    "evidence": {
+      "type": "json",
+      "required": true
+    },
+    "occurredAt": {
+      "type": "datetime",
+      "required": true
+    },
+    "version": {
+      "type": "integer",
+      "required": true,
+      "default": 1
+    },
+    "status": {
+      "type": "enumeration",
+      "enum": ["active", "archived"],
+      "required": true,
+      "default": "active"
+    },
+    "band": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "api::band.band",
+      "required": true
+    },
+    "subjectFan": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "api::fan.fan"
+    },
+    "idempotencyKey": {
+      "type": "string",
+      "required": true,
+      "unique": true,
+      "column": { "unique": true }
+    },
+    "archivedAt": {
+      "type": "datetime"
+    }
+  }
+}

@@ -1,0 +1,66 @@
+---
+description: Faneqo product identity, architecture, and production safety rules
+alwaysApply: true
+---
+
+# Faneqo (Fan Echo) — core engineering rules
+
+## Product
+Faneqo is a premium, music-first platform for artists and bands — not a generic link-in-bio clone.
+Positioning: **"Bands don't need more links. They need fans."**
+Goal: be the best smart-link and fan-relationship platform for bands and fans in the world.
+Public brand: **Faneqo**. Legacy **MusicBizQR** infrastructure may remain intentionally.
+
+## Stack (this repo)
+Nuxt 3 + Vue 3 + TypeScript (partial) + Tailwind + Pinia + Nitro server routes.
+External Strapi v4 backend (`STRAPI_URL`) is the data/API source of truth for bands, QRs, fans, events, billing, and most analytics.
+Do not assume backend code lives in this workspace.
+
+Domains:
+- Frontend: `https://faneqo.com` (default `BASE_URL`)
+- QR gateways (compatibility): `qr.faneqo.com`, `qr.musicbizqr.com`, `musicbizqr.com/directqr`
+- New QR encodes: `https://qr.faneqo.com/directqr?id=...`
+- Never bulk-convert existing QR URLs; preserve stored gateway URL on edit.
+
+## Before editing
+1. What you found
+2. Relevant files
+3. Proposed change
+4. Risks / compatibility
+5. How to test
+
+After editing: list files changed, explain plainly, note tests/build, production checklist, rollback steps.
+
+## Safety defaults
+- Smallest safe change; inspect and reuse before creating.
+- Preserve SSR, Nuxt conventions, Strapi API contracts, analytics events, auth, payments, QR resolution, legacy domains, and PWA behavior.
+- Do not update dependencies, `.env`, DNS, Railway, Cloudflare, Firebase, Stripe, or Resend config unless explicitly asked.
+- Do not commit, push, deploy, or run destructive/bulk DB commands without explicit permission.
+- Ask before broad architectural changes.
+
+## High-risk areas
+**QR:** `server/routes/directqr.ts`, `server/middleware/qr-gateway.ts`, `utils/qr.ts`, `components/EditQrCode.client.vue`, admin repair endpoints.
+**Subscriptions:** Stripe customer/trial via `server/utils/stripe-trial.ts`, Strapi `/api/stripe/*` — separate from Connect.
+**Connect payouts:** Strapi `bands/:id/payments/onboard` — do not mix with subscription logic.
+**PWA:** Do not re-enable broken offline navigate fallback; do not force-clear caches or unregister SWs without a migration plan.
+**Rebrand:** Classify each `MusicBizQR`/`musicbizqr` occurrence — visible branding vs intentional legacy vs docs vs uncertain.
+
+## Key paths
+- Homepage: `pages/index.vue`
+- Artist page: `pages/[bandSlug]/index.vue`
+- Dashboard: `pages/dashboard.vue`
+- Auth: `middleware/auth.ts`, `composables/useFirebase.ts`, `server/api/stripe/confirm-social.ts`
+- Config: `nuxt.config.ts`, `runtimeConfig`
+
+Canonical product docs, in order:
+
+1. `docs/FANEQO_DESIGN_NORTH_STAR.md` — durable design / product principles
+2. `docs/FANEQO_MASTER_PRODUCT_ROADMAP.md` — durable product direction
+3. `docs/FANEQO_CURRENT_PHASE.md` — what is happening now
+4. `docs/FANEQO_NEXT_AGENT_HANDOFF.md` — exact next task
+
+Older docs (including `docs/FANEQO_RELATIONSHIP_PLATFORM.md` architecture and `docs/design/FANEQO_VISUAL_LANGUAGE.md` tokens) must not override those four.
+
+Fuller frontend map: `docs/FANEQO_ARCHITECTURE.md`
+
+See also: `.cursor/rules/faneqo-architecture.mdc`, `.cursor/rules/faneqo-backend-safety.mdc`, `.cursor/rules/faneqo-product-quality.mdc`

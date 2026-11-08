@@ -1,0 +1,57 @@
+{
+  "kind": "collectionType",
+  "collectionName": "band_invites",
+  "info": {
+    "singularName": "band-invite",
+    "pluralName": "band-invites",
+    "displayName": "Band Invite",
+    "description": "Email invitation to join a band team. Token is stored hashed only."
+  },
+  "options": {
+    "draftAndPublish": false
+  },
+  "pluginOptions": {},
+  "attributes": {
+    "band": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "api::band.band"
+    },
+    "email": {
+      "type": "email",
+      "required": true
+    },
+    "role": {
+      "type": "enumeration",
+      "enum": ["manager", "viewer"],
+      "required": true
+    },
+    "tokenHash": {
+      "type": "string",
+      "private": true,
+      "searchable": false
+    },
+    "status": {
+      "type": "enumeration",
+      "enum": ["pending", "accepted", "revoked", "expired"],
+      "default": "pending",
+      "required": true
+    },
+    "expiresAt": {
+      "type": "datetime"
+    },
+    "invitedBy": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "plugin::users-permissions.user"
+    },
+    "acceptedBy": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "plugin::users-permissions.user"
+    },
+    "acceptedAt": {
+      "type": "datetime"
+    }
+  }
+}

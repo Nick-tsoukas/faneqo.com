@@ -1,0 +1,20 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Test QR</title>
+  <script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js"></script>
+</head>
+<body style="display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:100vh;background:#000;color:#fff;font-family:system-ui">
+  <h1>Test QR Code</h1>
+  <p>Scan this with your phone camera</p>
+  <canvas id="qr" style="margin:20px"></canvas>
+  <p>Should open: <code>https://google.com</code></p>
+  <script>
+    QRCode.toCanvas(document.getElementById('qr'), 'https://google.com', {
+      width: 300,
+      margin: 2,
+      color: { dark: '#000', light: '#fff' }
+    })
+  </script>
+</body>
+</html>

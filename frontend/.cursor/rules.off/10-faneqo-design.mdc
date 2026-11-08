@@ -1,0 +1,59 @@
+---
+description: Faneqo visual invariants for UI work — durable brand facts and pointers
+globs:
+  - pages/**/*.vue
+  - layouts/**/*.vue
+  - components/**/*.vue
+  - features/**/*.vue
+  - assets/**/*.{css,scss}
+  - app.vue
+  - tailwind.config.js
+alwaysApply: false
+---
+
+# Faneqo design invariants
+
+Faneqo is a music relationship product, not generic SaaS. One visual language — do not invent a second brand.
+
+Character: cinematic, editorial, music-native, emotional, premium, confident, dark, alive, personal, slightly futuristic.
+Not: sci-fi dashboard, gaming HUD, crypto, Instagram clone, Linktree clone.
+
+Meaning order: **Artist → music / photography / memory → relationship → context → action → chrome.**
+
+Decision order: **Story / task → Hierarchy → Media → Typography → Space → Interaction → Motion → Decoration.** Never backwards.
+
+Judge against an absolute standard: would an experienced product designer believe every visible decision was deliberately art-directed? "Better than the previous version" is not a quality target.
+
+## Durable brand facts
+
+- Type: **Poppins** (`tailwind.config.js`; Noto Sans Thai for `th` in `app.vue`). Do not add a font family for one feature; a global type change is a founder decision.
+- Surfaces: artist/memory `--faneqo-obsidian` `#050608`, `--faneqo-raised` `#0B0E14`, `--faneqo-surface` `#111722`. App/messages `--fq-app-bg`, `--fq-surface` (`utils/ui/faneqoBrand.js`). Public artist pages must not inherit messaging materials.
+- Near-white is the primary action. Magenta/violet = identity and precision; cyan/teal = live, progress, relationship. Neon green `#39FF14` is **legacy**, not current brand identity.
+- Borders: hairlines `rgba(255,255,255,0.07)`–`0.11`. Radius on chrome, **0 on gallery prints**.
+- Motion: `utils/ui/motionTokens.js` (0.14 / 0.21 / 0.28). Respect `prefers-reduced-motion`.
+- Media primitives: `components/media/FaneqoMediaGrid.vue`, `FaneqoMediaLightbox.vue`; gallery composition rules in `utils/media/faneqoGalleryLayout.js`. MediaItem is shared — no screen-specific fields.
+
+## Non-negotiables
+
+1. Inspect the target screen and existing components before designing anything new.
+2. Reuse tokens, type, buttons, and media primitives.
+3. Typography and space before boxes, pills, and nested cards.
+4. One dominant moment per view. Photography dominates when it is emotionally important — do not shrink concert photos into SaaS cards.
+5. Contrast, ≥44px touch targets, keyboard, focus-visible; no hover-only critical actions.
+6. Motion only when it explains state, relationship, or meaning.
+7. Prefer a cohesive improvement over an unrequested full redesign; do not rewrite a working page for a minor tweak.
+
+Anti-patterns: generic SaaS cards on concert photos · Instagram 3-up as the only gallery · equal-weight dashboards · nested cards · glow as personality · new font / hex / radius "just for this feature" · masonry dumps · custom cursors / scroll prisons / parallax spectacle.
+
+## Reuse these before building new
+
+Marketing `pages/index.vue`, `components/marketing/CinematicArtistWorld.vue` · shell `components/Header.vue`, `layouts/default.vue` · artist pages `components/band/BandPageCompact.vue` and siblings · media `components/media/FaneqoMediaGrid.vue`, `FaneqoMediaLightbox.vue` · labs `/labs/gallery`, `/__dev/gallery`, `/__dev/gallery-experience`.
+
+## Where the rest lives
+
+- Doctrine: `docs/FANEQO_DESIGN_NORTH_STAR.md` (wins over token docs)
+- Token lookup and gallery-count compositions: `docs/design/FANEQO_VISUAL_LANGUAGE.md` · taste: `docs/design/FANEQO_VISUAL_REFERENCES.md`
+- How to run visual work, and how quality is proven: `docs/FANEQO_CURSOR_OPERATING_SYSTEM.md`
+- Creation: `.cursor/skills/faneqo-ui-director/SKILL.md` · independent review: `.cursor/agents/faneqo-visual-critic.md`
+
+Legacy styling: `.btn` (neon-green) and `.mdc-*` form classes are MusicBizQR-era. Do not extend them outside the area you are fixing.

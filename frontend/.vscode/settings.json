@@ -1,0 +1,88 @@
+{
+  // ============================================
+  // Performance Optimizations for Low-RAM PCs
+  // ============================================
+
+  // File Watcher Exclusions - Prevent VS Code from watching heavy folders
+  "files.watcherExclude": {
+    "**/node_modules/**": true,
+    "**/.nuxt/**": true,
+    "**/.output/**": true,
+    "**/dist/**": true,
+    "**/build/**": true,
+    "**/.cache/**": true,
+    "**/.strapi/**": true,
+    "**/coverage/**": true,
+    "**/.git/**": true,
+    "**/.vercel/**": true,
+    "**/.netlify/**": true,
+    "**/.wrangler/**": true,
+    "**/.turbo/**": true,
+    "**/.next/**": true,
+    "**/logs/**": true,
+    "**/*.log": true
+  },
+
+  // Search Exclusions - Prevent expensive searches in generated folders
+  "search.exclude": {
+    "**/node_modules/**": true,
+    "**/.nuxt/**": true,
+    "**/.output/**": true,
+    "**/dist/**": true,
+    "**/build/**": true,
+    "**/.cache/**": true,
+    "**/.strapi/**": true,
+    "**/coverage/**": true,
+    "**/.git/**": true,
+    "**/.vercel/**": true,
+    "**/.netlify/**": true,
+    "**/.wrangler/**": true,
+    "**/.turbo/**": true,
+    "**/.next/**": true,
+    "**/logs/**": true,
+    "**/*.log": true,
+    "**/package-lock.json": true,
+    "**/yarn.lock": true,
+    "**/pnpm-lock.yaml": true
+  },
+
+  // File Explorer Exclusions - Hide generated folders (not node_modules)
+  "files.exclude": {
+    "**/.nuxt": true,
+    "**/.output": true,
+    "**/dist": true,
+    "**/build": true,
+    "**/.cache": true,
+    "**/coverage": true,
+    "**/*.log": true
+  },
+
+  // TypeScript/JavaScript Language Server - Reduce memory usage
+  "typescript.tsserver.maxTsServerMemory": 512,
+  "typescript.referencesCodeLens.enabled": false,
+  "javascript.referencesCodeLens.enabled": false,
+  "typescript.implementationsCodeLens.enabled": false,
+  "typescript.suggest.autoImports": false,
+  "javascript.suggest.autoImports": false,
+
+  // Editor UI - Disable expensive features
+  "editor.codeLens": false,
+  "editor.inlayHints.enabled": "offUnlessPressed",
+  "editor.minimap.enabled": false,
+  "breadcrumbs.enabled": false,
+  "workbench.editor.enablePreview": true,
+
+  // Keep Vue/Nuxt development support working
+  "[vue]": {
+    "editor.defaultFormatter": "Vue.volar"
+  },
+  "[javascript]": {
+    "editor.defaultFormatter": "esbenp.prettier-vscode"
+  },
+  "[typescript]": {
+    "editor.defaultFormatter": "esbenp.prettier-vscode"
+  },
+  "[json]": {
+    "editor.defaultFormatter": "esbenp.prettier-vscode"
+  }
+}

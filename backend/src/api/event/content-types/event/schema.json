@@ -1,0 +1,126 @@
+{
+  "kind": "collectionType",
+  "collectionName": "events",
+  "info": {
+    "singularName": "event",
+    "pluralName": "events",
+    "displayName": "Event",
+    "description": ""
+  },
+  "options": {
+    "draftAndPublish": false
+  },
+  "pluginOptions": {},
+  "attributes": {
+    "title": {
+      "type": "string",
+      "unique": true
+    },
+    "image": {
+      "type": "media",
+      "multiple": false,
+      "required": false,
+      "allowedTypes": [
+        "images",
+        "files",
+        "videos",
+        "audios"
+      ]
+    },
+    "date": {
+      "type": "date"
+    },
+    "time": {
+      "type": "time"
+    },
+    "doorsTime": {
+      "type": "time"
+    },
+    "link": {
+      "type": "string"
+    },
+    "ticketLabel": {
+      "type": "string"
+    },
+    "priceLine": {
+      "type": "string"
+    },
+    "band": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "api::band.band",
+      "inversedBy": "events"
+    },
+    "contactPhone": {
+      "type": "string",
+      "required": false
+    },
+    "contactEmail": {
+      "type": "string",
+      "required": false
+    },
+    "ageRestriction": {
+      "type": "string",
+      "required": false
+    },
+    "users_permissions_user": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "plugin::users-permissions.user",
+      "inversedBy": "events"
+    },
+    "venue": {
+      "type": "string"
+    },
+    "city": {
+      "type": "string"
+    },
+    "state": {
+      "type": "string"
+    },
+    "address": {
+      "type": "string"
+    },
+    "facebook": {
+      "type": "string",
+      "required": false
+    },
+    "twitter": {
+      "type": "string",
+      "required": false
+    },
+    "instagram": {
+      "type": "string",
+      "required": false
+    },
+    "youtube": {
+      "type": "string",
+      "required": false
+    },
+    "tiktok": {
+      "type": "string",
+      "required": false
+    },
+    "website": {
+      "type": "string",
+      "required": false
+    },
+    "isApproved": {
+      "type": "boolean",
+      "default": true
+    },
+    "description": {
+      "type": "json"
+    },
+    "slug": {
+      "type": "string",
+      "unique": true
+    },
+    "event_page_views": {
+      "type": "relation",
+      "relation": "oneToMany",
+      "target": "api::event-page-view.event-page-view",
+      "mappedBy": "event"
+    }
+  }
+}

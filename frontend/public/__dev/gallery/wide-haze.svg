@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1680" height="720" viewBox="0 0 1680 720" role="img" aria-label="Lab fixture: wide haze">
+  <defs>
+    <linearGradient id="wh-bg" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#050608"/>
+      <stop offset="100%" stop-color="#0b0e14"/>
+    </linearGradient>
+    <linearGradient id="wh-bar" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0%" stop-color="#39d5ff" stop-opacity="0"/>
+      <stop offset="35%" stop-color="#39d5ff" stop-opacity="0.55"/>
+      <stop offset="65%" stop-color="#ff4fd8" stop-opacity="0.5"/>
+      <stop offset="100%" stop-color="#8b6cff" stop-opacity="0"/>
+    </linearGradient>
+  </defs>
+  <rect width="1680" height="720" fill="url(#wh-bg)"/>
+  <rect x="0" y="250" width="1680" height="90" fill="url(#wh-bar)"/>
+  <rect x="120" y="470" width="1440" height="8" fill="#fff" opacity="0.08"/>
+</svg>

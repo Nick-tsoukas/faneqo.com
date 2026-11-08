@@ -1,0 +1,173 @@
+{
+  "kind": "collectionType",
+  "collectionName": "up_users",
+  "info": {
+    "name": "user",
+    "description": "",
+    "singularName": "user",
+    "pluralName": "users",
+    "displayName": "User"
+  },
+  "options": {
+    "draftAndPublish": false
+  },
+  "attributes": {
+    "username": {
+      "type": "string",
+      "minLength": 3,
+      "unique": true,
+      "configurable": false,
+      "required": true
+    },
+    "email": {
+      "type": "email",
+      "minLength": 6,
+      "configurable": false,
+      "required": true
+    },
+    "provider": {
+      "type": "string",
+      "configurable": false
+    },
+    "password": {
+      "type": "password",
+      "minLength": 6,
+      "configurable": false,
+      "private": true,
+      "searchable": false
+    },
+    "resetPasswordToken": {
+      "type": "string",
+      "configurable": false,
+      "private": true,
+      "searchable": false
+    },
+    "confirmationToken": {
+      "type": "string",
+      "configurable": false,
+      "private": true,
+      "searchable": false
+    },
+    "confirmed": {
+      "type": "boolean",
+      "default": false,
+      "configurable": false
+    },
+    "blocked": {
+      "type": "boolean",
+      "default": false,
+      "configurable": false
+    },
+    "role": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "plugin::users-permissions.role",
+      "inversedBy": "users",
+      "configurable": false
+    },
+    "qrs": {
+      "type": "relation",
+      "relation": "oneToMany",
+      "target": "api::qr.qr",
+      "mappedBy": "users_permissions_user"
+    },
+    "albums": {
+      "type": "relation",
+      "relation": "oneToMany",
+      "target": "api::album.album",
+      "mappedBy": "users_permissions_user"
+    },
+    "events": {
+      "type": "relation",
+      "relation": "oneToMany",
+      "target": "api::event.event",
+      "mappedBy": "users_permissions_user"
+    },
+    "bands": {
+      "type": "relation",
+      "relation": "oneToMany",
+      "target": "api::band.band",
+      "mappedBy": "users_permissions_user"
+    },
+    "tours": {
+      "type": "relation",
+      "relation": "oneToMany",
+      "target": "api::tour.tour",
+      "mappedBy": "users_permissions_user"
+    },
+    "streams": {
+      "type": "relation",
+      "relation": "oneToMany",
+      "target": "api::stream.stream",
+      "mappedBy": "users_permissions_user"
+    },
+    "socialpages": {
+      "type": "relation",
+      "relation": "oneToMany",
+      "target": "api::socialpage.socialpage",
+      "mappedBy": "users_permissions_user"
+    },
+    "videos": {
+      "type": "relation",
+      "relation": "oneToMany",
+      "target": "api::video.video",
+      "mappedBy": "users_permissions_users"
+    },
+    "subscriptionStatus": {
+      "type": "enumeration",
+      "enum": [
+        "active",
+        "trialing",
+        "pastDue",
+        "canceled",
+        "unpaid",
+        "past_due",
+        "free"
+      ],
+      "default": "unpaid"
+    },
+    "subscriptionId": {
+      "type": "string"
+    },
+    "customerId": {
+      "type": "string"
+    },
+    "plan": {
+      "type": "string"
+    },
+    "trialEndsAt": {
+      "type": "date"
+    },
+    "gracePeriodStart": {
+      "type": "date",
+      "required": false
+    },
+    "cancelAt": {
+      "type": "date"
+    },
+    "pushOptIn": {
+      "type": "boolean",
+      "default": false
+    },
+    "referredByMarketer": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "api::marketer.marketer",
+      "inversedBy": "referredUsers"
+    },
+    "marketerCodeUsed": {
+      "type": "string"
+    },
+    "referredAt": {
+      "type": "datetime"
+    },
+    "isMarketer": {
+      "type": "boolean",
+      "default": false
+    },
+    "editorialShowcaseAccess": {
+      "type": "boolean",
+      "default": false
+    }
+  }
+}

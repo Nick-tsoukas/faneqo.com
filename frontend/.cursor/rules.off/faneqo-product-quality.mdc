@@ -1,0 +1,36 @@
+---
+description: Faneqo product quality — artist/fan value, mobile, failure states, proof
+globs:
+  - pages/**/*.vue
+  - layouts/**/*.vue
+  - components/**/*.vue
+  - features/**/*.vue
+  - composables/**/*
+  - app.vue
+alwaysApply: false
+---
+
+# Faneqo product quality
+
+Every feature needs concrete artist or fan value. Domain-specific experience over generic SaaS UI.
+
+## Experience
+
+- Mobile-first. **390px is the canonical canvas.** Desktop-only validation is not complete. Check 320 and 430 where density is risky, plus 768 / 1024 / 1280+ when layout changes materially.
+- Accessibility: keyboard, focus-visible, contrast, `prefers-reduced-motion`, ≥44px targets.
+- Ownership and visibility integrity: attendee galleries, Passport, shares. Frontend visibility is not authorization.
+- Rive for meaning. CSS / Vue / motion-v for layout and polish. PhotoSwipe owns photograph physics behind `LivingGalleryAdapter`.
+
+## Design for failure
+
+Ask what happens when it fails — partial uploads, dropped network, duplicate publish, stale provider, a job that runs twice — and design the real state, not a spinner.
+
+## Proof
+
+Visual and flow claims need rendered proof, not source reading. Mode-appropriate evidence and the independent Visual Critic gate: `docs/FANEQO_CURSOR_OPERATING_SYSTEM.md`. Never claim real-device quality from emulation.
+
+## After a phase
+
+- Performance awareness: query count, N+1, payload size, no provider APIs in interactive paths
+- Product self-critique, then up to five improvements classified DO NOW / NEXT PHASE / LATER / REJECT
+- Do not implement discovered ideas automatically

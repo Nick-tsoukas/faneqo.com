@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64">
+  <!-- Outer circle (vinyl record edge) -->
+  <circle cx="32" cy="32" r="30" fill="white" />
+
+  <!-- Inner circle (vinyl record label area) -->
+  <circle cx="32" cy="32" r="10" fill="white" />
+
+  <!-- Center circle (vinyl record spindle hole) -->
+  <circle cx="32" cy="32" r="10" fill="black" />
+
+  <!-- Grooves (for a stylized effect) -->
+  <circle cx="32" cy="32" r="24" fill="none" stroke="white" stroke-width="1" />
+  <circle cx="32" cy="32" r="18" fill="none" stroke="white" stroke-width="1" />
+  <circle cx="32" cy="32" r="12" fill="none" stroke="white" stroke-width="1" />
+</svg>
