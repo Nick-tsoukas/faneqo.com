@@ -39,7 +39,7 @@ Human-facing how-to: [`README.md`](README.md).
 3. `npm install` at workspace root (stackrun + jiti).
 4. `npm run dev` — `docker compose up -d` Postgres only, then hot-reload FE + BE on the host via stackrun `$development`.
 5. `npm run staging` — today: stackrun `$staging` host apps + `STAGING_*` overlays. Planned (Architecture G): build apps, then compose `--profile staging` (stock Node FE/BE containers tagged from env Node pins + DB; built output volume-mounted; no custom Dockerfiles unless needed).
-6. Root `npm test` / `npm run test:stack` points at `tests/stackrun/check.sh`, which is **missing** until the monorepo CI phase (Task 12 in `tasks/todo.md`).
+6. Root `npm test` runs `test:stack` (`tests/stackrun/check.sh`) + `test:root` (`tests/root/check.sh`) — suite landed in Task 3.7. GitHub Actions wiring for that suite is still Task 12.
 
 Today compose runs Postgres only; stackrun runs apps on the host. After Tasks 3.5–3.6, staging apps move into compose profile containers; dev stays host hot-reload + mise. `mbq-cron` stays off locally.
 
@@ -68,6 +68,7 @@ Canonical detail: [`tasks/todo.md`](tasks/todo.md) Decisions log + [`tasks/plan.
 - **Local Node tooling:** mise on host only (`mise.toml`); not required on droplet / staging containers (Architecture H).
 - **Branches:** `main` empty for now; all work on `staging`; `staging` deploys to droplet.
 - **`faneqo.com` during staging:** push full `staging` content without product commit history (throwaway OK); history merge later.
+- **Audit track:** plan/todo/specs under `tasks/audit-issues-*.md` (not `docs/`); remediation waits on Task 17 / explicit go.
 
 ## Railway (production)
 

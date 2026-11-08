@@ -289,8 +289,9 @@ Audit remediation plan: `tasks/audit-issues-plan.md`. Start product fixes only a
 | Unified compose | **YES** — one `docker-compose.yml`; profiles (`staging` for FE/BE containers); dev = DB only + host apps; local + droplet staging = DB + volume-mounted built apps (Architecture G). Implement before droplet (Tasks 3.5–3.6). |
 | Staging runtime images | **Stock Node** — tags from `NODE_VERSION` / `FRONTEND_NODE_VERSION` / `BACKEND_NODE_VERSION`; dual FE/BE versions allowed; no custom `docker/Dockerfile.*` unless stock Node proves insufficient (Task 3.5 locked) |
 | Local Node tooling | **mise** on host only (`mise.toml` + `NODE_VERSION`); not required on droplet / staging containers (Architecture H / Task 3.4) |
+| Audit track | **`tasks/audit-issues-*.md`** — plan / todo / specs; remediation waits on Task 17 / explicit go (Decision 11) |
 
-Still open: audit in-repo?; old-repo archival after cutover?; Railway staging smoke before cutover (revisit at Checkpoint B).
+Still open: old-repo archival after cutover?; Railway staging smoke before cutover (revisit at Checkpoint B).
 
 ### Phase 1 — Root workspace + optional temp single tree (no remote surgery)
 
