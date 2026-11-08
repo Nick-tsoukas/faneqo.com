@@ -16,6 +16,7 @@ Side-by-side product trees under one root git (content-only `staging` on [`Nick-
 | `stack.config.ts`, `example.env`, `mise.toml`, root `package.json` | stackrun orchestration + local mise Node pin. Copy `example.env` → `.env`; `mise install` for host Node (`NODE_VERSION`). Staging profile hooks change when Architecture G is implemented. |
 | `.audit/` | Netlify audit site `faneqo-audit` (gitignored). Not the product app. |
 | `docs/railpack-research.md` | Railpack notes; out of migration scope unless cutover needs it. |
+| `docs/mise-install.md` | Host-only mise install (Linux / macOS / Windows / WSL); linked from README. |
 | `graphify-out/` | Local knowledge graph (gitignored). |
 
 Do **not** deep-scan `frontend/` or `backend/` unless the task needs product code. Prefer root docs + Railway ids here.

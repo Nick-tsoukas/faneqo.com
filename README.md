@@ -6,7 +6,7 @@ Monorepo root for local Nuxt (`frontend/`) + Strapi (`backend/`) with Postgres v
 
 | Tool | Required for | Notes |
 |------|----------------|-------|
-| [mise](https://mise.jdx.dev/) | **Local development only** | Pins Node from `.env` via root `mise.toml`. Not needed on the staging droplet or inside staging containers. |
+| [mise](https://mise.jdx.dev/) | **Local development only** | Pins Node from `.env` via root `mise.toml`. Install: [`docs/mise-install.md`](docs/mise-install.md) (Linux / macOS / Windows / WSL). Not needed on the staging droplet or inside staging containers. |
 | Node.js + npm | Local host builds / `npm run dev` | Version from `NODE_VERSION` in `.env` (default in `example.env`). After `cp example.env .env`, run `mise install` (or `mise trust` once) so PATH matches the pin. |
 | Docker | Local DB + staging containers | Daemon running |
 | Docker Compose | Same | Compose V2 plugin (`docker compose`) |
