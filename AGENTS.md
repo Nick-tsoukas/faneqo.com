@@ -28,6 +28,8 @@ Root orchestration, docs, and staging files at workspace root are the allowed ea
 
 ## Local stack
 
+Human-facing how-to: [`README.md`](README.md).
+
 1. `cp example.env .env` and fill secrets as needed.
 2. `npm install` at workspace root (stackrun + jiti).
 3. `npm run dev` — `docker compose up -d` Postgres, then hot-reload FE + BE on the host via stackrun `$development`.
