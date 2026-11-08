@@ -417,7 +417,7 @@ Begin `.audit/` work once daily development is the single repo/dir.
 ## Out of scope (this plan)
 
 - Pausing or “freezing” product development on `musicbizqr` / `qrserver`
-- Railpack flip on prod (see `docs/railpack-research.md`) unless cutover needs it
+- Railpack flip on prod unless cutover needs it
 - Duplicate staging-only compose files / image-bake-only staging that skips volume mounts (Architecture G forbids)
 - Custom staging Dockerfiles unless stock Node later proves insufficient
 - Product features / audit remediation content (Phase 9+)

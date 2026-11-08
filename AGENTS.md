@@ -19,7 +19,6 @@ Side-by-side product trees under one root git (content-only `staging` on [`Nick-
 | `.audit/` | Netlify audit site `faneqo-audit` (gitignored). Not the product app. Leave as-is; do not treat HTML/page-cards as the work queue. |
 | `tasks/audit-issues.md` | Prioritized audit-issue task page extracted from `.audit/github-issues.json` (docs track). |
 | `docs/audit-issues.md` | Short index for that track. |
-| `docs/railpack-research.md` | Railpack notes; out of migration scope unless cutover needs it. |
 | `docs/mise-install.md` | Host-only mise install (Linux / macOS / Windows / WSL); linked from README. |
 | `graphify-out/` | Local knowledge graph (gitignored). |
 

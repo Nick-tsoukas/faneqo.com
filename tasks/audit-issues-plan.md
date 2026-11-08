@@ -19,7 +19,7 @@ This plan does **not** overwrite the incomplete monorepo/staging plan in `tasks/
 | Remediation order already written | `.audit/REMEDIATION_PLAN.md` (sec → bill guard → mkt → vocab → dead/data → arch → test) |
 | Page-cards = reading notes, not bug list | `FINDINGS.md` + remediation “Do not file each note” |
 | Workspace task style | `tasks/todo.md` Task blocks: Description / Acceptance / Verification / Dependencies / Files / Scope |
-| Docs style today | Short durable notes under `docs/` (e.g. `railpack-research.md`) |
+| Docs style today | Short durable notes under `docs/` (e.g. `mise-install.md`) |
 | Monorepo Task 17 | “Begin audit work from `.audit/`” — late; Netlify-oriented; incomplete open item on audit-in-repo |
 
 ## Architecture Decisions
