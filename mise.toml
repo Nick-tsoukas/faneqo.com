@@ -1,0 +1,8 @@
+# Local host tooling only (npm run dev). Staging droplet / containers do not need mise.
+# Copy example.env → .env; pin lives in NODE_VERSION (and optional FE/BE overrides).
+
+[env]
+_.file = ".env"
+
+[tools]
+node = "{{ env.NODE_VERSION }}"

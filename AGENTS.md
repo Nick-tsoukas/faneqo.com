@@ -12,8 +12,8 @@ Side-by-side product trees under one root git (content-only `staging` on [`Nick-
 |------|------|
 | `frontend/` | Nuxt — checkout `Nick-tsoukas/musicbizqr`. Product operating loop: `frontend/AGENTS.md`. |
 | `backend/` | Strapi v4, canonical data — checkout `Nick-tsoukas/qrserver`. Defers to frontend loop: `backend/AGENTS.md`. |
-| `docker-compose.yml`, `docker/` | Local Postgres 16 only (`faneqo_dev`; init also creates `faneqo_staging`). |
-| `stack.config.ts`, `example.env`, root `package.json` | stackrun orchestration. Copy `example.env` → `.env`. |
+| `docker-compose.yml`, `docker/` | Today: Postgres 16 only (`faneqo_dev`; init also creates `faneqo_staging`). Planned: one compose file with profiles — db-only for `npm run dev`; `--profile staging` adds FE/BE containers (stock Node image + built apps volume-mounted; no custom Dockerfiles unless needed). See `tasks/plan.md` Architecture G / Tasks 3.5–3.6. |
+| `stack.config.ts`, `example.env`, `mise.toml`, root `package.json` | stackrun orchestration + local mise Node pin. Copy `example.env` → `.env`; `mise install` for host Node (`NODE_VERSION`). Staging profile hooks change when Architecture G is implemented. |
 | `.audit/` | Netlify audit site `faneqo-audit` (gitignored). Not the product app. |
 | `docs/railpack-research.md` | Railpack notes; out of migration scope unless cutover needs it. |
 | `graphify-out/` | Local knowledge graph (gitignored). |
@@ -30,17 +30,18 @@ Root orchestration, docs, and staging files at workspace root are the allowed ea
 
 Human-facing how-to: [`README.md`](README.md).
 
-1. `cp example.env .env` and fill secrets as needed.
-2. `npm install` at workspace root (stackrun + jiti).
-3. `npm run dev` — `docker compose up -d` Postgres, then hot-reload FE + BE on the host via stackrun `$development`.
-4. `npm run staging` — stackrun `$staging` (staging overlays from `STAGING_*` in `.env`).
-5. Root `npm test` / `npm run test:stack` points at `tests/stackrun/check.sh`, which is **missing** until the monorepo CI phase (Task 12 in `tasks/todo.md`).
+1. `cp example.env .env` and fill secrets as needed (`NODE_VERSION` / optional `FRONTEND_NODE_VERSION` / `BACKEND_NODE_VERSION` are non-secret pins).
+2. `mise install` (local host only — pins Node from `NODE_VERSION` via `mise.toml`). Staging droplet/containers do **not** need mise.
+3. `npm install` at workspace root (stackrun + jiti).
+4. `npm run dev` — `docker compose up -d` Postgres only, then hot-reload FE + BE on the host via stackrun `$development`.
+5. `npm run staging` — today: stackrun `$staging` host apps + `STAGING_*` overlays. Planned (Architecture G): build apps, then compose `--profile staging` (stock Node FE/BE containers tagged from env Node pins + DB; built output volume-mounted; no custom Dockerfiles unless needed).
+6. Root `npm test` / `npm run test:stack` points at `tests/stackrun/check.sh`, which is **missing** until the monorepo CI phase (Task 12 in `tasks/todo.md`).
 
-Compose does not run the apps; stackrun does. `mbq-cron` stays off locally.
+Today compose runs Postgres only; stackrun runs apps on the host. After Tasks 3.5–3.6, staging apps move into compose profile containers; dev stays host hot-reload + mise. `mbq-cron` stays off locally.
 
 ## Staging (planned early)
 
-Lean path per plan: **DigitalOcean droplet + compose** (Postgres + FE + BE; cron off) **before** history merge. No live Stripe, live Resend, production domains, or Railway `chalk-volume`. Optional Railway staging later for builder parity before cutover. Sizing and tradeoffs: `tasks/plan.md` (Architecture C).
+Lean path per plan: **one unified `docker-compose.yml`** (profiles) for local staging + **DigitalOcean droplet** (same file + `--profile staging`; Postgres + FE + BE; cron off) **before** history merge. Implement compose locally first (Tasks 3.5–3.6), then droplet (Task 4). No live Stripe, live Resend, production domains, or Railway `chalk-volume`. Optional Railway staging later for builder parity before cutover. Detail: `tasks/plan.md` Architecture C + G.
 
 ## Re-clone tips (Phase 1 temp `.git` removal)
 
@@ -58,6 +59,9 @@ Canonical detail: [`tasks/todo.md`](tasks/todo.md) Decisions log + [`tasks/plan.
 - **Temp nested `.git`:** YES (local only; re-clone before history merge).
 - **History tool:** defer until history phase.
 - **Staging:** DO only for now; **2GB** droplet; no Railway staging yet.
+- **Staging public URLs:** droplet IP over HTTP for `STAGING_API_PUBLIC` / `STAGING_WEB_PUBLIC` until a staging domain + TLS + Google redirects (Task 6b later).
+- **Unified compose:** YES — one `docker-compose.yml` + profiles; volume-mounted built apps for staging (Architecture G). Staging FE/BE: **stock Node** image tags from `NODE_VERSION` / `FRONTEND_NODE_VERSION` / `BACKEND_NODE_VERSION` (dual versions allowed); no custom Dockerfiles unless needed.
+- **Local Node tooling:** mise on host only (`mise.toml`); not required on droplet / staging containers (Architecture H).
 - **Branches:** `main` empty for now; all work on `staging`; `staging` deploys to droplet.
 - **`faneqo.com` during staging:** push full `staging` content without product commit history (throwaway OK); history merge later.
 
