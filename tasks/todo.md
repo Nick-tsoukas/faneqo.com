@@ -62,7 +62,7 @@ Do not make monorepo-driven edits under `frontend/` / `backend/` until Task 15 i
 
 **Estimated scope:** S
 
-**Done notes (2026-11-08):** Content-only snapshot pushed to `faneqo.com` `staging`. FE tip `625decc619e9743c89600e6dda6b9564db53e937`; BE tip `bef413d7cb2b9903a0f6b53a6698ed26a2e5f3a1`. Restored dirty local FE `package-lock.json` to tip before removal; ignored `env.prod`, `/.cursor/`, `**/graphify-out/`.
+**Done notes (2026-11-08):** Content-only snapshot pushed to `faneqo.com` `staging` @ `7be36cb58b56a6482b81d49089690617cc7cd7e5` — https://github.com/Nick-tsoukas/faneqo.com/tree/staging. FE tip `625decc619e9743c89600e6dda6b9564db53e937`; BE tip `bef413d7cb2b9903a0f6b53a6698ed26a2e5f3a1`. Restored dirty local FE `package-lock.json` to tip before removal; ignored `env.prod`, `/.cursor/`, `**/graphify-out/`. **Deferred from pack (still on disk):** `frontend/public/howtocreateartistpage.mp4`, `frontend/public/howtocreateqr.mp4`, `frontend/assets/ZoomInstaller.exe` (>50MB; upload stall) — listed in root `.gitignore`; re-add when bandwidth OK. `main` not pushed (empty on remote).
 
 ---
 
@@ -479,7 +479,7 @@ Do not make monorepo-driven edits under `frontend/` / `backend/` until Task 15 i
 | 2026-11-08 | Droplet size | **2GB** |
 | 2026-11-08 | Branch model | Keep `main` empty for now; all work on `staging`; `staging` deploys to droplet |
 | 2026-11-08 | Content-only `faneqo.com` during staging? | **YES** — push full `staging` branch content without product commit history (throwaway history OK). Get staging running without history; history merge later (history does not affect whether staging runs). |
-| 2026-11-08 | Phase 1 temp tips | FE `musicbizqr` `625decc619e9743c89600e6dda6b9564db53e937`; BE `qrserver` `bef413d7cb2b9903a0f6b53a6698ed26a2e5f3a1`. Nested `.git` removed locally; content-only `staging` push to `faneqo.com`. |
+| 2026-11-08 | Phase 1 temp tips | FE `musicbizqr` `625decc619e9743c89600e6dda6b9564db53e937`; BE `qrserver` `bef413d7cb2b9903a0f6b53a6698ed26a2e5f3a1`. Nested `.git` removed locally; content-only `staging` @ `7be36cb` on `faneqo.com`. Three >50MB FE media files deferred from pack (local only). |
 | | Audit in git? | |
 | | Archive old repos when? | |
 | | Cutover approved? | |
