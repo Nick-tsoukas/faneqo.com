@@ -47,6 +47,18 @@ npm run staging
 
 `mbq-cron` stays off locally.
 
+## Build / start (host)
+
+Production-style builds and servers (after `npm install` in `frontend/` / `backend/` as needed). Stackrun entrypoints (`npm run dev` / `npm run staging`) still start both apps for local loops.
+
+```bash
+npm run build            # backend then frontend
+npm run build:backend
+npm run build:frontend
+npm run start:backend
+npm run start:frontend
+```
+
 ## Remote staging deploy
 
 TBD — push to the `staging` branch will deploy staging with the **same** compose file + `--profile staging`. Steps not documented yet (Task 5).

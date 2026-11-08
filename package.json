@@ -4,7 +4,11 @@
   "type": "module",
   "scripts": {
     "dev": "NODE_ENV=development stackrun",
-    "build": "",
+    "build:frontend": "npm run build --prefix frontend",
+    "build:backend": "npm run build --prefix backend",
+    "build": "npm run build:backend && npm run build:frontend",
+    "start:frontend": "npm run start --prefix frontend",
+    "start:backend": "npm run start --prefix backend",
     "staging": "NODE_ENV=staging stackrun",
     "test": "npm run test:stack",
     "test:stack": "bash tests/stackrun/check.sh"
