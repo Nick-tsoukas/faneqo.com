@@ -13,15 +13,31 @@ Progress checklist for [`tasks/audit-issues-plan.md`](audit-issues-plan.md). Spe
 
 ---
 
-## Phase 1: Security
+## Phase 1: Security (auth)
 
 - [ ] `sec-001` — YouTube routes check the caller; debug routes gone
 - [ ] `sec-002` — user-admin accepts only `USER_ADMIN_SECRET`
 - [ ] `sec-005` — explicit auth on four Stripe signup routes
 
-### Checkpoint: Security
+### Checkpoint: Security (auth)
 
-- [ ] Phase 1 criteria pass
+- [ ] Phase 1 auth criteria pass
+- [ ] Human review before Phase 1b
+
+---
+
+## Phase 1b: Security (hide Strapi / Nitro BFF / CORS)
+
+Browsers must not see or call Strapi. Nuxt server proxies. CORS origins from public-URL env + optional comma-separated extras (no hardcoded list). Supersedes migration Task 6b.4.
+
+- [ ] `sec-006` — map: FE↔BE trust boundary (children below)
+- [ ] `sec-007` — Strapi URL out of public client payload
+- [ ] `sec-008` — Nitro same-origin proxy for product traffic
+- [ ] `sec-009` — CORS from public-URL env SoT + comma-separated extras
+
+### Checkpoint: Security (BFF / CORS)
+
+- [ ] Phase 1b criteria pass
 - [ ] Human review before Phase 2
 
 ---
@@ -90,7 +106,10 @@ Progress checklist for [`tasks/audit-issues-plan.md`](audit-issues-plan.md). Spe
 ## Phase 6: P2
 
 - [ ] `sec-003` — Stripe webhook failure returns fixed string
-- [ ] `sec-004` — browser allowlist (drop unowned host / keep localhost out of prod)
+- [ ] `sec-004` — fanecco / LAN off allowlist (or already closed by `sec-009`)
+- [ ] `sec-010` — no hardcoded Railway / api.musicbizqr.com in client pages
+- [ ] `sec-011` — production middlewares: real CSP + upload-enumeration block
+- [ ] `sec-012` — staging admin / :1337 not needlessly public
 - [ ] `bill-002` — Connect fee / buttons / trial / subscription-check guard verified
 - [ ] `dead-002` — unused pages/components removed or justified kept
 - [ ] `dead-003` — old homepages off live site
@@ -133,3 +152,4 @@ Progress checklist for [`tasks/audit-issues-plan.md`](audit-issues-plan.md). Spe
 ## Map-only (no separate product step)
 
 - [ ] `audit-parent` — closed when child work tracked above is done (navigation map only)
+- [ ] `sec-006` — closed when `sec-007`–`sec-009` done (FE↔BE trust map)

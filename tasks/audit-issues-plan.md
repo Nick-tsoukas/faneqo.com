@@ -35,30 +35,38 @@ This track is **parallel** to the monorepo/staging plan (`tasks/plan.md` / `task
 - Do not treat marketing page-scan notes as extra issues.
 - Do not file GitHub issues unless separately approved.
 - Do not start the next priority band until the current checkpoint is reviewed.
+- Do **not** hardcode CORS hosts in `middlewares.js` (including a one-off staging FE string). Origins = public-URL env SoT + optional comma-separated extras (`sec-009`).
+- Do not ship a blind open Nitro proxy that forwards arbitrary Strapi paths without an allowlist / product route shape (`sec-008`).
 
 ## Architecture decisions
 
 1. **One step, then stop.** Default unit = one draft id. Larger parents (`audit-parent`, `mkt-001`, `vocab-001`) are maps — work the children.
 2. **Guards are verify-only** (`bill-001`, `bill-002`, `mkt-013`): confirm product rules stay correct; do not “fix” by changing billing meaning.
 3. **Priority order is locked** unless a human reorders in writing:
-   1. P1 security (`sec-001` → `sec-002` → `sec-005`)
-   2. P1 billing guard (`bill-001`)
-   3. P1 data + live dead (`data-001`, `dead-004`, `dead-005`)
-   4. P1 marketing children (`mkt-002`…`mkt-012`, `mkt-014`; `mkt-001` is the map)
-   5. P1 vocabulary children (`vocab-002`…`vocab-004`; `vocab-001` is the map)
-   6. P2 (`sec-003`, `sec-004`, `bill-002`, `dead-002`, `dead-003`, `mkt-013`, `vocab-005`)
-   7. P3 (`arch-001-api`, `arch-001-app`, `dead-006`) — split only if one function clearly does two jobs
-   8. P4 tests (`test-001-api`, `test-001-app`) after the rules they lock exist
+   1. P1 security auth (`sec-001` → `sec-002` → `sec-005`)
+   2. P1 security FE↔BE trust (`sec-006` map → `sec-007` → `sec-008` → `sec-009`) — browsers must not see or call Strapi; Nitro BFF; CORS origins from public-URL env SoT + optional comma-separated extras (**no hardcoded host list**). **Do not** patch staging by editing a string array in `middlewares.js` (supersedes staging Task 6b.4).
+   3. P1 billing guard (`bill-001`)
+   4. P1 data + live dead (`data-001`, `dead-004`, `dead-005`)
+   5. P1 marketing children (`mkt-002`…`mkt-012`, `mkt-014`; `mkt-001` is the map)
+   6. P1 vocabulary children (`vocab-002`…`vocab-004`; `vocab-001` is the map)
+   7. P2 (`sec-003`, `sec-004` if not closed by `sec-009`, `sec-010`, `sec-011`, `sec-012`, `bill-002`, `dead-002`, `dead-003`, `mkt-013`, `vocab-005`)
+   8. P3 (`arch-001-api`, `arch-001-app`, `dead-006`) — split only if one function clearly does two jobs
+   9. P4 tests (`test-001-api`, `test-001-app`) after the rules they lock exist
 4. **Path citations are starting points.** Re-verify against current `frontend/` / `backend/` at implement time.
-5. **Staging plan stays untouched.** Audit progress lives only under `tasks/audit-issues-*.md`.
+5. **Staging / monorepo plan stays the migration SoT.** Audit progress lives under `tasks/audit-issues-*.md`. CORS/BFF work is **this** track, not Task 6b.4.
 
 ## Dependency graph
 
 ```
 Human approval to start (Task 17 or explicit go)
     │
-    ├── Phase 1: Security
+    ├── Phase 1: Security (auth)
     │       sec-001 → sec-002 → sec-005
+    │
+    ├── Phase 1b: Security (hide Strapi / Nitro BFF / CORS lock)
+    │       sec-006 (map)
+    │           └── sec-007 → sec-008 → sec-009
+    │       (P2 relatives: sec-004, sec-010, sec-011, sec-012)
     │
     ├── Phase 2: Billing guard
     │       bill-001
@@ -86,15 +94,29 @@ Human approval to start (Task 17 or explicit go)
 - [ ] Human OK with this plan shape and priority order
 - [ ] Explicit **do not start** until a later go (default)
 
-### Phase 1 — Security
+### Phase 1 — Security (auth)
 
 - [ ] `sec-001` YouTube caller checks; remove debug routes
 - [ ] `sec-002` user-admin secret only (`USER_ADMIN_SECRET`)
 - [ ] `sec-005` explicit auth on four Stripe signup routes
 
-### Checkpoint: Security
+### Checkpoint: Security (auth)
 
-- [ ] Phase 1 acceptance criteria pass
+- [ ] Phase 1 auth acceptance criteria pass
+- [ ] Human review before Phase 1b (or explicit skip to billing if reordered)
+
+### Phase 1b — Security (FE↔BE: hide Strapi / Nitro BFF / CORS)
+
+Target: browser never learns Strapi URL/IP; browser only talks same-origin to Nuxt; Nuxt server talks to Strapi; Strapi CORS origins come from public-URL env + optional extras (one SoT all envs; no hardcoded list). Added 2026-11-09 from staging CORS dig.
+
+- [ ] `sec-006` map accepted (children ordered below)
+- [ ] `sec-007` Strapi URL out of `public` / client payload
+- [ ] `sec-008` Nitro same-origin proxy for product traffic
+- [ ] `sec-009` CORS from public-URL env + comma-separated extras (closes durable `sec-004` path)
+
+### Checkpoint: Security (BFF / CORS)
+
+- [ ] Phase 1b acceptance criteria pass
 - [ ] Human review before Phase 2
 
 ### Phase 2 — Billing guard
@@ -139,7 +161,7 @@ Human approval to start (Task 17 or explicit go)
 
 ### Phase 6 — P2
 
-- [ ] `sec-003`, `sec-004`, `bill-002`, `dead-002`, `dead-003`, `mkt-013`, `vocab-005`
+- [ ] `sec-003`, `sec-004` (if not already closed by `sec-009`), `sec-010`, `sec-011`, `sec-012`, `bill-002`, `dead-002`, `dead-003`, `mkt-013`, `vocab-005`
 
 ### Checkpoint: P2
 
@@ -171,12 +193,13 @@ Human approval to start (Task 17 or explicit go)
 | Band | Ids |
 |------|-----|
 | Map | `audit-parent` |
-| P1 Security | `sec-001`, `sec-002`, `sec-005` |
+| P1 Security (auth) | `sec-001`, `sec-002`, `sec-005` |
+| P1 Security (BFF/CORS) | `sec-006` (map), `sec-007`, `sec-008`, `sec-009` |
 | P1 Billing guard | `bill-001` |
 | P1 Data / live dead | `data-001`, `dead-004`, `dead-005` |
 | P1 Marketing | `mkt-001` (map), `mkt-002`…`mkt-012`, `mkt-014` |
 | P1 Vocabulary | `vocab-001` (map), `vocab-002`…`vocab-004` |
-| P2 | `sec-003`, `sec-004`, `bill-002`, `dead-002`, `dead-003`, `mkt-013`, `vocab-005` |
+| P2 | `sec-003`, `sec-004`, `sec-010`, `sec-011`, `sec-012`, `bill-002`, `dead-002`, `dead-003`, `mkt-013`, `vocab-005` |
 | P3 | `arch-001-api`, `arch-001-app`, `dead-006` |
 | P4 | `test-001-api`, `test-001-app` |
 
@@ -189,8 +212,12 @@ Human approval to start (Task 17 or explicit go)
 | Accidental billing/Stripe change | High | Standing do-nots; guards are verify-only |
 | Speculative P3 refactors | Med | Split only with evidence of two jobs |
 | Scope creep across bands | Med | One approved id (or named set) per session |
+| “Fix” staging CORS by hardcoding FE in middlewares | High | Forbidden — set public-URL env (`sec-009`); 6b.4 deferred |
+| Blind open `/api` proxy | High | `sec-008` requires allowlisted / product-shaped Nitro routes |
+| Hardcoded CORS host drift (fanecco / LAN) | Med | Env SoT only; empty env = empty allowlist |
 
 ## Open questions
 
 - Start audit remediation before monorepo Task 17, or only after? Default: **wait for explicit go** (Task 17 or earlier override).
 - File GitHub issues when fixing, or fix in product remotes only? Default: **product remotes / monorepo as directed; no GitHub audit filing unless asked**.
+- Start Phase 1b (BFF/CORS) before or after Phase 1 auth? Default: **after auth checkpoint**, unless human reorders (BFF is large).

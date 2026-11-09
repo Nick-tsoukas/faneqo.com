@@ -4,7 +4,7 @@ Side-by-side product trees under one root git (content-only `staging` on [`Nick-
 
 **Product remotes stay the source of truth.** [`musicbizqr`](https://github.com/Nick-tsoukas/musicbizqr) and [`qrserver`](https://github.com/Nick-tsoukas/qrserver) keep receiving normal development. Migration does **not** pause FE/BE work; it only delays monorepo history merge, remote-affecting `.git` surgery, and Railway prod retarget until staging is live.
 
-**Migration (canonical):** read [`tasks/plan.md`](tasks/plan.md); track [`tasks/todo.md`](tasks/todo.md). Do not invent a second plan. **Status 2026-11-09:** staging done (Checkpoint B). **Next real work:** history merge (Tasks 7–10) when human says go. After that: small CI/workspace chores (11–13), then prod cutover (16). Optional product edits (14–15) only if needed. Local `npm test` already works — Task 12 is Actions wiring only, not new tests.
+**Migration (canonical):** read [`tasks/plan.md`](tasks/plan.md); track [`tasks/todo.md`](tasks/todo.md). Do not invent a second plan. **Status 2026-11-09:** staging done (Checkpoint B). Browser HTTPS + droplet env HTTPS done (**6b.1–6b.3**). **6b.4 CORS** → audit `sec-006`–`sec-009` (Nitro BFF / hide Strapi; CORS from public-URL env + extras — no hardcoded hosts). OAuth (**6b.5**) held. **Next real work:** history merge (Tasks 7–10) when human says go. After that: FE/BE CI port + workspace (11, 13; **12** done), then prod cutover (16). Optional product edits (14–15) only if needed.
 
 **Audit issues (parallel track, not started):** plan [`tasks/audit-issues-plan.md`](tasks/audit-issues-plan.md), progress [`tasks/audit-issues-todo.md`](tasks/audit-issues-todo.md), specs [`tasks/audit-issues.md`](tasks/audit-issues.md). Does not replace the staging plan.
 
@@ -50,7 +50,7 @@ Dev = host hot-reload + mise + SQLite (no Docker). Local staging = same compose 
 
 ## Staging (done)
 
-DO droplet live (`159.203.131.189`); compose `up -d`; Actions SSH deploy + selective FE/BE rebuild. Cron off; no mise/stackrun on droplet. Detail: [`docs/staging-droplet.md`](docs/staging-droplet.md), [`docs/staging-data.md`](docs/staging-data.md). No live Stripe, live Resend, production domains, or Railway `chalk-volume`. Optional later: Task 6b (staging domain + TLS + Google OAuth).
+DO droplet live (`159.203.131.189`); compose `up -d`; Actions SSH deploy + selective FE/BE rebuild. Cron off; no mise/stackrun on droplet. Browser HTTPS: `https://staging.faneqo.com` + `https://staging-api.faneqo.com` (CF Page Rules Flexible + host nginx `.do/`). Droplet `.env` public URLs = those HTTPS hostnames (**6b.3**). Browser→API CORS is **not** widened here — audit `sec-006`–`sec-009`. Google OAuth (**6b.5**) held. Detail: [`docs/staging-droplet.md`](docs/staging-droplet.md), [`docs/staging-data.md`](docs/staging-data.md). No live Stripe, live Resend, production domains, or Railway `chalk-volume`.
 
 ## Re-clone tips (Phase 1 temp `.git` removal)
 
@@ -68,7 +68,7 @@ Canonical detail: [`tasks/todo.md`](tasks/todo.md) Decisions log + [`tasks/plan.
 - **Temp nested `.git`:** YES (local only; re-clone before history merge).
 - **History tool:** defer until history phase.
 - **Staging:** DO only (**never** Railway staging); **2GB** droplet; Checkpoint B done. Leftover migration: **history merge → prod cutover**. Tasks 11–13 = small post-merge chores only.
-- **Staging public URLs:** droplet IP over HTTP for `STAGING_API_PUBLIC` / `STAGING_WEB_PUBLIC` until a staging domain + TLS + Google redirects (Task 6b later).
+- **Staging public URLs:** browser HTTPS hostnames + droplet app env HTTPS (**6b.1–6b.3**). CORS/BFF = audit `sec-006`–`sec-009`. Google OAuth (**6b.5**) optional.
 - **Unified compose:** YES — one `docker-compose.yml` (no profiles); volume-mounted built apps for **staging only** (Architecture G). Dev = host + SQLite, no compose. Staging ups all services. Staging FE/BE: **stock Node** nested tags FE/BE → `NODE_VERSION` → `22.11.0` (dual versions allowed; Compose ≥ 2.18; no wrapper script); no custom Dockerfiles unless needed.
 - **Local Node tooling:** mise on host only (`mise.toml`); not required on droplet / staging containers (Architecture H).
 - **Branches:** `main` empty for now; all work on `staging`; `staging` deploys to droplet.

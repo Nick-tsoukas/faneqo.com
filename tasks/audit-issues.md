@@ -1,10 +1,10 @@
 # Audit issues
 
-Specs for the **37** audit issues. **Plan (central):** [`tasks/audit-issues-plan.md`](audit-issues-plan.md). **Progress:** check ids in [`tasks/audit-issues-todo.md`](audit-issues-todo.md) as each issue resolves.
+Specs for the **44** audit issues. **Plan (central):** [`tasks/audit-issues-plan.md`](audit-issues-plan.md). **Progress:** check ids in [`tasks/audit-issues-todo.md`](audit-issues-todo.md) as each issue resolves.
 
 **Status: not started.** Acceptance criteria below are the done definition for each id. Progress boxes live on the todo; mark criteria here when that issue ships.
 
-**Standing do-nots:** no Stripe amount / trial / Lifetime Pro (`free`) meaning changes; no fan charges or limited Free tier; leave `POST /stripe/confirm-social` unregistered; do not claim YouTube routes are reachable in production; do not publish toy band names; do not invent extra issues from marketing page-scan notes; no GitHub filing unless separately approved.
+**Standing do-nots:** no Stripe amount / trial / Lifetime Pro (`free`) meaning changes; no fan charges or limited Free tier; leave `POST /stripe/confirm-social` unregistered; do not claim YouTube routes are reachable in production; do not publish toy band names; do not invent extra issues from marketing page-scan notes; no GitHub filing unless separately approved; **do not hardcode CORS hosts** in `middlewares.js` (including a one-off staging FE string) — origins come from public-URL env SoT + optional comma-separated extras (`sec-009`); BFF still means browsers should not call Strapi (`sec-006`–`sec-008`).
 
 ---
 
@@ -16,6 +16,10 @@ Specs for the **37** audit issues. **Plan (central):** [`tasks/audit-issues-plan
 | `sec-001` | 1 | High | S | qrserver | audit-parent | YouTube connect, sync, and debug routes do not check who is calling |
 | `sec-002` | 1 | High | XS | qrserver | audit-parent | User-admin routes accept the general API token when the dedicated secret is missing |
 | `sec-005` | 1 | High | S | qrserver | audit-parent | Four Stripe signup routes never say whether the caller must be logged in |
+| `sec-006` | 1 | High | XL | musicbizqr | audit-parent | Map: browsers talk to Strapi directly; the API host must stay private behind Nuxt |
+| `sec-007` | 1 | High | L | musicbizqr | sec-006 | `public.strapiUrl` and `@nuxtjs/strapi` ship the Strapi host to every browser |
+| `sec-008` | 1 | High | XL | musicbizqr | sec-006 | Product traffic still hits Strapi from the browser; Nitro must same-origin proxy it |
+| `sec-009` | 1 | High | M | qrserver | sec-006 | Strapi CORS origins are hardcoded; drive them from public-URL env + optional extras |
 | `bill-001` | 1 | High | XS | musicbizqr | audit-parent | The value free on an artist account means Lifetime Pro, not a small free plan |
 | `data-001` | 1 | High | M | qrserver | audit-parent | Stored pages still link to musicbizqr.com |
 | `dead-004` | 1 | High | S | musicbizqr | audit-parent | Test and internal preview pages are still on the live site |
@@ -39,6 +43,9 @@ Specs for the **37** audit issues. **Plan (central):** [`tasks/audit-issues-plan
 | `vocab-004` | 1 | High | S | musicbizqr | audit-parent | Public copy uses free for a plan that is not the 30-day trial |
 | `sec-003` | 2 | Low | XS | qrserver | audit-parent | A failed Stripe webhook returns the library's error text to the caller |
 | `sec-004` | 2 | Medium | XS | qrserver | audit-parent | The browser allowlist includes fanecco.com, which this audit did not confirm we own |
+| `sec-010` | 2 | Medium | S | musicbizqr | sec-006 | Shipped pages hardcode Railway and api.musicbizqr.com Strapi hosts |
+| `sec-011` | 2 | Medium | S | qrserver | sec-006 | Production middlewares stub CSP and drop the upload-enumeration block |
+| `sec-012` | 2 | Medium | S | qrserver | sec-006 | Strapi admin and :1337 stay reachable on the public API hostname |
 | `bill-002` | 2 | Medium | S | qrserver | audit-parent | The Connect fee, payment buttons, 30-day trial, and subscription check are already decided |
 | `dead-002` | 2 | High | M | musicbizqr | audit-parent | Unused pages and unused components are still in the app |
 | `dead-003` | 2 | High | S | musicbizqr | audit-parent | Old homepages are still on the live site |
@@ -190,6 +197,148 @@ Priority **1**, severity **High**, effort **S**, repo **qrserver**, findings `SE
 - `qrserver/src/api/stripe/controllers/stripe.js` (citation from draft; local trees may be `frontend/` / `backend/`)
 
 **Estimated scope:** S
+
+---
+
+### `sec-006`: Map: browsers talk to Strapi directly; the API host must stay private behind Nuxt
+
+**Role:** Map / parent (children carry the work)
+
+**Description:** Problem. Today the browser learns the Strapi origin and calls it cross-origin. `runtimeConfig.public.strapiUrl` and `@nuxtjs/strapi` put `STRAPI_URL` in the client payload. About seventy client files `$fetch` absolute `${strapiUrl}/api/...`; the Strapi module hits the same host. Nitro has no Strapi reverse-proxy in `routeRules` — only a thin BFF (fan subscribe, band-view, merch, ads, a few admin routes). Staging even publishes `https://staging-api.faneqo.com` into that public channel. Visitors can see the API host in DevTools. CORS is currently the gate that allows that browser→Strapi pattern.
+
+Target. Only the Nuxt server talks to Strapi. The browser talks same-origin to Nuxt (Nitro server routes / proxy). The Strapi URL and droplet IP never appear in HTML, JS, or Network as a third-party API host. Strapi CORS is **not** a hardcoded host list: it is built from the same public-URL env vars every environment already uses, plus an optional comma-separated extras env (`sec-009`). Do **not** patch staging by editing a string array in `middlewares.js`. Migration Task **6b.4** is deferred into this map.
+
+Children (order): `sec-007` hide the URL from the client → `sec-008` Nitro same-origin proxy for product traffic → `sec-009` env-driven CORS SoT. Related P2: `sec-004` (fanecco disappears when hardcodes die and env omits it), `sec-010` hardcoded Railway hosts, `sec-011` production middleware drift, `sec-012` public admin / :1337.
+
+Priority **1**, severity **High**, effort **XL**, repo **musicbizqr** (+ qrserver for CORS), findings `SEC-CORS-BFF`, labels: security, audit, architecture.
+
+**Acceptance criteria:**
+
+- [ ] Children `sec-007`, `sec-008`, `sec-009` each have one problem sentence and one fix sentence.
+- [ ] Standing do-not: no PR that only hardcodes a staging FE origin into `middlewares.js` as the staging “fix”.
+- [ ] Map closed only when those three children meet their acceptance criteria (P2 relatives may trail).
+
+**Verification:**
+
+- [ ] Section `sec-006` still matches this page’s inventory title and acceptance criteria
+- [ ] Manual check: child ids appear on this page and in `tasks/audit-issues-todo.md`
+
+**Dependencies:** audit-parent
+
+**Files likely touched:**
+
+- (map only — children list concrete paths)
+
+**Estimated scope:** XL
+
+---
+
+### `sec-007`: `public.strapiUrl` and `@nuxtjs/strapi` ship the Strapi host to every browser
+
+**Role:** Actionable
+
+**Description:** Problem. Nuxt puts the API origin in `runtimeConfig.public.strapiUrl` from `STRAPI_URL` / `NUXT_PUBLIC_STRAPI_URL` (`frontend/nuxt.config.ts`). The `@nuxtjs/strapi` module `strapi.url` uses the same env. Every page’s client payload can reveal `https://staging-api.faneqo.com`, Railway, or a droplet IP. Composables and pages read `useRuntimeConfig().public.strapiUrl` (~88 non-server files).
+
+Fix. Keep Strapi URL **private** (server-only runtimeConfig / `process.env.STRAPI_URL` on Nitro). Stop putting it under `public`. Stop configuring the client Strapi module to a cross-origin absolute host (same-origin relative base, or server-only client). After this, View Source / `__NUXT__` must not contain the Strapi hostname. Depends on `sec-008` for traffic that still needs an API.
+
+Priority **1**, severity **High**, effort **L**, repo **musicbizqr**, findings `SEC-PUBLIC-STRAPI-URL`, labels: security, audit.
+
+**Acceptance criteria:**
+
+- [ ] `runtimeConfig.public` has no `strapiUrl` (or equivalent) that holds the Strapi origin.
+- [ ] Built client payload / `__NUXT__` on a logged-out public page does not contain the Strapi hostname or droplet IP.
+- [ ] `NUXT_PUBLIC_STRAPI_URL` is removed from staging docs as a required public overlay (server-only `STRAPI_URL` remains).
+- [ ] Server routes that need Strapi still read a private config or `process.env.STRAPI_URL`.
+
+**Verification:**
+
+- [ ] Section `sec-007` still matches this page’s inventory title and acceptance criteria
+- [ ] Manual check: curl a public FE HTML/JS bundle; no `staging-api` / Railway / `:1337` API origin in client payload
+
+**Dependencies:** sec-006; practically pairs with sec-008 (do not ship hide-URL without a working same-origin path)
+
+**Files likely touched:**
+
+- `musicbizqr/nuxt.config.ts` (local: `frontend/nuxt.config.ts`)
+- `musicbizqr` composables/pages/plugins that read `public.strapiUrl`
+- `docs/staging-droplet.md`, `example.env` comments
+
+**Estimated scope:** L
+
+---
+
+### `sec-008`: Product traffic still hits Strapi from the browser; Nitro must same-origin proxy it
+
+**Role:** Actionable
+
+**Description:** Problem. Dominant pattern is browser → Strapi absolute URL (`$fetch(\`${strapiUrl}/api/...\`)`, `useStrapi*`). Nitro BFF exists only for a few paths (`server/api/fans/subscribe.post.js` already says the artist page must not depend on browser→:1337; also band-view, merch, ads, some admin). There is no `routeRules` proxy to Strapi. Authed product (inbox, galleries, uploads, dashboard finds) and much of the public artist page still call Strapi from the browser.
+
+Fix. Browser only calls same-origin Nuxt routes. Nitro (server routes and/or a controlled `/api/**` proxy) forwards to Strapi with server-side `STRAPI_URL`. JWT stays on the FE origin (existing `strapi_jwt` cookie) or is attached server-side — browser never needs the Strapi host. Prefer expanding the existing BFF pattern over a blind open proxy. Slice by product path if needed, but the issue is not done until browser Network on core band/dashboard flows shows only the FE host for API calls.
+
+Priority **1**, severity **High**, effort **XL**, repo **musicbizqr**, findings `SEC-BFF-PROXY`, labels: security, audit, architecture.
+
+**Acceptance criteria:**
+
+- [ ] Core public band-page and logged-in dashboard API calls from the browser are same-origin to Nuxt (no cross-origin Strapi host in Network).
+- [ ] No new open proxy that forwards arbitrary paths/methods without an allowlist or existing product route shape.
+- [ ] Existing BFF routes (subscribe, band-view, merch, ads) keep working; subscribe no longer needs a browser→Strapi fallback.
+- [ ] Upload / media flows either go through Nuxt or use CDN URLs that are not the Strapi API origin (document any intentional CDN exception).
+
+**Verification:**
+
+- [ ] Section `sec-008` still matches this page’s inventory title and acceptance criteria
+- [ ] Manual check: DevTools Network on band page + one authed dashboard screen — API XHR/fetch hosts are FE only
+
+**Dependencies:** sec-006; implement with or immediately after sec-007
+
+**Files likely touched:**
+
+- `musicbizqr/server/api/**`, `musicbizqr/nuxt.config.ts` routeRules
+- `musicbizqr/composables/**`, `musicbizqr/pages/**`, `musicbizqr/utils/**` that call Strapi from the client
+- `musicbizqr/utils/fan/joinArtistFanList.js` (drop Strapi-first fallback)
+
+**Estimated scope:** XL
+
+---
+
+### `sec-009`: Strapi CORS origins are hardcoded; drive them from public-URL env + optional extras
+
+**Role:** Actionable
+
+**Description:** Problem. `backend/config/middlewares.js` and `backend/config/env/production/middlewares.js` hardcode CORS `origin` arrays (localhost, a private LAN IP, musicbizqr, faneqo, **fanecco** ±www). Staging FE is missing until someone edits the file. Every environment needs a different list, so the hardcode drifts and ships unowned hosts (`sec-004`).
+
+Fix. One mechanism for all envs: build the CORS origin list from the **same public URL env vars** the app already uses as SoT for the frontend origin (normalize to origin only — scheme + host + optional port; strip paths). Primary sources (first non-empty wins, or union of non-empty — pick one rule and document it): `PUBLIC_APP_URL`, `FRONTEND_URL`, `WEB_PUBLIC`, and when `NODE_ENV=staging` the matching `STAGING_PUBLIC_APP_URL` / `STAGING_FRONTEND_URL` / `STAGING_WEB_PUBLIC` overlays already used by stack/droplet. Plus an optional env (name in PR, e.g. `CORS_ADDITIONAL_ORIGINS`) that accepts a **comma-separated** list of extra origins for rare tooling. No musicbizqr / faneqo / fanecco / LAN strings left in middleware source. Empty public-URL env ⇒ empty allowlist (fail closed), not a baked-in fallback host list.
+
+Relation to BFF (`sec-007`/`sec-008`): Nuxt server → Strapi does not need browser CORS. After BFF, product browsers should not call Strapi; public-URL env may still be set for links/redirects, but CORS is only for whatever still must be browser→Strapi (ideally nothing) plus explicit extras. Until BFF lands, wiring droplet/prod `PUBLIC_APP_URL` (etc.) is how staging/prod FE origins enter CORS — **not** a one-line hardcode of `https://staging.faneqo.com` in git. Migration 6b.4 superseded by this issue.
+
+Priority **1**, severity **High**, effort **M**, repo **qrserver**, findings `SEC-CORS-ENV`, labels: security, audit.
+
+**Acceptance criteria:**
+
+- [ ] `strapi::cors` `origin` is computed from public-URL env vars (documented which keys + normalize rule); no hardcoded product host list in middlewares source.
+- [ ] Optional comma-separated extras env is supported; empty/unset adds nothing.
+- [ ] Default and production middleware files share the same builder (no divergent hardcoded prod array).
+- [ ] fanecco.com / private LAN are absent unless present in env (satisfies `sec-004` when env is clean).
+- [ ] Local / staging / prod each get the right allowlist by setting the same public-URL env keys already used for that env (droplet staging uses HTTPS FE URL already set in 6b.3).
+- [ ] `example.env` (+ droplet docs) document the public-URL keys and the extras env; migration 6b.4 points here.
+- [ ] Nuxt server-side `$fetch` to Strapi still succeeds (server-to-server; not gated on browser CORS).
+
+**Verification:**
+
+- [ ] Section `sec-009` still matches this page’s inventory title and acceptance criteria
+- [ ] Manual check: with only `PUBLIC_APP_URL=https://staging.faneqo.com`, preflight from that origin is allowed; with empty public-URL + empty extras, browser ACAO is denied; changing env does not require editing `middlewares.js`
+- [ ] Manual check: ripgrep middlewares for `fanecco` / `musicbizqr.com` / `172.20` returns none
+
+**Dependencies:** sec-006; can land before or with sec-007/sec-008 (env SoT is independent of BFF; BFF reduces who needs to be on the list)
+
+**Files likely touched:**
+
+- `qrserver/config/middlewares.js` (local: `backend/config/middlewares.js`)
+- `qrserver/config/env/production/middlewares.js`
+- small helper under `qrserver/config/` or `src/utils/` if needed to parse/normalize origins
+- `example.env`, `docs/staging-droplet.md`, Task 6b.4 note
+
+**Estimated scope:** M
 
 ---
 
@@ -1002,26 +1151,28 @@ Priority **2**, severity **Low**, effort **XS**, repo **qrserver**, findings `SE
 
 ### `sec-004`: The browser allowlist includes fanecco.com, which this audit did not confirm we own
 
-**Role:** Actionable
+**Role:** Actionable (interim; prefer closing via `sec-009`)
 
-**Description:** Problem. A browser will let a web page call this API from the visitor's browser only when that page's site is on the CORS allowlist. Both the default list and the production list include fanecco.com. That name is not Faneqo and not MusicBizQR. This audit did not check who owns it.
+**Description:** Problem. Hardcoded CORS lists include fanecco.com (±www) and a private LAN origin. This audit did not confirm fanecco ownership. Those hosts only appear because the allowlist is a string array in git.
 
-Where. qrserver/config/middlewares.js allows https://musicbizqr.com, https://www.musicbizqr.com, https://faneqo.com, https://www.faneqo.com, https://fanecco.com, and https://www.fanecco.com. It also allows http://localhost:3000 and a private-network address. qrserver/config/env/production/middlewares.js allows the same three site names, with and without www. The production file does not list localhost.
+Where. `backend/config/middlewares.js` and `backend/config/env/production/middlewares.js`.
+
+Note. Durable fix is `sec-009`: origins from public-URL env + optional comma-separated extras — fanecco/LAN vanish unless someone puts them in env. Mark this done when `sec-009` ships and production/staging env do not include those hosts.
 
 Priority **2**, severity **Medium**, effort **XS**, repo **qrserver**, findings `SEC-004`, labels: security, audit.
 
 **Acceptance criteria:**
 
-- [ ] Production CORS does not list fanecco.com unless the pull request records that this project owns it.
-- [ ] Production CORS does not list localhost or a private-network address.
-- [ ] faneqo.com and the current app origin still work.
+- [ ] fanecco.com is not in middleware source and not in production/staging CORS env unless ownership is recorded.
+- [ ] Private-network origins are not in middleware source and not in production CORS env.
+- [ ] `sec-009` done (env-driven SoT), or an interim PR removes fanecco/LAN from the hardcode without adding new hardcoded product hosts.
 
 **Verification:**
 
 - [ ] Section `sec-004` still matches this page’s inventory title and acceptance criteria
 - [ ] Manual check: acceptance criteria pass against product code
 
-**Dependencies:** audit-parent
+**Dependencies:** audit-parent; superseded-by path `sec-009`
 
 **Files likely touched:**
 
@@ -1029,6 +1180,102 @@ Priority **2**, severity **Medium**, effort **XS**, repo **qrserver**, findings 
 - `qrserver/config/env/production/middlewares.js` (citation from draft; local trees may be `frontend/` / `backend/`)
 
 **Estimated scope:** XS
+
+---
+
+### `sec-010`: Shipped pages hardcode Railway and api.musicbizqr.com Strapi hosts
+
+**Role:** Actionable
+
+**Description:** Problem. Even when env is correct, some pages embed absolute Strapi hosts in client code: `pages/seo.vue` (Railway admin + API), `pages/directqrold.vue` (Railway), `pages/admin/repair-qrs.vue` (`https://api.musicbizqr.com`). Those strings leak into the bundle if the routes are reachable and bypass the private-URL goal of `sec-007`.
+
+Fix. Remove hardcodes, point through same-origin Nitro / private env, or delete/gate the pages (auth + noindex) if they are internal-only tools. Prefer deletion when the page is dead (`directqrold`).
+
+Priority **2**, severity **Medium**, effort **S**, repo **musicbizqr**, findings `SEC-HARDCODED-API-HOST`, labels: security, audit.
+
+**Acceptance criteria:**
+
+- [ ] No client-shipped page hardcodes `qrserver-production.up.railway.app` or `api.musicbizqr.com`.
+- [ ] Remaining admin tools use private server config or same-origin routes only.
+- [ ] Dead pages removed or production-404’d with evidence.
+
+**Verification:**
+
+- [ ] Section `sec-010` still matches this page’s inventory title and acceptance criteria
+- [ ] Manual check: ripgrep client trees for those host strings returns none (or only docs/scripts)
+
+**Dependencies:** sec-006
+
+**Files likely touched:**
+
+- `musicbizqr/pages/seo.vue`, `pages/directqrold.vue`, `pages/admin/repair-qrs.vue`
+- related `server/api/admin/*` fallbacks
+
+**Estimated scope:** S
+
+---
+
+### `sec-011`: Production middlewares stub CSP and drop the upload-enumeration block
+
+**Role:** Actionable
+
+**Description:** Problem. Default `backend/config/middlewares.js` has a detailed `strapi::security` CSP and registers `global::block-upload-file-enumeration`. Production override `backend/config/env/production/middlewares.js` replaces security with `contentSecurityPolicy: { /* your CSP config */ }` and does **not** list the upload-enumeration middleware. Production may run weaker headers than default/staging.
+
+Fix. Align production middlewares with the hardened default (real CSP, keep enumeration block), or document an intentional prod-only difference. Do not leave the placeholder comment as the live CSP.
+
+Priority **2**, severity **Medium**, effort **S**, repo **qrserver**, findings `SEC-PROD-MIDDLEWARE-DRIFT`, labels: security, audit.
+
+**Acceptance criteria:**
+
+- [ ] Production middlewares no longer ship an empty/placeholder CSP object.
+- [ ] `global::block-upload-file-enumeration` runs in production (or PR records why not).
+- [ ] CORS changes stay consistent with `sec-009` / `sec-004`.
+
+**Verification:**
+
+- [ ] Section `sec-011` still matches this page’s inventory title and acceptance criteria
+- [ ] Manual check: production config file reviewed; boot still healthy
+
+**Dependencies:** audit-parent; coordinate with sec-009 if both touch middlewares
+
+**Files likely touched:**
+
+- `qrserver/config/env/production/middlewares.js`
+- `qrserver/config/middlewares.js` (reference)
+
+**Estimated scope:** S
+
+---
+
+### `sec-012`: Strapi admin and :1337 stay reachable on the public API hostname
+
+**Role:** Actionable
+
+**Description:** Problem. Staging serves Strapi (including `/admin`) on `https://staging-api.faneqo.com` and historically on public droplet `:1337`. After BFF, product browsers should not need that host at all. Leaving admin and the raw Node port on the open internet widens the attack surface (admin login brute force, direct API probing).
+
+Fix. Prefer: close public `3000`/`1337` on the droplet firewall (nginx → localhost only); restrict `/admin` (VPN, Cloudflare Access, IP allowlist, or separate admin hostname); keep Nuxt→Strapi on private network / localhost. Document the chosen control. Prod Railway admin exposure is a separate cutover concern — record, do not silently change Railway networking without approval.
+
+Priority **2**, severity **Medium**, effort **S**, repo **qrserver**, findings `SEC-ADMIN-EXPOSURE`, labels: security, audit, ops.
+
+**Acceptance criteria:**
+
+- [ ] Staging droplet does not need public `:1337` / `:3000` for normal dogfood (nginx localhost only), or PR records residual need.
+- [ ] Strapi `/admin` access path is documented (who can reach it; how).
+- [ ] Product dogfood uses FE hostname only; API hostname not required in the browser for band/dashboard flows (after sec-008).
+
+**Verification:**
+
+- [ ] Section `sec-012` still matches this page’s inventory title and acceptance criteria
+- [ ] Manual check: from the public internet, direct `:1337` closed or documented; admin policy written in droplet docs
+
+**Dependencies:** sec-006; stronger after sec-008
+
+**Files likely touched:**
+
+- droplet firewall / nginx (ops); `docs/staging-droplet.md`
+- optional Cloudflare Access notes
+
+**Estimated scope:** S
 
 ---
 

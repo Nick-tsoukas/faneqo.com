@@ -8,23 +8,21 @@ Do not make monorepo-driven edits under `frontend/` / `backend/` until Task 15 i
 
 ## Status (2026-11-09)
 
-**Done:** Phase 0–2 (Tasks 1–6). Staging live on DO. Root `npm test` works locally. Staging deploy Actions live.
+**Done:** Phase 0–2 (Tasks 1–6 + Checkpoint B). Staging live on DO. Root `npm test` local + Actions (**12** done early). Staging deploy Actions live. Browser HTTPS on `staging.faneqo.com` / `staging-api.faneqo.com` (**6b.1–6b.2** done: CF Page Rules Flexible + host nginx `.do/`).
 
-**Next when human says go:** Tasks **7–10** (history merge). That is the real remaining migration work.
+**Now (ops crumb):** **6b.1–6b.3 done.** **6b.4 CORS deferred** to audit track (`sec-006`–`sec-009` — Nitro BFF / hide Strapi; do **not** allowlist staging FE→API). **6b.5** Google OAuth held.
 
-**Done early:** Task **12** — root `npm test` GitHub Actions (`.github/workflows/root-ci.yml`) on content-only `staging`. No history/prod.
+**Next real migration (HOLD until human says go):** Tasks **7–10** (history merge into `faneqo.com`).
 
-**After history (small chores, not big phases):**
-- **11** = port FE/BE `ci.yml` onto monorepo root Actions with path filters (still waits on history).
-- **13** = daily workspace = `faneqo.com` checkout (housekeeping after merge).
+**After history (small chores):**
+- **11** = port FE/BE `ci.yml` onto monorepo root Actions with path filters.
+- **13** = daily workspace = `faneqo.com` checkout.
 - **14–15** = only if cutover needs monorepo product diffs (explicit go). Often skippable.
 - **16** = prod Railway → monorepo (separate approval).
 
-**Next ops (when approved):** Task **6b** — `staging.faneqo.com` + HTTPS (Cloudflare DNS + origin proxy). Plan in `tasks/plan.md` Architecture C.1. History/prod still held.
+**Optional / separate:** Task **17** / audit track (includes FE↔BE CORS+BFF).
 
-**Optional / separate:** Task **17** (audit track).
-
-Plain English leftover: **staging HTTPS (6b) when you want it; else history merge → FE/BE CI port + workspace → prod cutover.**
+Plain English leftover: **optional OAuth → history merge → FE/BE CI port + workspace → prod cutover.** CORS/BFF = audit, not migration.
 
 ---
 
@@ -508,38 +506,40 @@ Plain English leftover: **staging HTTPS (6b) when you want it; else history merg
 
 
 
-### Task 6b: Staging hostname + HTTPS (`staging.faneqo.com`) — READY TO BUILD after forks
+### Task 6b: Staging hostname + HTTPS (`staging.faneqo.com`) — IN PROGRESS
 
-**Description:** Wire droplet to Cloudflare hostnames with working HTTPS. Canonical design: Architecture **C.1** in `tasks/plan.md`. Split below so DNS/proxy/env/CORS/OAuth can land in order. **Do not start until human approves the forks** listed in C.1 (API hostname, proxy choice, SSL mode, CORS edit, OAuth same-pass?).
+**Description:** Wire droplet to Cloudflare hostnames with working HTTPS. Canonical design: Architecture **C.1** in `tasks/plan.md`. **6b.1–6b.3 done.** **6b.4** moved to audit (`sec-006`–`sec-009`). **6b.5** OAuth optional/held.
 
 **Overall acceptance:**
 
-- [ ] `https://staging.faneqo.com` serves FE; API hostname serves Strapi over HTTPS
-- [ ] Droplet `.env` public URL overlays use HTTPS hostnames (not bare IP ports)
-- [ ] Browser FE→API works (CORS allowlist updated if approved)
-- [ ] Still no prod domain rewrite / live Stripe / live Resend / `chalk-volume`
-- [ ] Docs + root tests updated for hostname path
+- [x] `https://staging.faneqo.com` serves FE; `https://staging-api.faneqo.com` serves Strapi over HTTPS (browser via CF)
+- [x] Droplet `.env` public URL overlays use HTTPS hostnames (not bare IP ports) — **6b.3**
+- [x] CORS / browser→Strapi **not** “fixed” here — deferred to audit `sec-006`–`sec-009` (Nitro BFF; do not allowlist staging FE)
+- [x] Still no prod domain rewrite / live Stripe / live Resend / `chalk-volume`
+- [x] Docs + `example.env` comments updated for hostname path (with 6b.3)
 
 **Dependencies:** Checkpoint B (done); human owns Cloudflare zone `faneqo.com`
 
-**Estimated scope:** M (ops + root compose/docs; tiny backend CORS if approved)
+**Estimated scope:** M (ops + docs; tiny backend CORS if approved)
+
+**Done notes (2026-11-09):** DNS A `staging` + `staging-api` → `159.203.131.189` proxied. Host nginx from gitignored `.do/nginx/` on droplet `:80` → `127.0.0.1:3000` / `:1337`. CF Page Rules SSL=Flexible for those two hosts only (zone SSL left alone for Railway prod). No compose proxy. No self-signed / Origin CA.
 
 ---
 
 #### Task 6b.1: Cloudflare DNS + SSL mode
 
-**Description:** Create DNS records for FE (+ API) hostnames pointing at droplet `159.203.131.189`, proxied. Set zone SSL/TLS to **Full (strict)** once origin cert exists (or stage as Full until Origin CA installed). Human can click DNS in CF dashboard; agent may assist via CF tools if authed.
+**Description:** Create DNS records for FE (+ API) hostnames pointing at droplet `159.203.131.189`, proxied. Use **Page Rules** SSL=Flexible on staging hosts only so zone SSL can stay Full/strict for Railway prod.
 
 **Acceptance criteria:**
 
-- [ ] `staging.faneqo.com` A/AAAA → droplet IP, proxied
-- [ ] API hostname (default `api.staging.faneqo.com`) A/AAAA → same IP, proxied
-- [ ] SSL/TLS mode documented (target Full strict)
+- [x] `staging.faneqo.com` A → droplet IP, proxied
+- [x] `staging-api.faneqo.com` A → same IP, proxied (not `api.staging` — Universal SSL one-label limit)
+- [x] SSL mode documented: Page Rules Flexible for staging hosts; zone SSL unchanged for prod
 
 **Verification:**
 
-- [ ] Manual check: `dig` / CF dashboard shows orange-cloud records
-- [ ] Manual check: HTTPS may fail until 6b.2 (expected)
+- [x] Manual check: CF dashboard shows orange-cloud records
+- [x] Manual check: HTTPS works after 6b.2 + Page Rules
 
 **Dependencies:** Human fork OK on hostnames
 
@@ -547,82 +547,77 @@ Plain English leftover: **staging HTTPS (6b) when you want it; else history merg
 
 **Estimated scope:** S (ops)
 
+**Status:** complete 2026-11-09
+
 ---
 
-#### Task 6b.2: Origin reverse proxy + Origin CA on droplet
+#### Task 6b.2: Origin reverse proxy on droplet (host nginx)
 
-**Description:** Add TLS-terminating reverse proxy on droplet listening 80/443. Recommended: **Caddy compose service** with Cloudflare Origin CA cert/key (bind-mounted, gitignored). Route `Host: staging.faneqo.com` → `frontend:3000`; API host → `backend:1337`. Open DO firewall 80/443. Prefer closing public 3000/1337 after smoke (or restrict).
+**Description:** Host nginx on droplet listening `:80` (gitignored `.do/nginx/`). Route `Host: staging.faneqo.com` → `127.0.0.1:3000`; `staging-api.faneqo.com` → `127.0.0.1:1337`. No compose proxy. No origin TLS / no self-signed certs — CF Flexible Page Rules terminate HTTPS at edge.
 
 **Acceptance criteria:**
 
-- [ ] Proxy service in root compose (or approved alt) with `restart: unless-stopped`
-- [ ] Origin CA (or approved cert) installed; not committed to git
-- [ ] `https://staging.faneqo.com` and API hostname return app responses through CF
-- [ ] Local attached staging still workable (proxy optional/profile-free — document local skip if proxy only needed on droplet)
+- [x] Host nginx installed + enabled on droplet (not in compose)
+- [x] Config from `.do/nginx/` (gitignored); not committed
+- [x] `https://staging.faneqo.com` and `https://staging-api.faneqo.com` return app responses through CF
+- [x] Local attached staging unchanged (proxy is droplet-only)
 
 **Verification:**
 
-- [ ] Manual check: `curl -I https://staging.faneqo.com` → 200/302 from Nuxt
-- [ ] Manual check: `curl -I https://api.staging.faneqo.com` (or `/admin`) → Strapi
-- [ ] Tests pass: root shape asserts for proxy compose + gitignore of certs
+- [x] Manual check: browser HTTPS loads Nuxt on `staging.faneqo.com`
+- [x] Manual check: browser HTTPS loads Strapi admin on `staging-api.faneqo.com/admin`
 
-**Dependencies:** 6b.1 DNS; human fork OK on Caddy-in-compose vs Tunnel
+**Dependencies:** 6b.1 DNS
 
-**Files likely touched:** `docker-compose.yml`, `Caddyfile` or `docker/caddy/`, `.gitignore`, `docs/staging-droplet.md`, `scripts/staging-*.sh` if recreate list changes, `tests/root/check.sh`
+**Files likely touched:** droplet-only `.do/nginx/` (gitignored); optional later docs note
 
-**Estimated scope:** M
+**Estimated scope:** S
+
+**Status:** complete 2026-11-09
 
 ---
 
 #### Task 6b.3: Droplet env public URLs → HTTPS hostnames
 
-**Description:** On droplet `/opt/faneqo/.env` only (not committed secrets): set `STAGING_WEB_PUBLIC` / `STAGING_BASE_URL` / `STAGING_PUBLIC_APP_URL` / `STAGING_FRONTEND_URL` to `https://staging.faneqo.com`; set `STAGING_API_PUBLIC` / `STAGING_STRAPI_URL` to API HTTPS URL. Recreate FE/BE so runtime picks overlays. Update `example.env` comments + droplet docs with the hostname pattern (empty defaults OK).
+**Description:** On droplet `/opt/faneqo/.env` only (not committed secrets): set `STAGING_WEB_PUBLIC` / `STAGING_BASE_URL` / `STAGING_PUBLIC_APP_URL` / `STAGING_FRONTEND_URL` to `https://staging.faneqo.com`; set `STAGING_API_PUBLIC` / `STAGING_STRAPI_URL` to `https://staging-api.faneqo.com`. Also sync `STRAPI_URL` / `PUBLIC_APP_URL` / `BASE_URL` / `FRONTEND_URL` + `NUXT_PUBLIC_*` (Nuxt runtimeConfig without FE rebuild). Recreate FE/BE. Update `example.env` comments + droplet docs.
 
 **Acceptance criteria:**
 
-- [ ] Droplet env uses HTTPS hostnames (no `:3000`/`:1337` in public URLs)
-- [ ] FE/BE recreated; pages/API absolute links use hostnames
-- [ ] `example.env` / docs show hostname examples for Task 6b
+- [x] Droplet env uses HTTPS hostnames (no `:3000`/`:1337` in public URLs)
+- [x] FE/BE recreated; containers see HTTPS overlays
+- [x] `example.env` / docs show hostname examples for Task 6b
 
 **Verification:**
 
-- [ ] Manual check: browser loads app on HTTPS hostname; Strapi admin on API hostname
-- [ ] Manual check: IP:port may still work if ports open (optional; not required)
+- [x] Manual check: `https://staging.faneqo.com/` → 200; `https://staging-api.faneqo.com/admin` → 200
+- [x] Manual check: container `STRAPI_URL` / `NUXT_PUBLIC_STRAPI_URL` = HTTPS API host
 
-**Dependencies:** 6b.2
+**Dependencies:** 6b.2 (done)
 
-**Files likely touched:** droplet `.env` (ops), `example.env` comments, `docs/staging-droplet.md`, `README.md` / `AGENTS.md` status lines
+**Files likely touched:** droplet `.env` (ops), `example.env` comments, `docs/staging-droplet.md`, `AGENTS.md` / `tasks/*` status
 
 **Estimated scope:** S
 
+**Status:** complete 2026-11-09
+
 ---
 
-#### Task 6b.4: Staging CORS allowlist (explicit product-edit go)
+#### Task 6b.4: Staging CORS allowlist — DEFERRED to audit
 
-**Description:** Add `https://staging.faneqo.com` to Strapi CORS `origin` in `backend/config/middlewares.js` (and any other staging web origins approved). **Requires explicit human go** — this is a backend product-tree edit held by monorepo surgery rules. Keep diff minimal. Redeploy backend on droplet after merge/sync.
+**Status:** deferred 2026-11-09 → audit `sec-006` / `sec-007` / `sec-008` / `sec-009` in `tasks/audit-issues-*.md`.
+
+**Why not the one-liner:** Hardcoding `https://staging.faneqo.com` in `middlewares.js` is the wrong SoT. Target: CORS origins from public-URL env (`PUBLIC_APP_URL` / `FRONTEND_URL` / `WEB_PUBLIC` + staging overlays) plus optional comma-separated extras; Nitro BFF so browsers need not call Strapi (`sec-006`–`sec-009`).
 
 **Acceptance criteria:**
 
-- [ ] Human approved this file touch
-- [ ] CORS allows staging web origin
-- [ ] Browser XHR/fetch from FE hostname to API hostname succeeds (no CORS error)
-
-**Verification:**
-
-- [ ] Manual check: browser console clean on a FE page that calls API
-- [ ] Build/redeploy backend on droplet
-
-**Dependencies:** 6b.3; **explicit go**
-
-**Files likely touched:** `backend/config/middlewares.js` only (plus deploy)
-
-**Estimated scope:** XS–S
+- [x] Explicitly deferred (not “hardcode staging FE into CORS”)
+- [ ] Closed when audit `sec-009` (env-driven CORS) done — or human reopens a different staging interim
 
 ---
 
-#### Task 6b.5: Google OAuth redirects on staging (optional same-pass)
+#### Task 6b.5: Google OAuth redirects on staging (optional)
 
-**Description:** Set `STAGING_GOOGLE_REDIRECT_URI` (and related) to HTTPS callback on staging web host; register the same URI in Google Cloud console. Smoke Google login on staging. Skip if human wants HTTPS-only first.
+**Description:** Set `STAGING_GOOGLE_REDIRECT_URI` (and related) to HTTPS callback on staging web host; register the same URI in Google Cloud console. Smoke Google login on staging. Skip if human wants env-only first.
 
 **Acceptance criteria:**
 
@@ -643,11 +638,12 @@ Plain English leftover: **staging HTTPS (6b) when you want it; else history merg
 
 ## Checkpoint 6b: Staging HTTPS dogfood
 
-- [ ] Tasks 6b.1–6b.3 done (DNS + proxy + env)
-- [ ] 6b.4 done or explicitly deferred with known CORS limitation
-- [ ] 6b.5 done or explicitly deferred
-- [ ] Human uses `https://staging.faneqo.com` (not IP) for dogfood
-- [ ] Still no history merge / prod Railway retarget from this work
+- [x] Tasks 6b.1–6b.3 done (DNS + proxy + env)
+- [x] 6b.4 explicitly deferred to audit Phase 1b (`sec-006`–`sec-009`)
+- [ ] 6b.5 done or explicitly deferred (held — not yet)
+- [x] Human uses `https://staging.faneqo.com` (not IP) for browser reachability
+- [x] Still no history merge / prod Railway retarget from this work
+- [ ] Known limitation until audit BFF: browser XHR FE→`staging-api` may fail CORS (by design for now)
 
 ---
 
@@ -1045,9 +1041,10 @@ Prep (Task 7) + merge (Tasks 8–10). This is the remaining migration bulk. Do n
 | 2026-11-08 | Railway staging before cutover?           | **Not now** — revisited Checkpoint B                                                                                                                                                                                                                                                                                   |
 | 2026-11-09 | Railway staging (final)                   | **NEVER.** Staging = DO droplet only. Do not bring up Railway staging. Do not discuss Railway until prod cutover to monorepo.                                                                                                                         |
 | 2026-11-09 | Checkpoint B                              | Admin created on droplet Strapi. History merge **held**. Final order: history merge → then prod switch to new repo.                                                                                                                                  |
-| 2026-11-09 | Remaining-work clarity                    | Leftover migration = **history (7–10)** then **prod (16)**. Tasks 11–13 = small post-merge chores (port existing CI to monorepo Actions; point workspace). Local `npm test` already works — Task 12 ≠ invent tests. 14–15 optional. 6b/17 not blockers. |
+| 2026-11-09 | Remaining-work clarity                    | Leftover migration = optional **6b.5** → **history (7–10)** → **11+13** → **prod (16)**. Task **12** done. **6b.4** → audit `sec-006`–`sec-009`. 14–15 optional. 17 = audit track. |
 | 2026-11-09 | Task 12 early                             | Root CI Actions (`.github/workflows/root-ci.yml`) landed on content-only `staging` before history. Task 11 (FE/BE CI port) still after history. No prod cutover.                                                                                         |
-| 2026-11-09 | Task 6b plan                              | Wire `staging.faneqo.com` + HTTPS via Cloudflare + origin reverse proxy. Proposed: FE `staging.faneqo.com`, API `api.staging.faneqo.com`, Caddy-in-compose, CF Full (strict) + Origin CA. CORS backend edit needs explicit go. Build waits on human forks. |
+| 2026-11-09 | Task 6b as-built                          | FE `staging.faneqo.com`, API `staging-api.faneqo.com`. Host nginx `.do/` `:80`. CF Page Rules Flexible. **6b.1–6b.3 done.** **6b.4 deferred** to audit BFF/CORS. **6b.5** OAuth held. |
+| 2026-11-09 | CORS / BFF → audit                        | Do not hardcode CORS hosts. Target: CORS from public-URL env + comma-separated extras (`sec-009`); Nitro BFF (`sec-006`–`sec-008`). Specs in `tasks/audit-issues.md`. |
 | 2026-11-08 | Droplet size                              | **2GB**                                                                                                                                                                                                                                                                                                                |
 | 2026-11-08 | Branch model                              | Keep `main` empty for now; all work on `staging`; `staging` deploys to droplet                                                                                                                                                                                                                                         |
 | 2026-11-08 | Content-only `faneqo.com` during staging? | **YES** — push full `staging` branch content without product commit history (throwaway history OK). Get staging running without history; history merge later (history does not affect whether staging runs).                                                                                                           |

@@ -18,16 +18,34 @@ echo '/swapfile none swap sw 0 0' >> /etc/fstab
 
 Do **not** install mise on the droplet. Builds use stock Node containers (same image tags as compose).
 
-## Public URLs (Phase 2)
+## Public URLs
 
-Use the droplet public IP over HTTP (no staging hostname yet):
+Live staging uses HTTPS hostnames (Task 6b). On the droplet `.env`:
 
 ```bash
-STAGING_API_PUBLIC=http://DROPLET_IP:1337
-STAGING_WEB_PUBLIC=http://DROPLET_IP:3000
+STAGING_API_PUBLIC=https://staging-api.faneqo.com
+STAGING_WEB_PUBLIC=https://staging.faneqo.com
+STAGING_STRAPI_URL=https://staging-api.faneqo.com
+STAGING_BASE_URL=https://staging.faneqo.com
+STAGING_PUBLIC_APP_URL=https://staging.faneqo.com
+STAGING_FRONTEND_URL=https://staging.faneqo.com
+# Apps also read these (compose env_file); keep in sync:
+STRAPI_URL=https://staging-api.faneqo.com
+PUBLIC_APP_URL=https://staging.faneqo.com
+FRONTEND_URL=https://staging.faneqo.com
+BASE_URL=https://staging.faneqo.com
+# Nuxt runtimeConfig.public overrides without FE rebuild:
+NUXT_PUBLIC_STRAPI_URL=https://staging-api.faneqo.com
+NUXT_PUBLIC_BASE_URL=https://staging.faneqo.com
 ```
 
-Also set related app URL overlays (`STAGING_STRAPI_URL`, `STAGING_BASE_URL`, `STAGING_PUBLIC_APP_URL`, `STAGING_FRONTEND_URL`, …) to those HTTP IP URLs as needed. Domain + TLS + Google OAuth redirects = Task 6b later.
+Then: `docker compose up -d --force-recreate --no-deps backend frontend`.
+
+Edge TLS: Cloudflare Page Rules SSL=Flexible for `staging.faneqo.com/*` and `staging-api.faneqo.com/*` only. Origin = host nginx on `:80` (gitignored `.do/nginx/`) → `127.0.0.1:3000` / `:1337`. Zone SSL left alone for Railway prod.
+
+IP:port HTTP still works if those ports stay open; prefer hostnames for dogfood.
+
+**CORS / browser → Strapi:** Do **not** hardcode FE hosts in `middlewares.js`. Target (audit `sec-009`): CORS origins from the same public-URL env already set on the droplet (`PUBLIC_APP_URL` / `FRONTEND_URL` / `WEB_PUBLIC` + staging overlays) plus optional comma-separated extras. BFF path (`sec-006`–`sec-008`): Nitro same-origin proxy; Strapi URL private to Nuxt. Migration Task 6b.4 deferred into that audit band. Until `sec-009` ships, browser XHR FE→`staging-api` may fail CORS (hardcoded list has no staging FE); SSR/admin paths that skip browser CORS still work.
 
 ## Build + start
 
