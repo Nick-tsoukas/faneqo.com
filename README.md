@@ -7,7 +7,7 @@ Monorepo root for local Nuxt (`frontend/`) + Strapi (`backend/`) with Postgres v
 | Tool | Required for | Notes |
 |------|----------------|-------|
 | [mise](https://mise.jdx.dev/) | **Local development only** | Pins Node from `.env` via root `mise.toml`. Install: [`docs/mise-install.md`](docs/mise-install.md) (Linux / macOS / Windows / WSL). Not needed on the staging droplet or inside staging containers. |
-| Node.js + npm | Local host builds / `npm run dev` | Version from `NODE_VERSION` in `.env` (default in `example.env`). After `cp example.env .env`, run `mise install` (or `mise trust` once) so PATH matches the pin. |
+| Node.js + npm | Local host builds / `npm run dev` | **Source of truth: root `.env`** (`NODE_VERSION` / optional `FRONTEND_NODE_VERSION` / `BACKEND_NODE_VERSION`; template `example.env`). After `cp example.env .env`, run `mise install` so the default host pin matches `NODE_VERSION`. FE/BE commands use `mise exec` with FE/BE → `NODE_VERSION` fallbacks. |
 | Docker | Local DB + staging containers | Daemon running |
 | Docker Compose | Same | Compose V2 plugin (`docker compose`) |
 | Git | Clone / deploy packaging | — |
@@ -25,7 +25,7 @@ npm install
 
 Installs root tooling (`stackrun`, `jiti`). Frontend/backend deps install when you run the stack (dev) or when you `npm install` inside those folders.
 
-**Node pins:** Staging images use Compose nested defaults: FE/BE pin → `NODE_VERSION` → `22.11.0`. Leave `FRONTEND_NODE_VERSION` / `BACKEND_NODE_VERSION` empty to use `NODE_VERSION` (then the literal default). Set either override when FE and BE must differ. Needs Docker Compose ≥ 2.18.
+**Node pins (SoT = root `.env`):** Host FE/BE commands use `mise exec node@${FRONTEND_or_BACKEND_NODE_VERSION:-${NODE_VERSION}}` (stackrun + `npm run build:*`). Staging images use the **same** env vars via Compose nested defaults: FE/BE pin → `NODE_VERSION` → `22.11.0`. Leave `FRONTEND_NODE_VERSION` empty to use `NODE_VERSION`. Default `BACKEND_NODE_VERSION=20.20.2` for Strapi’s `<=20.x` engines. Do not hardcode versions in `mise.toml`. Needs Docker Compose ≥ 2.18. Droplet/containers still do **not** need mise.
 
 ## Local development
 
@@ -33,7 +33,7 @@ Installs root tooling (`stackrun`, `jiti`). Frontend/backend deps install when y
 npm run dev
 ```
 
-Sets `NODE_ENV=development`, runs `docker compose up -d postgres` (DB only on `5432`, `faneqo_dev`), then starts backend + frontend with hot reload on the **host** Node from mise. Default ports: Strapi `1337`, Nuxt `3000`. On exit, stackrun stops Compose.
+Sets `NODE_ENV=development`, runs `docker compose up -d postgres` (DB only; host maps `5433→5432`, `faneqo_dev`), then starts backend + frontend with hot reload via per-app `mise exec` pins (`BACKEND_NODE_VERSION` / `FRONTEND_NODE_VERSION` → `NODE_VERSION`). Default ports: Strapi `1337`, Nuxt `3000`. On exit, stackrun stops Compose.
 
 ## Local staging
 

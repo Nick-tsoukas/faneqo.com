@@ -91,10 +91,18 @@ printf '%s\n' "$dev_dry" | grep -Fq 'npm run develop' \
   || { echo "FAIL development dry-run missing host backend develop"; printf '%s\n' "$dev_dry"; exit 1; }
 printf '%s\n' "$dev_dry" | grep -Fq 'npm run dev' \
   || { echo "FAIL development dry-run missing host frontend dev"; printf '%s\n' "$dev_dry"; exit 1; }
+printf '%s\n' "$dev_dry" | grep -Fq 'mise exec' \
+  || { echo "FAIL development dry-run missing mise exec host Node pin"; printf '%s\n' "$dev_dry"; exit 1; }
+printf '%s\n' "$dev_dry" | grep -Fq 'BACKEND_NODE_VERSION' \
+  || { echo "FAIL development dry-run missing BACKEND_NODE_VERSION fallback"; printf '%s\n' "$dev_dry"; exit 1; }
+printf '%s\n' "$dev_dry" | grep -Fq 'FRONTEND_NODE_VERSION' \
+  || { echo "FAIL development dry-run missing FRONTEND_NODE_VERSION fallback"; printf '%s\n' "$dev_dry"; exit 1; }
 
 stg_dry="$(NODE_ENV=staging npx stackrun --dry-run 2>/dev/null)"
 printf '%s\n' "$stg_dry" | grep -Fq -- '--profile staging' \
   || { echo "FAIL staging dry-run missing --profile staging"; printf '%s\n' "$stg_dry"; exit 1; }
+printf '%s\n' "$stg_dry" | grep -Fq 'mise exec' \
+  || { echo "FAIL staging dry-run missing mise exec for host install/build"; printf '%s\n' "$stg_dry"; exit 1; }
 if printf '%s\n' "$stg_dry" | grep -Fq '"run": "npm run develop"'; then
   echo "FAIL staging dry-run still hosts npm run develop"
   printf '%s\n' "$stg_dry"

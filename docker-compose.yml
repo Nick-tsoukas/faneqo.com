@@ -2,7 +2,7 @@ services:
   postgres:
     image: postgres:16
     ports:
-      - "5432:5432"
+      - "5433:5432"
     environment:
       POSTGRES_USER: faneqo
       POSTGRES_PASSWORD: faneqo
@@ -34,7 +34,7 @@ services:
       HOST: "0.0.0.0"
       PORT: "1337"
       # Containers reach Postgres on the compose network (not 127.0.0.1).
-      DATABASE_URL: postgresql://faneqo:faneqo@postgres:5432/faneqo_staging?sslmode=disable
+      DATABASE_URL: postgresql://faneqo:faneqo@postgres:5433/faneqo_staging?sslmode=disable
       DATABASE_SSL: "false"
       NODE_ENV: staging
     depends_on:

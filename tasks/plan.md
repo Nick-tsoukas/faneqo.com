@@ -21,7 +21,7 @@ This plan is **read-only for product code in the monorepo sense**. No monorepo-d
 | Local stack: compose Postgres + stackrun `$development` / `$staging` | Root `docker-compose.yml`, `stack.config.ts`, `example.env` |
 | Compose = unified profiles (Architecture G) | Dev: `up -d postgres`; `--profile staging` adds stock-Node FE/BE (nested tags FE/BE → `NODE_VERSION` → `22.11.0`) volume-mounted |
 | Init creates `faneqo_staging` DB | `docker/postgres-init.sql` |
-| Local Node pin via mise (dev host only) | Root `mise.toml` + `NODE_VERSION` in `example.env` (Architecture H); staging droplet/containers do **not** need mise |
+| Local Node pin via mise (dev host only) | Root `mise.toml` + `NODE_VERSION` in `example.env` (Architecture H); staging droplet/containers do **not** need mise. **Gap (2026-11-08):** host `$development` / staging host builds still use shared `NODE_VERSION` only — `BACKEND_NODE_VERSION` is unused on the host path (Task 3.9). |
 | No custom app Dockerfiles planned for staging | Staging FE/BE use stock Node image tags from env + volume mounts (Architecture G locked); unrelated `frontend/workers/studio-video/Dockerfile` out of scope |
 | Root `npm test` runs stackrun + root shape checks | `tests/stackrun/` (import-root overlays) + `tests/root/` (scripts / mise / example.env / compose / docs); Task 3.7. Full FE/BE app builds **not** in root suite. GitHub Actions root workflow still Phase 5 / Task 12 |
 | Each app already has its own CI on its own remote | `frontend/.github/workflows/ci.yml`, `backend/.github/workflows/ci.yml` |
@@ -226,7 +226,16 @@ Caveats (accept for v1):
    node = "{{ env.NODE_VERSION }}"
    ```
 3. README documents: mise + Node/npm + Docker + Compose for local; droplet needs Docker/Compose/env only.
-4. Host `npm run dev` uses mise-pinned Node. When FE/BE need **different** host majors, dual PATH is awkward with one mise pin — prefer matching host to the stricter app for day-to-day, or document a one-off second shell; **containers** still can differ via `FRONTEND_*` / `BACKEND_*` image tags (primary dual-version path).
+4. Host `npm run dev` uses mise-pinned Node from root `NODE_VERSION`. **Compose** already honors `FRONTEND_*` / `BACKEND_*` image tags (Task 3.8). **Host path gap (observed 2026-11-08):** stackrun `$development` backend runs `npm install && npm run develop` under the shell’s single mise pin (`v22.11.0`), so Strapi `engines.node: ">=18.0.0 <=20.x.x"` warns `EBADENGINE` even when `.env` has `BACKEND_NODE_VERSION=20.x`. `$staging` `before` host `cd backend && npm install` / `npm run build` has the same host-pin problem; container runtime tags are already correct.
+
+**Amendment H.1 — Host dual Node via `.env` + `mise exec` (Task 3.9, pending human approve):** Close the host gap **without** inventing a second plan and **without** reintroducing redundant `env:` wrappers in `stack.config.ts`. Prefer:
+
+- Keep root `mise.toml` on `NODE_VERSION` (default / FE-friendly, e.g. `22.11.0`).
+- Wrap **backend** host commands (dev `run` + staging `before` install/build) with `mise exec node@${BACKEND_NODE_VERSION:-${NODE_VERSION}} -- …` so stackrun’s existing `.env` passthrough selects the tool; empty `BACKEND_NODE_VERSION` falls back to `NODE_VERSION`.
+- Optionally wrap frontend the same way with `FRONTEND_NODE_VERSION` for symmetry (empty → `NODE_VERSION`).
+- Droplet / containers unchanged: still stock Node image tags only; **no mise on droplet**.
+- Root tests must assert the host command strings (or equivalent) actually reference `BACKEND_NODE_VERSION` / `mise exec`, not only compose image tags.
+- Default pin recommendation: `BACKEND_NODE_VERSION=20.20.2` (already in local `.env` / `example.env`; installed via mise) unless human picks another `20.x` within Strapi’s ceiling.
 
 **Do not** require mise in droplet bootstrap, CI droplet agents, or staging container images.
 
@@ -307,14 +316,17 @@ Confirm root orchestration; optionally init root git and remove nested `.git` **
 
 Architecture H (mise + env Node pins) landed in Task 3.4. Architecture G **implemented** locally in Task 3.6; wrapper removed in Task 3.8 (nested Compose Node defaults, dual FE/BE versions allowed, no custom Dockerfiles). Prove: db-only for `npm run dev`; staging profile mounts built FE/BE for `npm run staging`. **Do not** invent a second compose file. **Do not** install mise on the droplet.
 
-**Root test coverage (Task 3.7, Architecture I)** landed; Task 3.6 extended suite with staging-profile asserts. Checkpoint before droplet.
+**Task 3.9 (additive — host dual Node):** Compose tags already respect `BACKEND_NODE_VERSION`; host `$development` / staging host builds do not. Close Architecture H.1 before relying on local Strapi develop (and before droplet dogfood if host builds feed volume mounts). See Amendment H.1 above.
+
+**Root test coverage (Task 3.7, Architecture I)** landed; Task 3.6 extended suite with staging-profile asserts. Extend suite in Task 3.9 for host `mise exec` / `BACKEND_NODE_VERSION`. Checkpoint before droplet.
 
 ### Checkpoint Compose — Design OK / local profile works
 
 - [x] Human OK on stock-Node approach (no custom Dockerfiles unless needed) — 2026-11-08
+- [ ] Task 3.9: host dual Node (`mise exec` + `BACKEND_NODE_VERSION`) — no Strapi `EBADENGINE` on `npm run dev`
 - [ ] Local: `docker compose up -d` = Postgres only
 - [ ] Local: `--profile staging` = Postgres + FE + BE with volume-mounted builds
-- [ ] `npm run dev` still hot-reloads on host
+- [ ] `npm run dev` still hot-reloads on host (FE on 22 OK; BE on ≤20 when pinned)
 - [ ] No product-source monorepo edits for this slice
 
 ### Phase 2 — Cheap staging on DO (EARLY)
@@ -385,7 +397,7 @@ Begin remediation per `tasks/audit-issues-plan.md` once daily development is the
 | Staging trees lag active product `main` | Med | Remotes stay source of truth; re-pull/re-clone before merge; redeploy staging when needed |
 | FE change redeploys BE on monorepo | Med | Path filters + Railway watch paths (Phase 5 / 8) |
 | DO staging ≠ Railway runtime | Med | Align `NODE_VERSION` / FE/BE overrides with prod builders; optional Railway staging smoke before cutover |
-| Host mise pin vs dual FE/BE engines | Med | Containers use separate image tags; host pin = shared `NODE_VERSION` (or stricter app); document override |
+| Host mise pin vs dual FE/BE engines | Med | **Task 3.9:** host `mise exec node@${BACKEND_NODE_VERSION:-…}` (and optional FE); containers keep separate image tags; no redundant stackrun `env:` wrappers |
 | Live Resend/Stripe on staging | High | Non-sending / test keys; cron off |
 | HTTP IP staging breaks Google OAuth / Secure cookies | Med | Accept for Phase 2; Task 6b when domain + HTTPS exist |
 | Droplet IP changes on rebuild | Low | Reserved IP optional; else update `STAGING_*_PUBLIC` after recreate |

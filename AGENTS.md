@@ -15,7 +15,7 @@ Side-by-side product trees under one root git (content-only `staging` on [`Nick-
 | `frontend/` | Nuxt — checkout `Nick-tsoukas/musicbizqr`. Product operating loop: `frontend/AGENTS.md`. |
 | `backend/` | Strapi v4, canonical data — checkout `Nick-tsoukas/qrserver`. Defers to frontend loop: `backend/AGENTS.md`. |
 | `docker-compose.yml`, `docker/` | One compose file + profiles. Dev: `docker compose up -d postgres`. `--profile staging`: stock Node FE/BE (tags FE/BE → `NODE_VERSION` → `22.11.0`) with built apps volume-mounted; no custom Dockerfiles unless needed. See `tasks/plan.md` Architecture G. |
-| `stack.config.ts`, `example.env`, `mise.toml`, root `package.json` | stackrun orchestration + local mise Node pin. Copy `example.env` → `.env`; `mise install` for host Node (`NODE_VERSION`). `$development` = db-only compose + host hot reload; `$staging` = build then `--profile staging` containers. |
+| `stack.config.ts`, `example.env`, `mise.toml`, root `package.json` | stackrun orchestration + local mise. **Node pin SoT = root `.env`** (`NODE_VERSION` / `FRONTEND_*` / `BACKEND_*`; template `example.env`). Host FE/BE use `mise exec` with FE/BE → `NODE_VERSION` fallbacks; compose uses the same vars for image tags. `$development` = db-only compose + host hot reload; `$staging` = host build then `--profile staging` containers. |
 | `tasks/audit-issues-plan.md` | Central plan to resolve audit issues (one approved step at a time). |
 | `tasks/audit-issues-todo.md` | Progress checklist — check off as issues resolve. |
 | `tasks/audit-issues.md` | Issue specs + acceptance criteria. |

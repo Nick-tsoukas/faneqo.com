@@ -24,11 +24,15 @@ const s = pkg.scripts ?? {};
 const exact = {
   dev: "NODE_ENV=development stackrun",
   staging: "NODE_ENV=staging stackrun",
-  "build:frontend": "npm run build --prefix frontend",
-  "build:backend": "npm run build --prefix backend",
+  "build:frontend":
+    "mise exec node@${FRONTEND_NODE_VERSION:-${NODE_VERSION}} -- npm run build --prefix frontend",
+  "build:backend":
+    "mise exec node@${BACKEND_NODE_VERSION:-${NODE_VERSION}} -- npm run build --prefix backend",
   build: "npm run build:backend && npm run build:frontend",
-  "start:frontend": "npm run start --prefix frontend",
-  "start:backend": "npm run start --prefix backend",
+  "start:frontend":
+    "mise exec node@${FRONTEND_NODE_VERSION:-${NODE_VERSION}} -- npm run start --prefix frontend",
+  "start:backend":
+    "mise exec node@${BACKEND_NODE_VERSION:-${NODE_VERSION}} -- npm run start --prefix backend",
   "test:stack": "bash tests/stackrun/check.sh",
   "test:root": "bash tests/root/check.sh",
 };
@@ -83,6 +87,16 @@ if grep -E "run: \"npm run (develop|dev)\"" stack.config.ts | grep -q .; then
     in_staging && /run: "npm run dev"/ { found=1 }
     END { exit found ? 0 : 1 }
   ' stack.config.ts && fail "stack.config.ts \$staging must not host npm run develop/dev"
+fi
+# Host dual Node (Task 3.9): mise exec with FE/BE → NODE_VERSION fallbacks
+# SoT = root .env (via stackrun / compose / mise _.file) — no hardcoded Node in mise.toml.
+grep -Fq 'FRONTEND_NODE_VERSION:-${NODE_VERSION}' stack.config.ts \
+  || fail "stack.config.ts must mise-exec frontend with FRONTEND_NODE_VERSION:-NODE_VERSION"
+grep -Fq 'BACKEND_NODE_VERSION:-${NODE_VERSION}' stack.config.ts \
+  || fail "stack.config.ts must mise-exec backend with BACKEND_NODE_VERSION:-NODE_VERSION"
+grep -Fq 'mise exec' stack.config.ts || fail "stack.config.ts must use mise exec for host Node pins"
+if grep -E 'node[[:space:]]*=[[:space:]]*"[0-9]' mise.toml >/dev/null; then
+  fail "mise.toml must not hardcode node version; SoT is .env NODE_VERSION via {{ env.NODE_VERSION }}"
 fi
 ok stack.config.ts overlays
 

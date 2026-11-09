@@ -1,5 +1,6 @@
 # Local host tooling only (npm run dev). Staging droplet / containers do not need mise.
-# Copy example.env → .env; pin lives in NODE_VERSION (and optional FE/BE overrides).
+# Source of truth for pins: root .env (from example.env). Do not hardcode Node versions here.
+# Default PATH pin = NODE_VERSION; FE/BE overrides applied via mise exec in stack.config / package.json.
 
 [env]
 _.file = ".env"
