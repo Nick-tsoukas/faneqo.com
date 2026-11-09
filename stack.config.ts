@@ -1,4 +1,4 @@
-import { defineStackrunConfig } from "stackrun";
+import { defineStackrunConfig, type StackrunConfig } from "stackrun";
 
 // Port remaps only fed command env / tunnels. Both commented — children inherit
 // STRAPI_PORT / NUXT_PORT from root .env (stackrun loads it). Restore with tunnels.
@@ -16,7 +16,14 @@ const hostFrontendNode =
 const hostBackendNode =
   "node@${BACKEND_NODE_VERSION:-${NODE_VERSION}}";
 
-export default defineStackrunConfig({
+// Runtime supports NODE_ENV overlays (`$development`, `$staging`, …).
+// Published StackrunConfig only types a single layer — widen for file configs.
+type StackrunFileConfig = StackrunConfig & {
+  $development?: StackrunConfig;
+  $staging?: StackrunConfig;
+};
+
+const config: StackrunFileConfig = {
   // No global before/after — overlays own compose lifecycle (Architecture G).
   $development: {
     before: ["docker compose up -d postgres"],
@@ -85,4 +92,6 @@ export default defineStackrunConfig({
       },
     ],
   },
-});
+};
+
+export default defineStackrunConfig(config);
