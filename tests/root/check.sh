@@ -165,6 +165,19 @@ grep -Fq './frontend/.output:/app/.output' docker-compose.yml \
   || fail "docker-compose.yml missing frontend .output volume mount"
 grep -Fq './backend:/app' docker-compose.yml \
   || fail "docker-compose.yml missing backend /app volume mount"
+# Droplet + local: restart unless-stopped (Ctrl+C on attached compose up still stops; policy helps droplet reboots)
+# Service keys are indented two spaces; properties are deeper — do not treat properties as new services.
+for svc in postgres backend frontend; do
+  awk -v svc="$svc" '
+    /^  [a-zA-Z0-9_-]+:/ {
+      in_svc = ($0 ~ "^  " svc ":")
+      next
+    }
+    in_svc && /restart:[[:space:]]*unless-stopped/ { found=1 }
+    END { exit found ? 0 : 1 }
+  ' docker-compose.yml || fail "docker-compose.yml $svc missing restart: unless-stopped"
+done
+ok compose restart unless-stopped
 # Host publish ports use STAGING_* (not remapped unprefixed names in stack.config)
 grep -Fq '"${STAGING_STRAPI_PORT:-1337}:1337"' docker-compose.yml \
   || fail "backend host port must interpolate STAGING_STRAPI_PORT"
@@ -217,5 +230,37 @@ if ! grep -Ei 'droplet|container' README.md | grep -Eiq 'not.*(mise)|do not.*mis
   fi
 fi
 ok docs presence + staging modes
+
+# --- droplet staging scripts (no mise / no stackrun; one-off stock Node containers) ---
+[[ -x scripts/staging-build.sh ]] || [[ -f scripts/staging-build.sh ]] \
+  || fail "scripts/staging-build.sh missing"
+[[ -f scripts/staging-up.sh ]] || fail "scripts/staging-up.sh missing"
+grep -Fq 'docker run --rm' scripts/staging-build.sh \
+  || fail "staging-build.sh must use docker run --rm one-off containers"
+grep -Fq 'npm install' scripts/staging-build.sh \
+  || fail "staging-build.sh must run npm install"
+grep -Fq 'npm run build' scripts/staging-build.sh \
+  || fail "staging-build.sh must run npm run build"
+grep -Fq 'BACKEND_NODE_VERSION:-${NODE_VERSION:-22.11.0}' scripts/staging-build.sh \
+  || fail "staging-build.sh must nest BACKEND_NODE_VERSION → NODE_VERSION → 22.11.0"
+grep -Fq 'FRONTEND_NODE_VERSION:-${NODE_VERSION:-22.11.0}' scripts/staging-build.sh \
+  || fail "staging-build.sh must nest FRONTEND_NODE_VERSION → NODE_VERSION → 22.11.0"
+# Comments may mention mise/stackrun as "do not use"; forbid live invocations only.
+if grep -vE '^[[:space:]]*#' scripts/staging-build.sh | grep -Eq '\bmise\b'; then
+  fail "staging-build.sh must not invoke mise (droplet path)"
+fi
+if grep -vE '^[[:space:]]*#' scripts/staging-build.sh | grep -Eq '\bstackrun\b'; then
+  fail "staging-build.sh must not invoke stackrun"
+fi
+if grep -vE '^[[:space:]]*#' scripts/staging-up.sh | grep -Eq '\bmise\b|\bstackrun\b'; then
+  fail "staging-up.sh must not invoke mise or stackrun"
+fi
+grep -Fq 'staging-build.sh' scripts/staging-up.sh \
+  || fail "staging-up.sh must call staging-build.sh"
+grep -Fq 'docker compose up -d' scripts/staging-up.sh \
+  || fail "staging-up.sh must docker compose up -d"
+grep -Fiq 'droplet' docs/staging-droplet.md || fail "docs/staging-droplet.md missing droplet guidance"
+grep -Fiq 'staging-build' README.md || fail "README.md must link droplet staging-build path"
+ok droplet staging-build scripts + docs
 
 echo "root shape checks passed"

@@ -14,9 +14,11 @@ Side-by-side product trees under one root git (content-only `staging` on [`Nick-
 |------|------|
 | `frontend/` | Nuxt — checkout `Nick-tsoukas/musicbizqr`. Product operating loop: `frontend/AGENTS.md`. |
 | `backend/` | Strapi v4, canonical data — checkout `Nick-tsoukas/qrserver`. Defers to frontend loop: `backend/AGENTS.md`. |
-| `docker-compose.yml` | Staging only. One compose file, no profiles. `POSTGRES_DB=faneqo_staging`. Local staging = host build then per-service attached `docker compose up … --no-log-prefix` (tags FE/BE → `NODE_VERSION` → `22.11.0`, volume-mounted builds). See `tasks/plan.md` Architecture G. |
+| `docker-compose.yml` | Staging only. One compose file, no profiles. `POSTGRES_DB=faneqo_staging`. `restart: unless-stopped` on all services. Local = host mise build + attached `docker compose up … --no-log-prefix`. Droplet = `scripts/staging-build.sh` + `docker compose up -d` (no stackrun). Tags FE/BE → `NODE_VERSION` → `22.11.0`. See `tasks/plan.md` Architecture G. |
+| `scripts/staging-build.sh`, `scripts/staging-up.sh` | Droplet FE/BE install+build via one-off stock Node `docker run --rm` (same image tags as compose); then detached compose up. No mise. |
 | `stack.config.ts`, `example.env`, `mise.toml`, root `package.json` | stackrun orchestration + local mise. **Node pin SoT = root `.env`**. `$development` = host hot reload + SQLite (no Docker, no install). `$staging` = before install/build, then attached compose up per service. |
 | `docs/docker-install.md` | Docker Engine + Compose install (Linux / macOS / Windows / WSL); linked from README. Staging prerequisite. |
+| `docs/staging-droplet.md` | Droplet bootstrap: no mise/stackrun; IP public URLs; staging-build + compose up -d. |
 | `tasks/audit-issues-plan.md` | Central plan to resolve audit issues (one approved step at a time). |
 | `tasks/audit-issues-todo.md` | Progress checklist — check off as issues resolve. |
 | `tasks/audit-issues.md` | Issue specs + acceptance criteria. |
@@ -39,14 +41,14 @@ Human-facing how-to: [`README.md`](README.md).
 2. `mise install` (local host only — pins Node from `NODE_VERSION` via `mise.toml`). Staging droplet/containers do **not** need mise.
 3. `npm install` at workspace root (stackrun + jiti).
 4. `npm run dev` — host hot-reload FE + BE via stackrun `$development` (mise Node; install deps in FE/BE folders first). Strapi **SQLite**; **no Docker**.
-5. `npm run staging` — before: host install/build; commands: attached `docker compose up` per service with `--no-log-prefix`. Droplet/containers do **not** need mise.
+5. `npm run staging` — before: host install/build; commands: attached `docker compose up` per service with `--no-log-prefix`. Droplet uses `scripts/staging-up.sh` instead (no stackrun/mise).
 6. Root `npm test` runs `test:stack` + `test:root` — suite from Task 3.7. GitHub Actions wiring still Task 12.
 
-Dev = host hot-reload + mise + SQLite (no Docker). Staging = same compose file, per-service attached `up`. `mbq-cron` stays off locally.
+Dev = host hot-reload + mise + SQLite (no Docker). Local staging = same compose file, per-service attached `up`. Droplet = `staging-build.sh` + `up -d`. `mbq-cron` stays off.
 
 ## Staging (local done; droplet next)
 
-Local unified compose landed (Task 3.6). Next: **DigitalOcean droplet** with the same file + `docker compose up -d` (Task 4); cron off; no mise on droplet. No live Stripe, live Resend, production domains, or Railway `chalk-volume`. Optional Railway staging later for builder parity before cutover. Detail: `tasks/plan.md` Architecture C + G.
+Local unified compose landed. **Task 4:** provision 2GB DO droplet; clone `staging`; fill `.env` with IP public URLs; `bash scripts/staging-up.sh`. Cron off; no mise/stackrun on droplet. Detail: [`docs/staging-droplet.md`](docs/staging-droplet.md), `tasks/plan.md` Architecture C + G. No live Stripe, live Resend, production domains, or Railway `chalk-volume`.
 
 ## Re-clone tips (Phase 1 temp `.git` removal)
 

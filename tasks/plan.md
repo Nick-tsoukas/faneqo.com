@@ -172,29 +172,30 @@ Caveats (accept for v1):
 
 **Dev DB (amended 2026-11-08):** Product `backend/config/database.js` uses **SQLite** when `NODE_ENV=development` and Postgres otherwise. Therefore `$development` must **not** start compose. Host develop → Postgres is deferred (maybe later / Task 15-era). Compose Postgres uses a single DB `faneqo_staging` via `POSTGRES_DB` (no `docker/postgres-init.sql`).
 
-**Implemented (Task 3.6 — 2026-11-08; wrapper removed Task 3.8; profiles removed 2026-11-08; dev compose dropped 2026-11-08):**
-- `docker-compose.yml` = `postgres` + `frontend` + `backend` (all eligible; no `profiles` key). Stock Node + volume mounts for FE/BE. Used by staging only.
+**Implemented (Task 3.6 — 2026-11-08; wrapper removed Task 3.8; profiles removed 2026-11-08; dev compose dropped 2026-11-08; droplet build path Task 4):**
+- `docker-compose.yml` = `postgres` + `frontend` + `backend` (all eligible; no `profiles` key). Stock Node + volume mounts for FE/BE. `restart: unless-stopped` on all services (droplet reboots; local attached Ctrl+C still stops). Used by staging only.
 - Nested image tags (Compose ≥ 2.18): `node:${FRONTEND_NODE_VERSION:-${NODE_VERSION:-22.11.0}}` (same for `BACKEND_*`). No `scripts/docker-compose.sh`.
-- `$development`: host hot reload only (no Docker; Strapi SQLite). `$staging`: host install/build then `docker compose up -d` (all services); follows container logs (not host `develop`/`dev`).
+- `$development`: host hot reload only (no Docker; Strapi SQLite). `$staging` (local): host mise install/build, then attached `docker compose up <service> --no-log-prefix` (not host `develop`/`dev`).
+- **Droplet:** no stackrun, no mise. `scripts/staging-build.sh` = one-off `docker run --rm` with the same Node tags → `npm install && npm run build` on bind mounts; then `docker compose up -d` (`scripts/staging-up.sh`).
 
 **Behavior:**
 
 | Mode | How invoked | Compose | Apps / DB |
 |------|-------------|---------|-----------|
 | **Dev** | `npm run dev` / stackrun `$development` | **None** | FE + BE on host (hot reload); Strapi **SQLite** |
-| **Local staging** | `npm run staging` / stackrun `$staging` | `docker compose up -d` → Postgres + FE + BE containers | **Built** apps; volumes; Postgres `faneqo_staging` |
-| **Droplet staging** | deploy / host `docker compose up -d` | **Same file** | Same volume-mounted built apps + DB; cron off |
+| **Local staging** | `npm run staging` / stackrun `$staging` | attached `up <service> --no-log-prefix` | **Built** on host (mise); volumes; Postgres `faneqo_staging` |
+| **Droplet staging** | `scripts/staging-up.sh` | `docker compose up -d` | **Built** via one-off Node containers; same volumes + DB; cron off |
 
-**Chosen approach — staging compose + stackrun hooks:**
+**Chosen approach — staging compose + local stackrun / droplet scripts:**
 
 1. **All services** eligible in one file (no Compose `profiles`). Compose is **not** used by `npm run dev`.
-2. **Staging** uses bare `docker compose up -d` (Postgres + FE + BE).
-3. **Runtime images** — **stock Node image(s)** tagged from the **same env vars** as local tooling (Architecture H). Chain: `FRONTEND_NODE_VERSION` / `BACKEND_NODE_VERSION` → `NODE_VERSION` → literal `22.11.0` via Compose nested defaults (Task 3.8; Compose ≥ 2.18). Dual versions allowed. Same image name OK twice when versions match. No custom `docker/Dockerfile.*` unless stock Node later proves insufficient. Per service: different `command`, ports, and **volume mounts** for built app output. **Build on host** (or deploy script): `frontend` / `backend` `npm run build`, then mount artifacts into containers, e.g. Nuxt `.output` (and any required node_modules/runtime bits) and Strapi build/dist as bind mounts. Honor “built apps mounted as volumes” for local + droplet parity: rebuild on host → remount/restart without baking a new app image every time.
-4. **`stack.config.ts`:**
+2. **Local staging** attaches per-service `docker compose up` (stackrun panes). **Droplet** uses detached `docker compose up -d`.
+3. **Runtime images** — **stock Node image(s)** tagged from the **same env vars** as local tooling (Architecture H). Chain: `FRONTEND_NODE_VERSION` / `BACKEND_NODE_VERSION` → `NODE_VERSION` → literal `22.11.0` via Compose nested defaults (Task 3.8; Compose ≥ 2.18). Dual versions allowed. Same image name OK twice when versions match. No custom `docker/Dockerfile.*` unless stock Node later proves insufficient. Per service: different `command`, ports, and **volume mounts** for built app output. **Build:** local = host mise; droplet = one-off stock Node `docker run --rm` (`scripts/staging-build.sh`) — not a compose service, not mise. Rebuild → remount/restart without baking a new app image every time.
+4. **`stack.config.ts` (local only):**
    - `$development`: host `mise exec` + `develop`/`dev` only — **no** compose `before`/`after`.
-   - `$staging` `before`: host `npm install` (FE+BE) + `npm run build`, then `docker compose up -d`.
-   - `$staging` `commands`: compose `logs -f` only (no host `develop`/`dev`). Dev hot-reload stays `$development` only.
-5. **Droplet:** rsync/git pull tree + env → same `docker compose up -d`. No second compose file.
+   - `$staging` `before`: host `npm install` (FE+BE) + `npm run build`.
+   - `$staging` `commands`: attached `docker compose up <service> --no-log-prefix` for postgres/backend/frontend.
+5. **Droplet:** clone/pull tree + `.env` → `bash scripts/staging-up.sh`. No second compose file. No stackrun. No mise.
 
 **Acceptance criteria (Architecture G — verified in Tasks 3.5–3.6 / 4; dev-DB amend 2026-11-08):**
 
@@ -205,7 +206,7 @@ Caveats (accept for v1):
 - [x] Staging FE/BE containers mount **built** app dirs as volumes
 - [x] `npm run dev` host-runs FE/BE with mise (no compose prerequisite)
 - [x] Local `npm run staging` uses compose containers (not host develop as the server)
-- [ ] Droplet deploy uses the same file + IP public URLs; **no mise** on droplet
+- [ ] Droplet deploy uses the same file + IP public URLs; **no mise** / no stackrun on droplet (`scripts/staging-up.sh`) — repo substrate 2026-11-09; live droplet still open
 - [x] No monorepo-driven product source edits under `frontend/` / `backend/` for this slice
 
 **Locked (2026-11-08 — Task 3.5 / Checkpoint Compose design):** **No custom Dockerfiles unless needed.** Staging FE/BE services use stock Node image(s) (same image OK twice when versions match), different `command` / ports / volume mounts for built output. Image tags driven by env (Architecture H). Do **not** add root `docker/Dockerfile.frontend` / `docker/Dockerfile.backend` (or product-tree Dockerfiles) unless stock Node proves insufficient later. Unrelated `frontend/workers/studio-video/Dockerfile` stays out of scope.

@@ -1,0 +1,35 @@
+#!/usr/bin/env bash
+# Droplet (and optional CI) FE/BE install+build — no mise, no stackrun, no compose.
+# One-off stock Node containers matching compose image tags; --rm drops them after.
+# Local `npm run staging` still builds on the host via mise (stack.config.ts before).
+set -euo pipefail
+ROOT="$(cd "$(dirname "$0")/.." && pwd)"
+cd "$ROOT"
+
+if [[ -f .env ]]; then
+  set -a
+  # shellcheck disable=SC1091
+  source .env
+  set +a
+fi
+
+BACKEND_IMAGE="node:${BACKEND_NODE_VERSION:-${NODE_VERSION:-22.11.0}}"
+FRONTEND_IMAGE="node:${FRONTEND_NODE_VERSION:-${NODE_VERSION:-22.11.0}}"
+
+echo "==> backend install+build via ${BACKEND_IMAGE}"
+docker run --rm \
+  -v "${ROOT}/backend:/app" \
+  -w /app \
+  -e NODE_ENV="${NODE_ENV:-staging}" \
+  "${BACKEND_IMAGE}" \
+  sh -c 'npm install && npm run build'
+
+echo "==> frontend install+build via ${FRONTEND_IMAGE}"
+docker run --rm \
+  -v "${ROOT}/frontend:/app" \
+  -w /app \
+  -e NODE_ENV="${NODE_ENV:-staging}" \
+  "${FRONTEND_IMAGE}" \
+  sh -c 'npm install && npm run build'
+
+echo "==> staging build done (artifacts on host bind mounts)"

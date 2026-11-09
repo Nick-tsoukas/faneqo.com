@@ -1,6 +1,7 @@
 services:
   postgres:
     image: postgres:16
+    restart: unless-stopped
     ports:
       - "5433:5432"
     environment:
@@ -18,11 +19,14 @@ services:
 
   # Staging only (Architecture G). Dev does not start compose — host SQLite.
   # Stock Node: FE/BE pin → NODE_VERSION → 22.11.0 (Compose nested defaults).
+  # restart: unless-stopped = droplet reboots / crash recovery. Local stackrun
+  # attached `compose up` still stops on Ctrl+C (explicit stop; policy does not revive).
   backend:
     image: node:${BACKEND_NODE_VERSION:-${NODE_VERSION:-22.11.0}}
+    restart: unless-stopped
     working_dir: /app
     volumes:
-      # Built Strapi tree (host npm run build) + runtime deps — no custom Dockerfile.
+      # Built Strapi tree (host or scripts/staging-build.sh) + runtime deps — no custom Dockerfile.
       - ./backend:/app
     command: ["npm", "run", "start"]
     ports:
@@ -44,9 +48,10 @@ services:
 
   frontend:
     image: node:${FRONTEND_NODE_VERSION:-${NODE_VERSION:-22.11.0}}
+    restart: unless-stopped
     working_dir: /app
     volumes:
-      # Nuxt Nitro build output from host `npm run build` / `build:frontend`.
+      # Nuxt Nitro build output from host / scripts/staging-build.sh.
       - ./frontend/.output:/app/.output:ro
     command: ["node", ".output/server/index.mjs"]
     ports:

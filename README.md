@@ -8,10 +8,15 @@ Monorepo root for Nuxt (`frontend/`) + Strapi (`backend/`) with Postgres via Doc
 
 - **[mise](https://mise.jdx.dev/)** — installs/pins Node from `.env` via `mise.toml` (see [`docs/mise-install.md`](docs/mise-install.md))
 
-**Local / remote staging** (`npm run staging` / droplet):
+**Local staging** (`npm run staging`):
 
 - **Docker** with Compose V2 (`docker compose`) — Postgres + FE + BE containers (see [`docs/docker-install.md`](docs/docker-install.md))
-- **mise** on the host that builds (stackrun install/build steps). FE/BE **containers** only run stock Node images — no mise inside.
+- **mise** on the host that builds (stackrun `before` install/build). FE/BE **containers** only run stock Node images — no mise inside.
+
+**Droplet staging** (no stackrun, no mise):
+
+- **Docker** + Compose V2 only — see [`docs/staging-droplet.md`](docs/staging-droplet.md)
+- Build via `scripts/staging-build.sh` (one-off stock Node containers), then `docker compose up -d`
 
 ## Setup
 
@@ -53,6 +58,8 @@ Requires Docker. Stackrun `$staging`:
 
 Same `docker-compose.yml`, no profiles, no custom Dockerfiles. Image tags: FE/BE → `NODE_VERSION` → `22.11.0`. Containers use internal `postgres:5432` / DB `faneqo_staging`. Built output is volume-mounted (`backend/`, `frontend/.output`). Host-published ports: `STAGING_STRAPI_PORT` / `STAGING_NUXT_PORT` (else `1337` / `3000`).
 
+Services use `restart: unless-stopped` (droplet reboots). Local Ctrl+C on attached `compose up` still stops those services.
+
 `mbq-cron` stays off locally. Stop stackrun with Ctrl+C; run `docker compose down` if you want containers removed.
 
 ## Tests
@@ -65,8 +72,14 @@ npm run test:root        # root env + compose assertions
 
 Staging compose config checks need Docker. No app servers required.
 
-## Remote staging deploy
+## Droplet staging
 
-TBD — `staging` branch deploys with the same compose file (`docker compose up -d`). Steps not documented yet (Task 5).
+See [`docs/staging-droplet.md`](docs/staging-droplet.md). Short path on the droplet (Docker only — no mise, no stackrun):
 
-**Public URLs (Phase 2):** droplet IP over HTTP for `STAGING_API_PUBLIC` / `STAGING_WEB_PUBLIC`. Domain + TLS + Google OAuth redirects later (`tasks/todo.md` Task 6b).
+```bash
+bash scripts/staging-up.sh    # staging-build.sh then docker compose up -d
+```
+
+`scripts/staging-build.sh` runs `npm install` + `npm run build` in one-off `docker run --rm` containers using the same Node image tags as compose, then drops those containers. Detached compose keeps Postgres/FE/BE up with `restart: unless-stopped`.
+
+**Public URLs (Phase 2):** droplet IP over HTTP for `STAGING_API_PUBLIC` / `STAGING_WEB_PUBLIC`. Domain + TLS + Google OAuth redirects later (`tasks/todo.md` Task 6b). Ongoing deploy automation = Task 5.

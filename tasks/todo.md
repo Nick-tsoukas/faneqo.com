@@ -115,7 +115,7 @@ Do not make monorepo-driven edits under `frontend/` / `backend/` until Task 15 i
 
 - [x] Tasks 2–3 done
 - [x] Product remotes still source of truth for development (re-clone from recorded tips / current `main` before history merge)
-- [ ] Human OK to stand up staging without history merge — **say go Phase 2** (compose Tasks 3.5–3.6 first, then droplet Task 4)
+- [x] Human OK to stand up staging without history merge — **go Phase 2** (2026-11-09; compose prep done; droplet = Task 4)
 
 ---
 
@@ -363,12 +363,15 @@ Do not make monorepo-driven edits under `frontend/` / `backend/` until Task 15 i
 
 ### Task 4: Provision DO droplet; run same compose staging stack
 
-**Description:** Create droplet (2GB+), firewall, and host env. Deploy with the **same** root `docker-compose.yml` + `docker compose up -d` (from Task 3.6 lineage; no Compose profiles) — Postgres + FE + BE containers with volume-mounted builds. Do **not** add a second compose file. **Public reachability = droplet IP over HTTP** — set `STAGING_API_PUBLIC` / `STAGING_WEB_PUBLIC` (and related `STAGING_`* URL overlays) to `http://DROPLET_IP` or `http://DROPLET_IP:port` as needed. No staging domain, TLS terminator, or Google OAuth redirect wiring in this task (see Task 6b).
+**Description:** Create droplet (2GB+), firewall, and host env. Deploy with the **same** root `docker-compose.yml` + `docker compose up -d` (no Compose profiles; `restart: unless-stopped`) — Postgres + FE + BE with volume-mounted builds. **No stackrun and no mise on the droplet.** FE/BE `npm install` + `npm run build` via `scripts/staging-build.sh` (one-off `docker run --rm` stock Node containers matching compose image tags; containers dropped after build). Bring-up: `scripts/staging-up.sh`. Do **not** add a second compose file. **Public reachability = droplet IP over HTTP** — set `STAGING_API_PUBLIC` / `STAGING_WEB_PUBLIC` (and related `STAGING_*` URL overlays) to `http://DROPLET_IP:port` as needed. No staging domain, TLS terminator, or Google OAuth redirect wiring in this task (see Task 6b).
 
 **Acceptance criteria:**
 
+- [x] Repo: `restart: unless-stopped` on postgres/backend/frontend; OK with local attached stackrun `compose up` (Ctrl+C still stops)
+- [x] Repo: `scripts/staging-build.sh` + `scripts/staging-up.sh` + `docs/staging-droplet.md` (no mise/stackrun)
 - [ ] Staging reachable on droplet public IP (not prod `faneqo.com`; no staging hostname required yet)
-- [ ] Droplet uses root `docker-compose.yml` + `docker compose up -d` (same as local)
+- [ ] Droplet uses root `docker-compose.yml` + `docker compose up -d` (same file as local; no stackrun)
+- [ ] Droplet builds via one-off Node containers (`staging-build.sh`), not mise
 - [ ] `STAGING_API_PUBLIC` / `STAGING_WEB_PUBLIC` point at those HTTP IP URLs
 - [ ] Postgres on droplet volume (not Railway `chalk-volume`)
 - [ ] FE/BE use staging env (test Stripe, non-sending mail)
@@ -376,16 +379,19 @@ Do not make monorepo-driven edits under `frontend/` / `backend/` until Task 15 i
 
 **Verification:**
 
+- [x] Tests pass: `npm test` (restart + staging-build script shape) — 2026-11-09
 - [ ] Manual check: staging FE opens via droplet IP; API reaches staging BE
 - [ ] Manual check: host `docker compose ps` shows db + apps
 - [ ] Manual check: no live Resend send / no live Stripe secret
 - [ ] Manual check: Google OAuth not required for Phase 2 dogfood (may fail until Task 6b)
 
-**Dependencies:** Checkpoint Compose; Task 1 staging = DO
+**Dependencies:** Checkpoint Compose; Task 1 staging = DO; human go Phase 2 (2026-11-09)
 
-**Files likely touched:** deploy script at root, staging `.env` on host, docs — **not** a second compose file; **not** product source for monorepo fixes
+**Files likely touched:** `docker-compose.yml`, `scripts/staging-*.sh`, `docs/staging-droplet.md`, README/AGENTS/plan/todo/tests — **not** a second compose file; **not** product source for monorepo fixes
 
 **Estimated scope:** M (vertical “staging site up” on droplet; compose already done in 3.6)
+
+**Status:** repo substrate in progress 2026-11-09 — **blocked on DO droplet provision** (no `doctl` / API token in agent env)
 
 ---
 
@@ -872,6 +878,7 @@ Do not make monorepo-driven edits under `frontend/` / `backend/` until Task 15 i
 | 2026-11-08 | Root test coverage                        | Fast shell suite only (Architecture I / Task 3.7): stackrun overlays + package/mise/example.env/compose/docs shape. Compose asserts (no profiles) from Task 3.6 lineage. Skip full FE/BE builds in suite. Actions wiring = Task 12.                                                                                    |
 | 2026-11-08 | Unified compose (Task 3.6)                | One `docker-compose.yml`; stock Node tags (nested defaults after Task 3.8); `$staging` builds then all containers. `$development` later amended to SQLite / no Docker (Task 3.10). Profiles later removed.                                                                                                              |
 | 2026-11-08 | Audit track                               | Plan `tasks/audit-issues-plan.md`; progress `tasks/audit-issues-todo.md`; specs `tasks/audit-issues.md`. Remediation not started — explicit go / Task 17.                                                                                                                                                              |
+| 2026-11-09 | Go Phase 2 / Task 4 droplet               | Human go. Droplet = **no stackrun, no mise**. Build = `scripts/staging-build.sh` one-off stock Node `docker run --rm` (same tags as compose). Runtime = `docker compose up -d` + `restart: unless-stopped` (OK with local attached stackrun Ctrl+C). Live droplet still needs DO provision.                              |
 |            | Archive old repos when?                   |                                                                                                                                                                                                                                                                                                                        |
 |            | Cutover approved?                         |                                                                                                                                                                                                                                                                                                                        |
 |            | Monorepo product edit list approved?      |                                                                                                                                                                                                                                                                                                                        |
