@@ -26,7 +26,7 @@ This plan is **read-only for product code in the monorepo sense**. No monorepo-d
 | 11–12 | Port existing FE/BE `ci.yml` + wire root `npm test` as GitHub Actions on the monorepo (path filters so FE≠BE≠docs). | Inventing a new test system. Local root tests already work; product CI already works on each remote. |
 | 13 | Point daily `/home/me/dev/faneqo` at `faneqo.com`. | A product feature. |
 | 14–15 | Optional monorepo product diffs **only if** cutover needs them (explicit go). | Required by default. |
-| 6b | Optional staging domain + TLS + Google OAuth. | Blocking history or prod. |
+| 6b | Staging hostname + HTTPS (`staging.faneqo.com`) — Architecture C.1; ready after forks. | History merge or prod cutover. |
 | 17 | Separate audit track. | Part of history/prod migration. |
 
 Plain English: **history, then prod.** CI/workspace chores ride along after history because GitHub only runs workflows from repo-root `.github/workflows/` — nested `frontend/.github` / `backend/.github` stop mattering once trees live in one repo.
@@ -159,7 +159,52 @@ Caveats (accept for v1):
 - **Cookies / `Secure` flags** may misbehave or force lax settings over plain HTTP; document whatever staging needs for email/password dogfood.
 - IP may change if the droplet is rebuilt without a reserved IP — update env when that happens.
 
-**Later (not Phase 2 now):** attach a staging hostname (not prod `faneqo.com`), terminate TLS, point DNS at the droplet, then re-set public URL env vars and wire Google (and other) redirect URIs. Tracked as deferred Task 6b in `tasks/todo.md`.
+**Later → now (Task 6b, planned 2026-11-09):** attach `staging.faneqo.com` (+ API hostname), terminate TLS via Cloudflare + origin reverse proxy, re-set public URL env vars, then Google OAuth redirects. Detail: Architecture **C.1** below and Tasks 6b.1–6b.5 in `tasks/todo.md`.
+
+### C.1 Staging hostname + HTTPS (Task 6b) — plan 2026-11-09
+
+**Goal:** Browser reaches staging over HTTPS hostnames, not `http://DROPLET_IP:port`. Cloudflare owns DNS + edge TLS. Droplet still runs the same compose FE/BE; a reverse proxy speaks 80/443.
+
+**Why a proxy:** Cloudflare orange-cloud proxy only forwards **80/443** to origin. Publishing `:3000` / `:1337` alone cannot get a normal HTTPS hostname.
+
+#### Recommended design (needs human OK on forks below)
+
+| Piece | Choice |
+|-------|--------|
+| FE hostname | `https://staging.faneqo.com` |
+| API hostname | `https://staging-api.faneqo.com` (not `api.staging` — Universal SSL is one label deep) |
+| DNS | Cloudflare A → droplet `159.203.131.189`, **proxied** (orange cloud) |
+| Edge TLS | Cloudflare Universal SSL; start **Flexible**, later **Full (strict)** + Origin CA |
+| Origin proxy | **Host nginx on droplet** (files in gitignored `.do/`) — not compose, not committed. `:80` → `127.0.0.1:3000` / `:1337` by `Host` |
+| Droplet firewall | Open **22, 80, 443**; after cutover prefer closing public **3000/1337** (or lock to admin IPs) |
+| App env (droplet `.env` only) | Web overlays → `https://staging.faneqo.com`; API overlays → `https://staging-api.faneqo.com`; recreate FE/BE after edit |
+| Google OAuth | After HTTPS works: set `STAGING_GOOGLE_REDIRECT_URI` + Google Cloud console redirect URIs (Task 6b.5) |
+
+**Product-tree exception (explicit go required):** `backend/config/middlewares.js` CORS `origin` list is hardcoded and does **not** include staging hostnames. Browser FE → API will fail CORS until that allowlist adds `https://staging.faneqo.com` (and any other staging web origin). Same for Strapi `url` / proxy settings if admin absolute links break. Scope = minimal staging-host allowlist only — not a general Task 15 dump.
+
+#### Alternatives (reject unless human prefers)
+
+| Alt | Pros | Cons |
+|-----|------|------|
+| Cloudflare Tunnel (`cloudflared`) | No open 80/443; CF still terminates HTTPS | Extra daemon/token; different ops than compose ports |
+| Grey-cloud + Let’s Encrypt on Caddy | “Real” origin LE certs | Droplet IP exposed; LE HTTP-01 needs 80 open; no CF WAF |
+| CF Flexible (HTTPS to CF, HTTP to origin) | Fastest | Not Full strict; weaker origin story — avoid |
+| Single hostname path-proxy (`/api` → Strapi) | One DNS name | Messy Strapi admin/absolute URLs; avoid |
+
+#### Human forks (approve before build)
+
+1. **API hostname:** `api.staging.faneqo.com` (recommended) vs something else?
+2. **Proxy:** Caddy-in-compose (recommended) vs host nginx/Caddy vs Cloudflare Tunnel?
+3. **CF SSL mode:** Full (strict) + Origin CA (recommended) vs Full / Flexible?
+4. **CORS edit:** approve minimal `backend/config/middlewares.js` staging origin now?
+5. **Google OAuth in same pass** (6b.5) or HTTPS-only first?
+
+#### Out of scope for 6b
+
+- Prod `faneqo.com` DNS/TLS changes
+- History merge / Railway prod cutover
+- Live Stripe / live Resend / `chalk-volume`
+- Reserved droplet IP (nice-to-have if IP changes later)
 
 ### G. Unified docker-compose — staging-only compose (amended 2026-11-08)
 
