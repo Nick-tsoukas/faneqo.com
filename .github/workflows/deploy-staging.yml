@@ -1,0 +1,35 @@
+# Deploy content-only staging branch to the DO droplet.
+# Build runs ON the droplet (scripts/staging-droplet-deploy.sh) — not on the runner.
+# Required repo secrets: STAGING_HOST, STAGING_USER, STAGING_SSH_PRIVATE_KEY
+name: Deploy staging
+
+on:
+  push:
+    branches:
+      - staging
+  workflow_dispatch:
+
+concurrency:
+  group: deploy-staging-droplet
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - name: SSH deploy to droplet
+        uses: appleboy/ssh-action@v1.2.2
+        with:
+          host: ${{ secrets.STAGING_HOST }}
+          username: ${{ secrets.STAGING_USER }}
+          key: ${{ secrets.STAGING_SSH_PRIVATE_KEY }}
+          script_stop: true
+          command_timeout: 40m
+          script: |
+            set -euo pipefail
+            cd /opt/faneqo
+            # Reset first so staging-droplet-deploy.sh exists even on older trees
+            git fetch origin
+            git reset --hard "${{ github.sha }}"
+            bash scripts/staging-droplet-deploy.sh "${{ github.sha }}"
