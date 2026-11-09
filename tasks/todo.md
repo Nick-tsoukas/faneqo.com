@@ -413,7 +413,7 @@ Do not make monorepo-driven edits under `frontend/` / `backend/` until Task 15 i
 **Verification:**
 
 - [x] Tests pass: root shape asserts workflow + `staging-droplet-deploy.sh`
-- [ ] Manual check: Actions deploy runs; running commit/tree id visible on host (`git rev-parse HEAD`)
+- [x] Manual check: Actions deploy green (`42581125677`, ~23m); droplet at deploy SHA
 - [x] Manual check: prod service sources unchanged (no Railway retarget)
 
 **Dependencies:** Task 4
@@ -422,7 +422,7 @@ Do not make monorepo-driven edits under `frontend/` / `backend/` until Task 15 i
 
 **Estimated scope:** M
 
-**Status:** complete 2026-11-09 — workflow on `origin/staging` (`b1b3a0b`); secrets set; deploy key on droplet; first Actions run verifying.
+**Status:** complete 2026-11-09 — workflow + secrets + green Actions deploy (`c91ef7d`)
 
 ---
 
