@@ -31,11 +31,9 @@ const config: StackrunFileConfig = {
       {
         name: "backend",
         // Host Node: BACKEND_NODE_VERSION → NODE_VERSION (Strapi engines ≤20.x).
-        run: `mise exec ${hostBackendNode} -- sh -c 'npm install && npm run develop'`,
+        run: `mise exec ${hostBackendNode} -- sh -c 'npm run develop'`,
         cwd: "backend",
         color: "green",
-        // Redundant: root .env STRAPI_PORT inherited by children.
-        // env: { STRAPI_PORT: process.env.STRAPI_PORT || "1337" },
         // tunnel: {
         //   local: `http://127.0.0.1:${process.env.STRAPI_PORT || "1337"}`,
         //   public: process.env.API_PUBLIC ?? undefined,
@@ -44,11 +42,9 @@ const config: StackrunFileConfig = {
       {
         name: "frontend",
         // Host Node: FRONTEND_NODE_VERSION → NODE_VERSION.
-        run: `mise exec ${hostFrontendNode} -- sh -c 'npm install && npm run dev'`,
+        run: `mise exec ${hostFrontendNode} -- sh -c 'npm run dev'`,
         cwd: "frontend",
         color: "blue",
-        // Redundant: root .env NUXT_PORT inherited by children.
-        // env: { NUXT_PORT: process.env.NUXT_PORT || "3000" },
         // tunnel: {
         //   local: `http://127.0.0.1:${process.env.NUXT_PORT || "3000"}`,
         //   public: process.env.WEB_PUBLIC ?? undefined,
@@ -57,37 +53,27 @@ const config: StackrunFileConfig = {
     ],
   },
   $staging: {
-    // Build on host with per-app Node, then stock-Node containers (all compose services).
     before: [
-      `cd backend && mise exec ${hostBackendNode} -- npm install`,
-      `cd frontend && mise exec ${hostFrontendNode} -- npm install`,
-      `mise exec ${hostBackendNode} -- npm run build --prefix backend`,
-      `mise exec ${hostFrontendNode} -- npm run build --prefix frontend`,
-      "docker compose up -d",
+      `sh -c 'mise exec ${hostBackendNode} -- npm install --prefix backend'`,
+      `sh -c 'mise exec ${hostBackendNode} -- npm run build --prefix backend'`,
+      `sh -c 'mise exec ${hostFrontendNode} -- npm install --prefix frontend'`,
+      `sh -c 'mise exec ${hostFrontendNode} -- npm run build --prefix frontend'`
     ],
-    after: ["docker compose down"],
     commands: [
       {
-        name: "backend",
-        run: "docker compose logs -f backend",
+        name: "postgress",
+        run: `docker compose up postgres --no-log-prefix`,
         color: "green",
-        // Redundant: root .env inheritance; STAGING_* ports belong to compose, not command env.
-        // env: { STRAPI_PORT: stagingStrapiPort },
-        // tunnel: {
-        //   local: `http://127.0.0.1:${stagingStrapiPort}`,
-        //   public: process.env.STAGING_API_PUBLIC ?? undefined,
-        // },
+      },
+      {
+        name: "backend",
+        run: `docker compose up backend --no-log-prefix`,
+        color: "green",
       },
       {
         name: "frontend",
-        run: "docker compose logs -f frontend",
+        run: `docker compose up frontend --no-log-prefix`,
         color: "blue",
-        // Redundant: root .env inheritance; STAGING_* ports belong to compose, not command env.
-        // env: { NUXT_PORT: stagingNuxtPort },
-        // tunnel: {
-        //   local: `http://127.0.0.1:${stagingNuxtPort}`,
-        //   public: process.env.STAGING_WEB_PUBLIC ?? undefined,
-        // },
       },
     ],
   },

@@ -14,8 +14,8 @@ Side-by-side product trees under one root git (content-only `staging` on [`Nick-
 |------|------|
 | `frontend/` | Nuxt — checkout `Nick-tsoukas/musicbizqr`. Product operating loop: `frontend/AGENTS.md`. |
 | `backend/` | Strapi v4, canonical data — checkout `Nick-tsoukas/qrserver`. Defers to frontend loop: `backend/AGENTS.md`. |
-| `docker-compose.yml` | Staging only. One compose file, no profiles. `POSTGRES_DB=faneqo_staging`. `docker compose up -d` = Postgres + stock Node FE/BE (tags FE/BE → `NODE_VERSION` → `22.11.0`) with built apps volume-mounted; no custom Dockerfiles unless needed. See `tasks/plan.md` Architecture G. |
-| `stack.config.ts`, `example.env`, `mise.toml`, root `package.json` | stackrun orchestration + local mise. **Node pin SoT = root `.env`** (`NODE_VERSION` / `FRONTEND_*` / `BACKEND_*`; template `example.env`). Host FE/BE use `mise exec` with FE/BE → `NODE_VERSION` fallbacks; compose uses the same vars for image tags. `$development` = host hot reload + SQLite (no Docker); `$staging` = host build then all compose services. |
+| `docker-compose.yml` | Staging only. One compose file, no profiles. `POSTGRES_DB=faneqo_staging`. Local staging = host build then per-service attached `docker compose up … --no-log-prefix` (tags FE/BE → `NODE_VERSION` → `22.11.0`, volume-mounted builds). See `tasks/plan.md` Architecture G. |
+| `stack.config.ts`, `example.env`, `mise.toml`, root `package.json` | stackrun orchestration + local mise. **Node pin SoT = root `.env`**. `$development` = host hot reload + SQLite (no Docker, no install). `$staging` = before install/build, then attached compose up per service. |
 | `docs/docker-install.md` | Docker Engine + Compose install (Linux / macOS / Windows / WSL); linked from README. Staging prerequisite. |
 | `tasks/audit-issues-plan.md` | Central plan to resolve audit issues (one approved step at a time). |
 | `tasks/audit-issues-todo.md` | Progress checklist — check off as issues resolve. |
@@ -38,11 +38,11 @@ Human-facing how-to: [`README.md`](README.md).
 1. `cp example.env .env` and fill secrets as needed (`NODE_VERSION` / optional `FRONTEND_NODE_VERSION` / `BACKEND_NODE_VERSION` are non-secret pins).
 2. `mise install` (local host only — pins Node from `NODE_VERSION` via `mise.toml`). Staging droplet/containers do **not** need mise.
 3. `npm install` at workspace root (stackrun + jiti).
-4. `npm run dev` — host hot-reload FE + BE via stackrun `$development` (mise Node). Strapi uses **SQLite** in development; **no Docker**.
-5. `npm run staging` — host install + build, then `docker compose up -d` (Postgres + stock Node FE/BE containers; built output volume-mounted; no custom Dockerfiles unless needed). Droplet/containers do **not** need mise.
-6. Root `npm test` runs `test:stack` (`tests/stackrun/check.sh`) + `test:root` (`tests/root/check.sh`) — suite from Task 3.7; compose asserts added in Task 3.6. GitHub Actions wiring for that suite is still Task 12.
+4. `npm run dev` — host hot-reload FE + BE via stackrun `$development` (mise Node; install deps in FE/BE folders first). Strapi **SQLite**; **no Docker**.
+5. `npm run staging` — before: host install/build; commands: attached `docker compose up` per service with `--no-log-prefix`. Droplet/containers do **not** need mise.
+6. Root `npm test` runs `test:stack` + `test:root` — suite from Task 3.7. GitHub Actions wiring still Task 12.
 
-Dev = host hot-reload + mise + SQLite (no Docker). Staging = same compose file, all services (`up -d`). `mbq-cron` stays off locally. Host develop → Postgres is deferred (maybe later).
+Dev = host hot-reload + mise + SQLite (no Docker). Staging = same compose file, per-service attached `up`. `mbq-cron` stays off locally.
 
 ## Staging (local done; droplet next)
 

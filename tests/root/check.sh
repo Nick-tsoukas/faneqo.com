@@ -79,8 +79,17 @@ fi
 # Dev = host SQLite (no compose). Staging ups all compose services. No Compose profiles.
 grep -Fq 'docker compose up -d postgres' stack.config.ts \
   && fail "stack.config.ts \$development must not start postgres (Strapi uses SQLite in development)"
-grep -Fq '"docker compose up -d"' stack.config.ts \
-  || fail "stack.config.ts \$staging must use bare docker compose up -d"
+# Staging: host build in before; attached per-service `docker compose up … --no-log-prefix` (not -d / logs).
+grep -Fq 'docker compose up -d' stack.config.ts \
+  && fail "stack.config.ts must not use docker compose up -d (staging attaches with up)"
+grep -Fq 'docker compose up postgres --no-log-prefix' stack.config.ts \
+  || fail "stack.config.ts \$staging must up postgres with --no-log-prefix"
+grep -Fq 'docker compose up backend --no-log-prefix' stack.config.ts \
+  || fail "stack.config.ts \$staging must up backend with --no-log-prefix"
+grep -Fq 'docker compose up frontend --no-log-prefix' stack.config.ts \
+  || fail "stack.config.ts \$staging must up frontend with --no-log-prefix"
+grep -Fq 'docker compose logs' stack.config.ts \
+  && fail "stack.config.ts \$staging must not tail compose logs (use attached up)"
 grep -Fq -- '--profile' stack.config.ts \
   && fail "stack.config.ts must not use Compose --profile"
 if grep -E "run: \"npm run (develop|dev)\"" stack.config.ts | grep -q .; then

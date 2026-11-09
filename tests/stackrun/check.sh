@@ -100,7 +100,15 @@ printf '%s\n' "$dev_dry" | grep -Fq 'FRONTEND_NODE_VERSION' \
 
 stg_dry="$(NODE_ENV=staging npx stackrun --dry-run 2>/dev/null)"
 printf '%s\n' "$stg_dry" | grep -Fq 'docker compose up -d' \
-  || { echo "FAIL staging dry-run missing docker compose up -d"; printf '%s\n' "$stg_dry"; exit 1; }
+  && { echo "FAIL staging dry-run must not use docker compose up -d"; printf '%s\n' "$stg_dry"; exit 1; }
+printf '%s\n' "$stg_dry" | grep -Fq 'docker compose up postgres --no-log-prefix' \
+  || { echo "FAIL staging dry-run missing docker compose up postgres --no-log-prefix"; printf '%s\n' "$stg_dry"; exit 1; }
+printf '%s\n' "$stg_dry" | grep -Fq 'docker compose up backend --no-log-prefix' \
+  || { echo "FAIL staging dry-run missing docker compose up backend --no-log-prefix"; printf '%s\n' "$stg_dry"; exit 1; }
+printf '%s\n' "$stg_dry" | grep -Fq 'docker compose up frontend --no-log-prefix' \
+  || { echo "FAIL staging dry-run missing docker compose up frontend --no-log-prefix"; printf '%s\n' "$stg_dry"; exit 1; }
+printf '%s\n' "$stg_dry" | grep -Fq 'docker compose logs' \
+  && { echo "FAIL staging dry-run must not tail compose logs"; printf '%s\n' "$stg_dry"; exit 1; }
 printf '%s\n' "$stg_dry" | grep -Fq -- '--profile' \
   && { echo "FAIL staging dry-run still uses Compose --profile"; printf '%s\n' "$stg_dry"; exit 1; }
 printf '%s\n' "$stg_dry" | grep -Fq 'mise exec' \

@@ -28,7 +28,7 @@ npm install           # root stackrun + jiti
 
 Host FE/BE use `mise exec` with FE/BE → `NODE_VERSION` fallbacks. Compose staging images use the same vars (then `22.11.0`). Default `BACKEND_NODE_VERSION=20.20.2` for Strapi’s `<=20.x` engines. Staging needs Docker Compose ≥ 2.18.
 
-Frontend/backend `node_modules` install when you run the stack (or `npm install` inside those folders).
+Frontend/backend deps: `npm install` in those folders (or staging `before` install/build). Dev stackrun does not run install.
 
 ## Local development
 
@@ -36,7 +36,7 @@ Frontend/backend `node_modules` install when you run the stack (or `npm install`
 npm run dev
 ```
 
-No Docker. `NODE_ENV=development` → host Strapi + Nuxt hot reload via mise. Strapi uses **SQLite** (`DATABASE_FILENAME`, default `backend/.tmp/data.db`) — product `database.js` ignores `DATABASE_URL` in development. Ports: Strapi `1337`, Nuxt `3000`.
+No Docker. `NODE_ENV=development` → host Strapi + Nuxt hot reload via mise (`npm run develop` / `npm run dev`). Strapi uses **SQLite** (`DATABASE_FILENAME`, default `backend/.tmp/data.db`) — product `database.js` ignores `DATABASE_URL` in development. Ports: Strapi `1337`, Nuxt `3000`.
 
 Postgres for host develop is deferred (maybe later); compose Postgres is for staging only.
 
@@ -46,16 +46,14 @@ Postgres for host develop is deferred (maybe later); compose Postgres is for sta
 npm run staging
 ```
 
-Requires Docker. Host builds the apps (install + build via mise inside stackrun), then Compose runs Postgres + FE + BE containers (same `docker-compose.yml`, no profiles, no custom Dockerfiles).
+Requires Docker. Stackrun `$staging`:
 
-1. `NODE_ENV=staging`
-2. Host `npm install` + `npm run build` for backend and frontend (mise Node pins)
-3. `docker compose up -d` — Postgres + stock Node FE/BE (image tags: FE/BE → `NODE_VERSION` → `22.11.0`)
-4. Follows container logs until you exit, then `docker compose down`
+1. **before** — host `npm install` + `npm run build` for backend then frontend (mise Node pins)
+2. **commands** — attached `docker compose up <service> --no-log-prefix` for `postgres`, `backend`, and `frontend` (one stackrun pane each; compose service logs without `*-1 |` prefix)
 
-Containers use internal `postgres:5432` / DB `faneqo_staging`. Built output is volume-mounted (`backend/`, `frontend/.output`). Host-published ports: `STAGING_STRAPI_PORT` / `STAGING_NUXT_PORT` (else `1337` / `3000`).
+Same `docker-compose.yml`, no profiles, no custom Dockerfiles. Image tags: FE/BE → `NODE_VERSION` → `22.11.0`. Containers use internal `postgres:5432` / DB `faneqo_staging`. Built output is volume-mounted (`backend/`, `frontend/.output`). Host-published ports: `STAGING_STRAPI_PORT` / `STAGING_NUXT_PORT` (else `1337` / `3000`).
 
-`mbq-cron` stays off locally.
+`mbq-cron` stays off locally. Stop stackrun with Ctrl+C; run `docker compose down` if you want containers removed.
 
 ## Tests
 
