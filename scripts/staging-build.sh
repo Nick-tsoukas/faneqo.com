@@ -16,8 +16,16 @@ fi
 BACKEND_IMAGE="node:${BACKEND_NODE_VERSION:-${NODE_VERSION:-22.11.0}}"
 FRONTEND_IMAGE="node:${FRONTEND_NODE_VERSION:-${NODE_VERSION:-22.11.0}}"
 
+# Pass root .env into one-off builds (Strapi loads cron-tasks → Stripe needs STRIPE_SECRET_KEY).
+# Local stackrun/mise inherits .env; droplet docker run does not unless --env-file.
+ENV_FILE_ARGS=()
+if [[ -f "${ROOT}/.env" ]]; then
+  ENV_FILE_ARGS+=(--env-file "${ROOT}/.env")
+fi
+
 echo "==> backend install+build via ${BACKEND_IMAGE}"
 docker run --rm \
+  "${ENV_FILE_ARGS[@]}" \
   -v "${ROOT}/backend:/app" \
   -w /app \
   -e NODE_ENV="${NODE_ENV:-staging}" \
@@ -26,6 +34,7 @@ docker run --rm \
 
 echo "==> frontend install+build via ${FRONTEND_IMAGE}"
 docker run --rm \
+  "${ENV_FILE_ARGS[@]}" \
   -v "${ROOT}/frontend:/app" \
   -w /app \
   -e NODE_ENV="${NODE_ENV:-staging}" \

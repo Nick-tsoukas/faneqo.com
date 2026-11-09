@@ -32,7 +32,7 @@ bash scripts/staging-up.sh
 
 What that does:
 
-1. **`scripts/staging-build.sh`** — `docker run --rm` with the same nested Node tags as compose (`FRONTEND_` / `BACKEND_` → `NODE_VERSION` → `22.11.0`). Runs `npm install && npm run build` in one-off containers; bind-mounts write artifacts onto the host tree; containers exit and are removed (`--rm`). **Not** a compose service.
+1. **`scripts/staging-build.sh`** — `docker run --rm --env-file .env` with the same nested Node tags as compose (`FRONTEND_` / `BACKEND_` → `NODE_VERSION` → `22.11.0`). Runs `npm install && npm run build` in one-off containers; bind-mounts write artifacts onto the host tree; containers exit and are removed (`--rm`). **Not** a compose service. `--env-file` is required so Strapi build sees secrets (e.g. `STRIPE_SECRET_KEY` loaded by `cron-tasks.js`).
 2. **`docker compose up -d`** — Postgres + backend + frontend. Services use `restart: unless-stopped` so they survive droplet reboots.
 
 Rebuild after a pull:

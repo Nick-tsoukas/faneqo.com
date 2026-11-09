@@ -237,6 +237,8 @@ ok docs presence + staging modes
 [[ -f scripts/staging-up.sh ]] || fail "scripts/staging-up.sh missing"
 grep -Fq 'docker run --rm' scripts/staging-build.sh \
   || fail "staging-build.sh must use docker run --rm one-off containers"
+grep -Fq -- '--env-file' scripts/staging-build.sh \
+  || fail "staging-build.sh must pass --env-file .env into build containers"
 grep -Fq 'npm install' scripts/staging-build.sh \
   || fail "staging-build.sh must run npm install"
 grep -Fq 'npm run build' scripts/staging-build.sh \
