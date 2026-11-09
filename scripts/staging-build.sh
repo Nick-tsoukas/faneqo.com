@@ -32,12 +32,16 @@ docker run --rm \
   "${BACKEND_IMAGE}" \
   sh -c 'npm install && npm run build'
 
-echo "==> frontend install+build via ${FRONTEND_IMAGE}"
+# 2GB droplets: Nuxt vite build OOMs at default heap — cap below RAM+swap.
+FRONTEND_NODE_OPTIONS="${FRONTEND_NODE_OPTIONS:---max-old-space-size=1536}"
+
+echo "==> frontend install+build via ${FRONTEND_IMAGE} (NODE_OPTIONS=${FRONTEND_NODE_OPTIONS})"
 docker run --rm \
   "${ENV_FILE_ARGS[@]}" \
   -v "${ROOT}/frontend:/app" \
   -w /app \
   -e NODE_ENV="${NODE_ENV:-staging}" \
+  -e NODE_OPTIONS="${FRONTEND_NODE_OPTIONS}" \
   "${FRONTEND_IMAGE}" \
   sh -c 'npm install && npm run build'
 

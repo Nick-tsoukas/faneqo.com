@@ -7,6 +7,14 @@ Cheap remote staging on a **2GB** droplet. Same root `docker-compose.yml` as loc
 - Docker Engine + Compose V2 (≥ 2.18) — see [`docker-install.md`](docker-install.md)
 - Git (clone/pull `Nick-tsoukas/faneqo.com` branch `staging`)
 - Root `.env` copied from `example.env` with staging secrets + public URLs
+- **2GB RAM:** add ~2G swap before first FE build (Nuxt vite is heavy). Example:
+
+```bash
+fallocate -l 2G /swapfile && chmod 600 /swapfile && mkswap /swapfile && swapon /swapfile
+echo '/swapfile none swap sw 0 0' >> /etc/fstab
+```
+
+`scripts/staging-build.sh` sets `NODE_OPTIONS=--max-old-space-size=1536` for the frontend one-off container (override with `FRONTEND_NODE_OPTIONS`).
 
 Do **not** install mise on the droplet. Builds use stock Node containers (same image tags as compose).
 
