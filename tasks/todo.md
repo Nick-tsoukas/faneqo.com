@@ -428,6 +428,38 @@ Do not make monorepo-driven edits under `frontend/` / `backend/` until Task 15 i
 
 
 
+### Task 5.1: Selective FE/BE rebuild on droplet deploy
+
+**Description:** Speed up staging deploys. Always `git fetch` + `reset --hard` to `$GITHUB_SHA`, but only run FE and/or BE one-off builds + `compose` recreate when those trees (or shared stack files) changed vs previous HEAD. Docs/`tasks/`-only pushes sync git and skip builds. Task 6 still waits.
+
+**Acceptance criteria:**
+
+- [x] `scripts/staging-build.sh` supports selective build (`BUILD_BACKEND` / `BUILD_FRONTEND` or `--backend-only` / `--frontend-only` / `--all`)
+- [x] `scripts/staging-droplet-deploy.sh` diffs previous HEAD → new SHA; classifies FE / BE / shared stack
+- [x] Shared stack changes (`scripts/staging-*.sh`, `docker-compose.yml`, deploy workflow) rebuild both
+- [x] Docs-only / unrelated paths: no FE/BE build, no container recreate
+- [x] BE-only → backend build + recreate backend only; FE-only → frontend only
+- [x] First deploy / unknown prev → full rebuild (safe default)
+- [x] Docs + root tests updated; no mise/stackrun on droplet path
+
+**Verification:**
+
+- [x] Tests pass: `npm test`
+- [ ] Manual check: docs-only push finishes without Nuxt/Strapi build (follow-up after this stack-script push)
+- [x] Manual check: path rules documented in `docs/staging-droplet.md`
+
+**Dependencies:** Task 5
+
+**Files likely touched:** `scripts/staging-build.sh`, `scripts/staging-droplet-deploy.sh`, `docs/staging-droplet.md`, `tests/root/check.sh`, `tasks/*`
+
+**Estimated scope:** S
+
+**Status:** complete 2026-11-09 — selective rebuild landed; this push touches `scripts/staging-*` so expects full rebuild once; next docs-only should skip
+
+---
+
+
+
 ### Task 6: Staging data strategy
 
 **Description:** Document seed/refresh (empty migrate vs scrubbed dump). Never attach prod volume. Cron off until mail safe.

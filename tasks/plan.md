@@ -271,7 +271,7 @@ Path filters stay relevant **after** history merge. Until then, product CI stays
 
 **Railway (cutover):** service roots `frontend`, `backend`, `frontend/jobs/mbq-cron` + watch paths.
 
-**DO staging deploys:** branch `staging` (or content deploy from root); v1 whole-stack rebuild OK; path-aware later if rebuild time hurts.
+**DO staging deploys:** branch `staging`; Actions SSH → droplet. Task 5 landed whole-stack rebuild; **Task 5.1** path-aware FE/BE rebuild on droplet (docs-only skips builds).
 
 ### E. Monorepo-driven product edits wait until last step
 
@@ -335,6 +335,8 @@ Architecture H (mise + env Node pins) landed in Task 3.4. Architecture G **imple
 ### Phase 2 — Cheap staging on DO (EARLY)
 
 Provision droplet; deploy with **same** root `docker-compose.yml` + `docker compose up -d`; staging env (test Stripe, non-sending mail); data strategy; deploy path. **Public URLs = droplet IP over HTTP** (`STAGING_API_PUBLIC` / `STAGING_WEB_PUBLIC`). Defer staging domain, TLS terminator, and Google OAuth redirect wiring (Task 6b). **No history merge required.**
+
+**Task 5.1 (selective rebuild):** Actions stays a thin SSH trigger. Wall clock is droplet `npm install` + Nuxt/Strapi build. Diff previous HEAD → deploy SHA: rebuild only FE and/or BE when those trees change; shared stack files (`scripts/staging-*.sh`, `docker-compose.yml`, deploy workflow) rebuild both; docs/`tasks/`-only syncs git and skips builds. Always pull; conditionally build.
 
 ### Checkpoint B — Staging dogfood
 

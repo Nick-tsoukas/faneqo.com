@@ -43,15 +43,24 @@ What that does:
 1. **`scripts/staging-build.sh`** — `docker run --rm --env-file .env` with the same nested Node tags as compose (`FRONTEND_` / `BACKEND_` → `NODE_VERSION` → `22.11.0`). Runs `npm install && npm run build` in one-off containers; bind-mounts write artifacts onto the host tree; containers exit and are removed (`--rm`). **Not** a compose service. `--env-file` is required so Strapi build sees secrets (e.g. `STRIPE_SECRET_KEY` loaded by `cron-tasks.js`).
 2. **`docker compose up -d`** — Postgres + backend + frontend. Services use `restart: unless-stopped` so they survive droplet reboots.
 
-Redeploy after a new commit (CI or manual) — sync SHA, rebuild, recreate FE/BE only:
+Redeploy after a new commit (CI or manual) — sync SHA, **selectively** rebuild, recreate only what changed:
 
 ```bash
 bash scripts/staging-droplet-deploy.sh <git-sha>
 # or: GITHUB_SHA=<sha> bash scripts/staging-droplet-deploy.sh
+# force both: FORCE_FULL_BUILD=1 bash scripts/staging-droplet-deploy.sh <sha>
 ```
 
-That runs `git fetch` + `reset --hard`, then `scripts/staging-build.sh`, then
-`docker compose up -d --force-recreate --no-deps backend frontend` (postgres untouched).
+1. `git fetch` + `reset --hard` to the deploy SHA (always)
+2. Diff **previous HEAD → new SHA**; classify paths:
+   - `backend/**` → build + recreate **backend** only
+   - `frontend/**` → build + recreate **frontend** only
+   - shared stack (`scripts/staging-*.sh`, `docker-compose.yml`, `.github/workflows/deploy-staging.yml`) → **both**
+   - docs / `tasks/` / other → git sync only (skip build + recreate)
+3. `scripts/staging-build.sh` honors `BUILD_BACKEND` / `BUILD_FRONTEND` (also `--backend-only` / `--frontend-only` / `--all`)
+4. `docker compose up -d --force-recreate --no-deps` for the services that built (postgres untouched)
+
+Wall clock is droplet install/build, not the Actions runner. Path-aware skips are how docs-only pushes avoid another ~20m Nuxt build.
 
 ### GitHub Actions (Task 5)
 

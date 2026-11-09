@@ -243,10 +243,22 @@ grep -Fq 'npm install' scripts/staging-build.sh \
   || fail "staging-build.sh must run npm install"
 grep -Fq 'npm run build' scripts/staging-build.sh \
   || fail "staging-build.sh must run npm run build"
+grep -Fq 'BUILD_BACKEND' scripts/staging-build.sh \
+  || fail "staging-build.sh must support BUILD_BACKEND selective build"
+grep -Fq 'BUILD_FRONTEND' scripts/staging-build.sh \
+  || fail "staging-build.sh must support BUILD_FRONTEND selective build"
+grep -Fq -- '--backend-only' scripts/staging-build.sh \
+  || fail "staging-build.sh must support --backend-only"
+grep -Fq -- '--frontend-only' scripts/staging-build.sh \
+  || fail "staging-build.sh must support --frontend-only"
 grep -Fq 'BACKEND_NODE_VERSION:-${NODE_VERSION:-22.11.0}' scripts/staging-build.sh \
   || fail "staging-build.sh must nest BACKEND_NODE_VERSION → NODE_VERSION → 22.11.0"
 grep -Fq 'FRONTEND_NODE_VERSION:-${NODE_VERSION:-22.11.0}' scripts/staging-build.sh \
   || fail "staging-build.sh must nest FRONTEND_NODE_VERSION → NODE_VERSION → 22.11.0"
+# Selective skip: both flags 0 exits without docker
+if ! BUILD_BACKEND=0 BUILD_FRONTEND=0 bash scripts/staging-build.sh 2>&1 | grep -Fq 'staging build skipped'; then
+  fail "staging-build.sh with BUILD_BACKEND=0 BUILD_FRONTEND=0 must skip"
+fi
 # Comments may mention mise/stackrun as "do not use"; forbid live invocations only.
 if grep -vE '^[[:space:]]*#' scripts/staging-build.sh | grep -Eq '\bmise\b'; then
   fail "staging-build.sh must not invoke mise (droplet path)"
@@ -266,6 +278,10 @@ grep -Fq 'git reset --hard' scripts/staging-droplet-deploy.sh \
   || fail "staging-droplet-deploy.sh must git reset --hard to deploy SHA"
 grep -Fq 'staging-build.sh' scripts/staging-droplet-deploy.sh \
   || fail "staging-droplet-deploy.sh must call staging-build.sh"
+grep -Fq 'git diff --name-only' scripts/staging-droplet-deploy.sh \
+  || fail "staging-droplet-deploy.sh must diff paths for selective rebuild"
+grep -Fq 'FORCE_FULL_BUILD' scripts/staging-droplet-deploy.sh \
+  || fail "staging-droplet-deploy.sh must allow FORCE_FULL_BUILD"
 grep -Fq -- '--force-recreate' scripts/staging-droplet-deploy.sh \
   || fail "staging-droplet-deploy.sh must force-recreate app containers"
 grep -Fq -- '--no-deps' scripts/staging-droplet-deploy.sh \
@@ -279,6 +295,8 @@ grep -Fiq 'staging-droplet-deploy' docs/staging-droplet.md \
   || fail "docs/staging-droplet.md must document staging-droplet-deploy"
 grep -Fiq 'Rollback' docs/staging-droplet.md \
   || fail "docs/staging-droplet.md must document Rollback"
+grep -Eiq 'selective|path-aware|BUILD_BACKEND|only rebuild' docs/staging-droplet.md \
+  || fail "docs/staging-droplet.md must document selective FE/BE rebuild"
 # Root GH Actions deploy (Task 5) — SSH thin wrapper; build stays on droplet
 [[ -f .github/workflows/deploy-staging.yml ]] || fail ".github/workflows/deploy-staging.yml missing"
 grep -Fq 'branches: [staging]' .github/workflows/deploy-staging.yml \
