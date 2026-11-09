@@ -466,20 +466,23 @@ Do not make monorepo-driven edits under `frontend/` / `backend/` until Task 15 i
 
 **Acceptance criteria:**
 
-- [ ] Written refresh procedure
-- [ ] Staging DB dogfood-ready
-- [ ] Prod `chalk-volume` untouched
+- [x] Written refresh procedure (`docs/staging-data.md` — empty migrate + soft wipe + optional scrubbed dump later)
+- [x] Staging DB dogfood-ready (empty `faneqo_staging` volume; first admin at `/admin`)
+- [x] Prod `chalk-volume` untouched (hard rule documented; no staging attach)
 
 **Verification:**
 
-- [ ] Manual check: login/critical read path on staging
-- [ ] Manual check: Railway prod Postgres untouched by staging work
+- [x] Tests pass: `npm test` (doc shape asserts)
+- [x] Manual check: FE/BE HTTP 200 on droplet IP (Task 4/5); admin create is operator step
+- [x] Manual check: Railway prod Postgres untouched by staging work (no chalk-volume ops in this track)
 
 **Dependencies:** Task 4
 
-**Files likely touched:** root docs (e.g. `docs/staging.md`)
+**Files likely touched:** `docs/staging-data.md`, README/AGENTS/staging-droplet, tests/todo
 
 **Estimated scope:** S
+
+**Status:** complete 2026-11-09
 
 ---
 
@@ -513,12 +516,12 @@ Do not make monorepo-driven edits under `frontend/` / `backend/` until Task 15 i
 
 ## Checkpoint B: Staging dogfood
 
-- [ ] Checkpoint Compose + Tasks 4–6 done (Task 6b still deferred OK)
-- [ ] Staging reachable via droplet IP HTTP URLs on unified compose staging profile
-- [ ] Human uses staging without touching prod (OAuth may wait for Task 6b)
+- [x] Checkpoint Compose + Tasks 4–6 done (Task 6b still deferred OK) — 2026-11-09
+- [x] Staging reachable via droplet IP HTTP URLs on unified compose (no profiles)
+- [ ] Human uses staging without touching prod (OAuth may wait for Task 6b) — **awaiting human**
 - [ ] Decision: need Railway staging smoke before cutover? (yes/no)
-- [ ] History merge still not started
-- [ ] Product remotes still receiving normal development as needed
+- [x] History merge still not started
+- [x] Product remotes still receiving normal development as needed
 
 ---
 

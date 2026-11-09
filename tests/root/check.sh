@@ -297,6 +297,16 @@ grep -Fiq 'Rollback' docs/staging-droplet.md \
   || fail "docs/staging-droplet.md must document Rollback"
 grep -Eiq 'selective|path-aware|BUILD_BACKEND|only rebuild' docs/staging-droplet.md \
   || fail "docs/staging-droplet.md must document selective FE/BE rebuild"
+# Staging data strategy (Task 6)
+[[ -f docs/staging-data.md ]] || fail "docs/staging-data.md missing"
+grep -Fiq 'chalk-volume' docs/staging-data.md \
+  || fail "docs/staging-data.md must mention chalk-volume (never attach)"
+grep -Eiq 'empty migrate|Empty migrate' docs/staging-data.md \
+  || fail "docs/staging-data.md must document empty migrate dogfood model"
+grep -Fiq 'mbq-cron' docs/staging-data.md \
+  || fail "docs/staging-data.md must keep mbq-cron off"
+grep -Fiq 'staging-data' README.md \
+  || fail "README.md must link staging-data docs"
 # Root GH Actions deploy (Task 5) — SSH thin wrapper; build stays on droplet
 [[ -f .github/workflows/deploy-staging.yml ]] || fail ".github/workflows/deploy-staging.yml missing"
 grep -Fq 'branches: [staging]' .github/workflows/deploy-staging.yml \

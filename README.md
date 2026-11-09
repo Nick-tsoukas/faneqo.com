@@ -84,4 +84,6 @@ bash scripts/staging-up.sh    # staging-build.sh then docker compose up -d
 
 **CI deploy:** push to `staging` runs [`.github/workflows/deploy-staging.yml`](.github/workflows/deploy-staging.yml) → SSH → `scripts/staging-droplet-deploy.sh`. Secrets + rollback: [`docs/staging-droplet.md`](docs/staging-droplet.md).
 
+**Staging data:** empty migrate + local volume only — never Railway `chalk-volume`. Refresh steps: [`docs/staging-data.md`](docs/staging-data.md).
+
 **Public URLs (Phase 2):** droplet IP over HTTP for `STAGING_API_PUBLIC` / `STAGING_WEB_PUBLIC`. Domain + TLS + Google OAuth redirects later (`tasks/todo.md` Task 6b).

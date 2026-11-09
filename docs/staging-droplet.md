@@ -113,6 +113,8 @@ docker compose down
 - `mbq-cron` stays off
 - Firewall: allow `22`, `3000`, `1337` (and optionally restrict by source IP)
 
+Data seed / wipe / refresh: [`staging-data.md`](staging-data.md).
+
 ## Provision checklist (Task 4)
 
 1. Create 2GB Ubuntu droplet (+ backups optional)

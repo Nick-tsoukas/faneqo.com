@@ -19,6 +19,7 @@ Side-by-side product trees under one root git (content-only `staging` on [`Nick-
 | `stack.config.ts`, `example.env`, `mise.toml`, root `package.json` | stackrun orchestration + local mise. **Node pin SoT = root `.env`**. `$development` = host hot reload + SQLite (no Docker, no install). `$staging` = before install/build, then attached compose up per service. |
 | `docs/docker-install.md` | Docker Engine + Compose install (Linux / macOS / Windows / WSL); linked from README. Staging prerequisite. |
 | `docs/staging-droplet.md` | Droplet bootstrap: no mise/stackrun; IP public URLs; staging-build + compose up -d. |
+| `docs/staging-data.md` | Staging DB strategy: empty migrate, refresh/wipe, never `chalk-volume`. |
 | `tasks/audit-issues-plan.md` | Central plan to resolve audit issues (one approved step at a time). |
 | `tasks/audit-issues-todo.md` | Progress checklist — check off as issues resolve. |
 | `tasks/audit-issues.md` | Issue specs + acceptance criteria. |
