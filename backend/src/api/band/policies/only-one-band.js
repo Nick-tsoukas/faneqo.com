@@ -1,39 +1,56 @@
 // path: src/api/band/policies/only-one-band.js
 'use strict';
 
-module.exports = async (policyContext, config, { strapi }) => {
-  const { state, response } = policyContext;
-  const user = state.user;
+const { errors } = require('@strapi/utils');
 
-  // Not logged in
-  if (!user) {
-    return response.unauthorized('You must be logged in.');
-  }
+/**
+ * Band creation limit.
+ *
+ * - A regular artist account may own one band.
+ * - Manually approved agency accounts may own up to ten.
+ * - Only bands the account owns (the band's users_permissions_user) count.
+ *   Team Access memberships are band-member rows, not ownership, so an
+ *   account can manage any number of assigned artists and still create its own.
+ *
+ * Strapi v4 lets a request through when a policy returns `true` or `undefined`,
+ * so a refusal must throw. The old `response.forbidden()` only set a 403 body
+ * and returned undefined, and the controller went on to create the band.
+ */
+const DEFAULT_BAND_LIMIT = 1;
+const AGENCY_BAND_LIMIT = 10;
 
-  // Special users with higher limits
-  const specialUsers = [
-    'mjc773@gmail.com',
-    'partner@musicbizqr.com',
-  ];
+// Manually approved multi-band (agency) accounts.
+const AGENCY_EMAILS = new Set([
+  'mjc773@gmail.com',
+  'partner@musicbizqr.com',
+]);
 
-  // Default band limit
-  let bandLimit = 1;
+function bandLimitFor(user) {
+  const email = String(user?.email || '').trim().toLowerCase();
+  return AGENCY_EMAILS.has(email) ? AGENCY_BAND_LIMIT : DEFAULT_BAND_LIMIT;
+}
 
-  // Give special users a higher limit
-  if (specialUsers.includes(user.email)) {
-    bandLimit = 10;
-  }
-
-  // Count how many bands this user already has
-  const bands = await strapi.entityService.findMany('api::band.band', {
-    filters: { users_permissions_user: { id: user.id } },
-    publicationState: 'live',
+async function countOwnedBands(strapi, userId) {
+  return strapi.db.query('api::band.band').count({
+    where: { users_permissions_user: { id: userId } },
   });
+}
 
-  if (bands.length >= bandLimit) {
-    return response.forbidden(`You may only create up to ${bandLimit} band(s).`);
+module.exports = async (policyContext, config, { strapi }) => {
+  const user = policyContext.state?.user;
+  if (!user?.id) {
+    throw new errors.UnauthorizedError('You must be logged in.');
   }
 
-  // Allowed to proceed
+  const limit = bandLimitFor(user);
+  const owned = await countOwnedBands(strapi, user.id);
+  if (owned >= limit) {
+    throw new errors.PolicyError(`You may only create up to ${limit} band(s).`);
+  }
+
   return true;
 };
+
+module.exports.bandLimitFor = bandLimitFor;
+module.exports.DEFAULT_BAND_LIMIT = DEFAULT_BAND_LIMIT;
+module.exports.AGENCY_BAND_LIMIT = AGENCY_BAND_LIMIT;

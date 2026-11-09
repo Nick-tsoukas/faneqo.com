@@ -406,7 +406,7 @@ function withCoreProto(overrides, calls) {
   console.log('\nBand payment fields');
   const { stripServerManagedBandFields, SERVER_MANAGED_BAND_FIELDS } = require('../src/utils/bandRoles');
 
-  await test('Stripe Connect fields are stripped from every client band write', () => {
+  await test('Stripe Connect fields and the owner are stripped from every client band write', () => {
     const out = stripServerManagedBandFields({
       name: 'A',
       paymentsEnabled: true,
@@ -415,8 +415,9 @@ function withCoreProto(overrides, calls) {
       stripeChargesEnabled: true,
       users_permissions_user: 7,
     });
-    assert.deepStrictEqual(out, { name: 'A', users_permissions_user: 7 });
+    assert.deepStrictEqual(out, { name: 'A' });
     assert.ok(SERVER_MANAGED_BAND_FIELDS.includes('paymentsEnabled'));
+    assert.ok(SERVER_MANAGED_BAND_FIELDS.includes('users_permissions_user'));
     const src = codeOnly(read('src/api/band/controllers/band.js'));
     assert.strictEqual((src.match(/stripServerManagedBandFields\(data\)/g) || []).length, 2, 'create and update must both strip');
   });

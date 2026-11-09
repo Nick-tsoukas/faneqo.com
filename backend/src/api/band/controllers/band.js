@@ -9,6 +9,7 @@ const {
   ROLE_OWNER,
   stripOwnerOnlyBandFields,
   stripServerManagedBandFields,
+  assignNewBandOwner,
 } = require('../../../utils/bandRoles');
 const { toPublicBand, toOwnerBand } = require('../../../utils/band/publicBandPure');
 const { createFeaturedGalleryService } = require('../../../utils/galleries/featuredGalleryService');
@@ -248,12 +249,14 @@ module.exports = createCoreController("api::band.band", ({ strapi }) => ({
       data = stripServerManagedBandFields(data);
 
       const user = await resolveRequestUser(strapi, ctx);
+      if (!user?.id) return ctx.unauthorized("You must be logged in.");
       sanitizeEditorialPayload(data, user);
 
       const framing = applyArtistImageFramingUpdate({}, data);
       if (framing.error) return ctx.badRequest(framing.error);
-      data = framing.data;
-      
+      // Last, so nothing above can put another account back in the owner field.
+      data = assignNewBandOwner(framing.data, user.id);
+
       const createdBand = await strapi.entityService.create("api::band.band", {
         data,
         files: files || undefined,

@@ -1,4 +1,13 @@
 // path: src/policies/subscription-active.js
+//
+// KNOWN GAP, LEFT IN PLACE ON PURPOSE (2026-11-09):
+// `response.forbidden()` sets a 403 body but returns undefined, and Strapi v4
+// treats an undefined policy result as a pass, so this policy does not block.
+// Band and QR create/update/delete still run for lapsed accounts.
+// Do NOT make it throw until Payments Activation's Start Pro recovery path
+// (qrserver #30 billing/start-pro, musicbizqr #52) is deployed: today a lapsed
+// trial has no way to pay, so enforcing would lock artists out of their own
+// pages with no route back. See only-one-band.js for the throwing pattern.
 const { isBillingExemptLifetimePro } = require('../utils/billing/artistEntitlement');
 
 function deny(response, message) {

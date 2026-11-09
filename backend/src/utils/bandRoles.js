@@ -260,14 +260,22 @@ function stripOwnerOnlyBandFields(data) {
 }
 
 /**
+ * No client — owner included — may set these through band create/update.
  * Stripe Connect state is written only by payment onboarding and the Connect
- * webhook. No client — owner included — may set it through band create/update,
- * or a suspended band could simply switch its own payments back on.
+ * webhook, or a suspended band could simply switch its own payments back on.
+ * The owner comes from the signed-in account (see assignNewBandOwner), never
+ * from the body, or an account could create or move a band into someone
+ * else's name and slip past the one-band limit and blocked-owner checks.
  */
-const SERVER_MANAGED_BAND_FIELDS = OWNER_ONLY_BAND_FIELDS.filter((key) => key !== 'users_permissions_user');
+const SERVER_MANAGED_BAND_FIELDS = [...OWNER_ONLY_BAND_FIELDS];
 
 function stripServerManagedBandFields(data) {
   return omitKeys(data, SERVER_MANAGED_BAND_FIELDS);
+}
+
+/** A new band always belongs to the account that creates it. */
+function assignNewBandOwner(data, userId) {
+  return { ...omitKeys(data, ['users_permissions_user']), users_permissions_user: userId };
 }
 
 module.exports = {
@@ -286,4 +294,5 @@ module.exports = {
   stripOwnerOnlyBandFields,
   SERVER_MANAGED_BAND_FIELDS,
   stripServerManagedBandFields,
+  assignNewBandOwner,
 };
