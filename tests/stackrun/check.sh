@@ -41,8 +41,8 @@ check staging \
 
 # Dry-run root config: staging uses profile containers; development stays db-only + host apps.
 dev_dry="$(NODE_ENV=development npx stackrun --dry-run 2>/dev/null)"
-printf '%s\n' "$dev_dry" | grep -Fq 'docker compose up -d' \
-  || { echo "FAIL development dry-run missing db-only compose up"; printf '%s\n' "$dev_dry"; exit 1; }
+printf '%s\n' "$dev_dry" | grep -Fq 'docker compose up -d postgres' \
+  || { echo "FAIL development dry-run missing db-only compose up postgres"; printf '%s\n' "$dev_dry"; exit 1; }
 printf '%s\n' "$dev_dry" | grep -Fq 'npm run develop' \
   || { echo "FAIL development dry-run missing host backend develop"; printf '%s\n' "$dev_dry"; exit 1; }
 printf '%s\n' "$dev_dry" | grep -Fq 'npm run dev' \

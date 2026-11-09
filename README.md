@@ -25,7 +25,7 @@ npm install
 
 Installs root tooling (`stackrun`, `jiti`). Frontend/backend deps install when you run the stack (dev) or when you `npm install` inside those folders.
 
-**Node pins:** `NODE_VERSION` is the shared default. Leave `FRONTEND_NODE_VERSION` / `BACKEND_NODE_VERSION` empty to use it (`scripts/docker-compose.sh` resolves empties before compose). Set either override when FE and BE must differ — staging stock Node image tags follow those vars.
+**Node pins:** Staging images use Compose nested defaults: FE/BE pin → `NODE_VERSION` → `22.11.0`. Leave `FRONTEND_NODE_VERSION` / `BACKEND_NODE_VERSION` empty to use `NODE_VERSION` (then the literal default). Set either override when FE and BE must differ. Needs Docker Compose ≥ 2.18.
 
 ## Local development
 
@@ -33,7 +33,7 @@ Installs root tooling (`stackrun`, `jiti`). Frontend/backend deps install when y
 npm run dev
 ```
 
-Sets `NODE_ENV=development`, runs `docker compose up -d` (**Postgres only** on `5432`, DB `faneqo_dev`), then starts backend + frontend with hot reload on the **host** Node from mise. Default ports: Strapi `1337`, Nuxt `3000`. On exit, stackrun stops Compose.
+Sets `NODE_ENV=development`, runs `docker compose up -d postgres` (DB only on `5432`, `faneqo_dev`), then starts backend + frontend with hot reload on the **host** Node from mise. Default ports: Strapi `1337`, Nuxt `3000`. On exit, stackrun stops Compose.
 
 ## Local staging
 
@@ -41,7 +41,7 @@ Sets `NODE_ENV=development`, runs `docker compose up -d` (**Postgres only** on `
 npm run staging
 ```
 
-Sets `NODE_ENV=staging`. Stackrun `$staging` installs + builds FE/BE on the host, then runs `scripts/docker-compose.sh --profile staging up -d` (same root `docker-compose.yml`). That profile starts Postgres + **stock Node** FE/BE containers tagged from `FRONTEND_NODE_VERSION` / `BACKEND_NODE_VERSION` (fallback `NODE_VERSION`). Built artifacts are volume-mounted (`frontend/.output`, whole `backend/` including Strapi build output) — no custom Dockerfiles. Containers talk to Postgres on the compose network (`faneqo_staging`). Stackrun then follows container logs (not host `develop`/`dev`). Ports: `STAGING_STRAPI_PORT` / `STAGING_NUXT_PORT`, else unprefixed defaults. Droplet/containers do **not** need mise.
+Sets `NODE_ENV=staging`. Stackrun `$staging` installs + builds FE/BE on the host, then runs `docker compose --profile staging up -d` (same root `docker-compose.yml`). That profile starts Postgres + **stock Node** FE/BE containers (tags: FE/BE → `NODE_VERSION` → `22.11.0`). Built artifacts are volume-mounted (`frontend/.output`, whole `backend/` including Strapi build output) — no custom Dockerfiles. Containers talk to Postgres on the compose network (`faneqo_staging`). Stackrun then follows container logs (not host `develop`/`dev`). Ports: `STAGING_STRAPI_PORT` / `STAGING_NUXT_PORT`, else unprefixed defaults. Droplet/containers do **not** need mise.
 
 `mbq-cron` stays off locally.
 

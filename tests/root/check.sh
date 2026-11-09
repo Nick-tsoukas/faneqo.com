@@ -92,42 +92,56 @@ grep -Eq '^[[:space:]]*frontend:' docker-compose.yml || fail "docker-compose.yml
 grep -Eq '^[[:space:]]*backend:' docker-compose.yml || fail "docker-compose.yml missing backend service"
 grep -Fq 'profiles:' docker-compose.yml || fail "docker-compose.yml missing profiles"
 grep -Fq 'staging' docker-compose.yml || fail "docker-compose.yml missing staging profile"
-# Stock Node images from env pins (wrapper resolves empty → NODE_VERSION)
-grep -Eq 'image:[[:space:]]*node:\$\{FRONTEND_NODE_VERSION\}' docker-compose.yml \
-  || fail "frontend must use image: node:\${FRONTEND_NODE_VERSION}"
-grep -Eq 'image:[[:space:]]*node:\$\{BACKEND_NODE_VERSION\}' docker-compose.yml \
-  || fail "backend must use image: node:\${BACKEND_NODE_VERSION}"
+# Stock Node nested defaults: FE/BE → NODE_VERSION → 22.11.0 (no wrapper script)
+grep -Fq 'node:${FRONTEND_NODE_VERSION:-${NODE_VERSION:-22.11.0}}' docker-compose.yml \
+  || fail "frontend must use nested image: node:\${FRONTEND_NODE_VERSION:-\${NODE_VERSION:-22.11.0}}"
+grep -Fq 'node:${BACKEND_NODE_VERSION:-${NODE_VERSION:-22.11.0}}' docker-compose.yml \
+  || fail "backend must use nested image: node:\${BACKEND_NODE_VERSION:-\${NODE_VERSION:-22.11.0}}"
 # No custom app Dockerfiles at root for staging
 if compgen -G 'docker/Dockerfile*' >/dev/null; then
   fail "unexpected docker/Dockerfile* (stock Node only unless escape hatch)"
 fi
+[[ ! -e scripts/docker-compose.sh ]] || fail "scripts/docker-compose.sh must be removed (use nested compose defaults)"
 ok docker-compose services + profiles
 
 # --- compose service selection (db-only vs staging profile) ---
-[[ -x scripts/docker-compose.sh ]] || fail "scripts/docker-compose.sh must exist and be executable"
-mapfile -t default_services < <(bash scripts/docker-compose.sh config --services | sort)
+mapfile -t default_services < <(docker compose config --services | sort)
 default_joined=$(IFS=,; echo "${default_services[*]}")
 [[ "$default_joined" == "postgres" ]] \
   || fail "default compose services want only postgres, got: ${default_services[*]}"
 
-mapfile -t staging_services < <(bash scripts/docker-compose.sh --profile staging config --services | sort)
+mapfile -t staging_services < <(docker compose --profile staging config --services | sort)
 staging_joined=$(IFS=,; echo "${staging_services[*]}")
 printf '%s\n' "${staging_services[@]}" | grep -Fxq postgres || fail "staging profile missing postgres"
 printf '%s\n' "${staging_services[@]}" | grep -Fxq frontend || fail "staging profile missing frontend"
 printf '%s\n' "${staging_services[@]}" | grep -Fxq backend || fail "staging profile missing backend"
 ok "compose services default=[${default_joined}] staging=[${staging_joined}]"
 
-# Dual Node tags via wrapper (empty FE/BE pins fall back to NODE_VERSION)
+# Dual Node tags + empty FE falls back to NODE_VERSION; bare defaults → 22.11.0
 dual_cfg="$(
   NODE_VERSION=22.11.0 \
-  FRONTEND_NODE_VERSION=22.11.0 \
+  FRONTEND_NODE_VERSION= \
   BACKEND_NODE_VERSION=20.18.0 \
-  bash scripts/docker-compose.sh --profile staging config
+  docker compose --profile staging config
 )"
-printf '%s\n' "$dual_cfg" | grep -Fq 'image: node:22.11.0' || fail "frontend image tag missing node:22.11.0"
+printf '%s\n' "$dual_cfg" | grep -Fq 'image: node:22.11.0' || fail "empty FRONTEND must fall back to NODE_VERSION node:22.11.0"
 printf '%s\n' "$dual_cfg" | grep -Fq 'image: node:20.18.0' || fail "backend image tag missing node:20.18.0"
+# No project .env pins: --env-file empty + unset shell pins → literal 22.11.0
+literal_env="$(mktemp)"
+literal_cfg="$(
+  env -u NODE_VERSION -u FRONTEND_NODE_VERSION -u BACKEND_NODE_VERSION \
+    docker compose --env-file "$literal_env" --profile staging config
+)"
+rm -f "$literal_env"
+printf '%s\n' "$literal_cfg" | grep -Fq 'image: node:22.11.0' \
+  || fail "unset NODE_VERSION + FE/BE must fall back to node:22.11.0"
 # Built-app volume mounts present
 printf '%s\n' "$dual_cfg" | grep -Eq '\.output|/app' || fail "staging config missing built-app volume mounts"
+# Dev overlay pins postgres service explicitly
+grep -Fq 'docker compose up -d postgres' stack.config.ts \
+  || fail "stack.config.ts \$development must up postgres only"
+grep -Fq 'scripts/docker-compose.sh' stack.config.ts \
+  && fail "stack.config.ts must not reference scripts/docker-compose.sh"
 ok compose node tags + volume mounts
 
 # --- cheap docs presence + staging modes described ---

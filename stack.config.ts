@@ -7,16 +7,15 @@ const stagingStrapiPort =
 const stagingNuxtPort =
   process.env.STAGING_NUXT_PORT || process.env.NUXT_PORT || "3000";
 
-const compose = "bash scripts/docker-compose.sh";
-
 export default defineStackrunConfig({
   // No global before/after — overlays own compose lifecycle (Architecture G).
   $development: {
-    before: ["docker compose up -d"],
+    before: ["docker compose up -d postgres"],
     after: ["docker compose stop"],
     commands: [
       {
         name: "backend",
+        // Host Node from root mise (.env NODE_VERSION); stackrun already passes env into commands.
         run: "npm install && npm run develop",
         cwd: "backend",
         color: "green",
@@ -43,13 +42,13 @@ export default defineStackrunConfig({
     // Build on host, then stock-Node containers mount artifacts (--profile staging).
     before: [
       "npm install --prefix backend && npm install --prefix frontend && npm run build",
-      `${compose} --profile staging up -d`,
+      "docker compose --profile staging up -d",
     ],
-    after: [`${compose} --profile staging stop`],
+    after: ["docker compose --profile staging stop"],
     commands: [
       {
         name: "backend",
-        run: `${compose} --profile staging logs -f backend`,
+        run: "docker compose --profile staging logs -f backend",
         color: "green",
         env: { STRAPI_PORT: stagingStrapiPort },
         // tunnel: {
@@ -59,7 +58,7 @@ export default defineStackrunConfig({
       },
       {
         name: "frontend",
-        run: `${compose} --profile staging logs -f frontend`,
+        run: "docker compose --profile staging logs -f frontend",
         color: "blue",
         env: { NUXT_PORT: stagingNuxtPort },
         // tunnel: {

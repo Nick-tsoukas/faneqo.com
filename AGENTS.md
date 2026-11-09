@@ -14,7 +14,7 @@ Side-by-side product trees under one root git (content-only `staging` on [`Nick-
 |------|------|
 | `frontend/` | Nuxt — checkout `Nick-tsoukas/musicbizqr`. Product operating loop: `frontend/AGENTS.md`. |
 | `backend/` | Strapi v4, canonical data — checkout `Nick-tsoukas/qrserver`. Defers to frontend loop: `backend/AGENTS.md`. |
-| `docker-compose.yml`, `docker/`, `scripts/docker-compose.sh` | One compose file + profiles. Default: Postgres 16 only (`faneqo_dev`; init also creates `faneqo_staging`). `--profile staging`: stock Node FE/BE (tags from env via wrapper) with built apps volume-mounted; no custom Dockerfiles unless needed. See `tasks/plan.md` Architecture G. |
+| `docker-compose.yml`, `docker/` | One compose file + profiles. Dev: `docker compose up -d postgres`. `--profile staging`: stock Node FE/BE (tags FE/BE → `NODE_VERSION` → `22.11.0`) with built apps volume-mounted; no custom Dockerfiles unless needed. See `tasks/plan.md` Architecture G. |
 | `stack.config.ts`, `example.env`, `mise.toml`, root `package.json` | stackrun orchestration + local mise Node pin. Copy `example.env` → `.env`; `mise install` for host Node (`NODE_VERSION`). `$development` = db-only compose + host hot reload; `$staging` = build then `--profile staging` containers. |
 | `tasks/audit-issues-plan.md` | Central plan to resolve audit issues (one approved step at a time). |
 | `tasks/audit-issues-todo.md` | Progress checklist — check off as issues resolve. |
@@ -37,8 +37,8 @@ Human-facing how-to: [`README.md`](README.md).
 1. `cp example.env .env` and fill secrets as needed (`NODE_VERSION` / optional `FRONTEND_NODE_VERSION` / `BACKEND_NODE_VERSION` are non-secret pins).
 2. `mise install` (local host only — pins Node from `NODE_VERSION` via `mise.toml`). Staging droplet/containers do **not** need mise.
 3. `npm install` at workspace root (stackrun + jiti).
-4. `npm run dev` — `docker compose up -d` Postgres only, then hot-reload FE + BE on the host via stackrun `$development` (mise Node).
-5. `npm run staging` — host install + build, then `scripts/docker-compose.sh --profile staging up -d` (Postgres + stock Node FE/BE containers; built output volume-mounted; no custom Dockerfiles unless needed). Droplet/containers do **not** need mise.
+4. `npm run dev` — `docker compose up -d postgres`, then hot-reload FE + BE on the host via stackrun `$development` (mise Node).
+5. `npm run staging` — host install + build, then `docker compose --profile staging up -d` (Postgres + stock Node FE/BE containers; built output volume-mounted; no custom Dockerfiles unless needed). Droplet/containers do **not** need mise.
 6. Root `npm test` runs `test:stack` (`tests/stackrun/check.sh`) + `test:root` (`tests/root/check.sh`) — suite from Task 3.7; staging-profile asserts added in Task 3.6. GitHub Actions wiring for that suite is still Task 12.
 
 Dev = db-only compose + host hot-reload + mise. Staging = same compose file + `--profile staging` containers. `mbq-cron` stays off locally.
@@ -64,7 +64,7 @@ Canonical detail: [`tasks/todo.md`](tasks/todo.md) Decisions log + [`tasks/plan.
 - **History tool:** defer until history phase.
 - **Staging:** DO only for now; **2GB** droplet; no Railway staging yet.
 - **Staging public URLs:** droplet IP over HTTP for `STAGING_API_PUBLIC` / `STAGING_WEB_PUBLIC` until a staging domain + TLS + Google redirects (Task 6b later).
-- **Unified compose:** YES — one `docker-compose.yml` + profiles; volume-mounted built apps for staging (Architecture G). Staging FE/BE: **stock Node** image tags from `NODE_VERSION` / `FRONTEND_NODE_VERSION` / `BACKEND_NODE_VERSION` (dual versions allowed); no custom Dockerfiles unless needed.
+- **Unified compose:** YES — one `docker-compose.yml` + profiles; volume-mounted built apps for staging (Architecture G). Staging FE/BE: **stock Node** nested tags FE/BE → `NODE_VERSION` → `22.11.0` (dual versions allowed; Compose ≥ 2.18; no wrapper script); no custom Dockerfiles unless needed.
 - **Local Node tooling:** mise on host only (`mise.toml`); not required on droplet / staging containers (Architecture H).
 - **Branches:** `main` empty for now; all work on `staging`; `staging` deploys to droplet.
 - **`faneqo.com` during staging:** push full `staging` content without product commit history (throwaway OK); history merge later.

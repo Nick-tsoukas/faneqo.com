@@ -16,10 +16,10 @@ services:
       timeout: 5s
       retries: 10
 
-  # Staging only (Architecture G). Stock Node tags from env via scripts/docker-compose.sh.
+  # Staging only (Architecture G). Stock Node: FE/BE pin → NODE_VERSION → 22.11.0 (Compose nested defaults).
   backend:
     profiles: ["staging"]
-    image: node:${BACKEND_NODE_VERSION}
+    image: node:${BACKEND_NODE_VERSION:-${NODE_VERSION:-22.11.0}}
     working_dir: /app
     volumes:
       # Built Strapi tree (host npm run build) + runtime deps — no custom Dockerfile.
@@ -43,7 +43,7 @@ services:
 
   frontend:
     profiles: ["staging"]
-    image: node:${FRONTEND_NODE_VERSION}
+    image: node:${FRONTEND_NODE_VERSION:-${NODE_VERSION:-22.11.0}}
     working_dir: /app
     volumes:
       # Nuxt Nitro build output from host `npm run build` / `build:frontend`.

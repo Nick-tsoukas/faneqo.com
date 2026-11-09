@@ -198,8 +198,8 @@ Do not make monorepo-driven edits under `frontend/` / `backend/` until Task 15 i
 
 **Verification:**
 
-- [x] Manual check: `docker compose config --services` (via `scripts/docker-compose.sh`) shows postgres only; staging profile lists postgres + frontend + backend — 2026-11-08
-- [x] Manual check: dual `FRONTEND_NODE_VERSION` / `BACKEND_NODE_VERSION` yields different image tags via `scripts/docker-compose.sh --profile staging config` — 2026-11-08
+- [x] Manual check: `docker compose config --services` shows postgres only; staging profile lists postgres + frontend + backend — 2026-11-08 (rechecked after Task 3.8: bare compose, no wrapper)
+- [x] Manual check: dual/empty FE pins yield nested image tags via `docker compose --profile staging config` — 2026-11-08 (rechecked after Task 3.8)
 - [x] Manual check: `npm test` green with staging-profile asserts — 2026-11-08
 - [x] Manual check: `$development` dry-run still host `develop`/`dev` after db-only compose; `$staging` dry-run uses `--profile staging` logs (not host develop) — 2026-11-08
 - [x] Manual check: `git status` — no product-source monorepo edits; no `docker/Dockerfile.*`
@@ -244,12 +244,44 @@ Do not make monorepo-driven edits under `frontend/` / `backend/` until Task 15 i
 
 
 
+### Task 3.8: Drop compose wrapper; nest Node defaults in compose
+
+**Description:** Remove `scripts/docker-compose.sh`. Put FE/BE → `NODE_VERSION` → `22.11.0` nested defaults in `docker-compose.yml` (Compose ≥ 2.18). Dev stackrun ups `postgres` only; staging uses bare `docker compose --profile staging`. Update docs + root tests. No product edits.
+
+**Acceptance criteria:**
+
+- [x] `scripts/docker-compose.sh` deleted (no wrapper)
+- [x] `docker-compose.yml` images: `node:${FRONTEND_NODE_VERSION:-${NODE_VERSION:-22.11.0}}` and same for `BACKEND_*`
+- [x] `$development` uses `docker compose up -d postgres`
+- [x] `$staging` uses `docker compose --profile staging …` (no script)
+- [x] Docs / `example.env` describe nested chain; no wrapper references
+- [x] Root tests assert bare compose + nest + dual/empty fallbacks
+
+**Verification:**
+
+- [x] Tests pass: `npm test` — 2026-11-08
+- [x] Manual check: `docker compose config --services` = postgres only; `--profile staging` = postgres+frontend+backend
+- [x] Manual check: empty FE + set BE yields different tags; all-empty → `node:22.11.0`
+
+**Dependencies:** Task 3.6
+
+**Files likely touched:** `docker-compose.yml`, `stack.config.ts`, `scripts/docker-compose.sh` (delete), `example.env`, `README.md`, `AGENTS.md`, `tests/root/check.sh`, `tasks/plan.md`, `tasks/todo.md`
+
+**Estimated scope:** S
+
+**Status:** complete 2026-11-08
+
+---
+
+
+
 ## Checkpoint Compose: Local unified stack OK
 
 - [x] Human OK on stock-Node approach (no custom Dockerfiles unless needed) — 2026-11-08 / Task 3.5
 - [x] Task 3.4 mise + README deps done (host only; env pins for compose tags)
 - [x] Task 3.7 root test suite green (`npm test`) — 2026-11-08
 - [x] Tasks 3.5–3.6 done (3.5 design lock; 3.6 implement complete 2026-11-08)
+- [x] Task 3.8 done (wrapper removed; nested compose defaults) — 2026-11-08
 - [ ] Human OK on local staging profile behavior (incl. image tags from env / dual Node when set)
 - [ ] Ready for DO droplet using the **same** compose file + `--profile staging` (**no mise** on droplet)
 - [ ] Still no history merge / Railway prod retarget
@@ -763,10 +795,11 @@ Do not make monorepo-driven edits under `frontend/` / `backend/` until Task 15 i
 | 2026-11-08 | Phase 1 temp tips                         | FE `musicbizqr` `625decc619e9743c89600e6dda6b9564db53e937`; BE `qrserver` `bef413d7cb2b9903a0f6b53a6698ed26a2e5f3a1`. Nested `.git` removed locally; content-only `staging` @ `7be36cb` on `faneqo.com`. Three >50MB FE media files deferred from pack (local only).  |
 | 2026-11-08 | Staging public URLs                       | **Droplet IP** — `http://DROPLET_IP` / `:port` for `STAGING_API_PUBLIC` / `STAGING_WEB_PUBLIC` until a staging domain exists. HTTP-only caveats: Google OAuth often needs HTTPS + registered redirects (Task 6b later); Secure cookies may need lax staging settings. |
 | 2026-11-08 | Unified docker-compose                    | **YES** — one root `docker-compose.yml`; Compose profiles (`staging` for FE/BE). Dev: DB only + host hot reload. Local staging + DO droplet: same file + `--profile staging`; built apps **volume-mounted** into runtime containers. Implement Tasks 3.5–3.6 before droplet Task 4. No duplicate staging compose file. |
-| 2026-11-08 | Staging runtime images                    | **Stock Node** — tags from `NODE_VERSION` / optional `FRONTEND_NODE_VERSION` / `BACKEND_NODE_VERSION` (empty → `NODE_VERSION`); dual FE/BE versions allowed; same image OK when equal; different `command` / ports / volume mounts. **No custom Dockerfiles unless needed**. Task 3.5 locked. |
+| 2026-11-08 | Staging runtime images                    | **Stock Node** — tags `FRONTEND_/BACKEND_NODE_VERSION` → `NODE_VERSION` → `22.11.0` (Compose nested defaults; Compose ≥ 2.18). Dual FE/BE versions allowed; same image OK when equal; different `command` / ports / volume mounts. **No custom Dockerfiles unless needed**. Task 3.5 locked; wrapper removed Task 3.8. |
+| 2026-11-08 | Drop compose wrapper (Task 3.8)           | Nested Compose defaults replace `scripts/docker-compose.sh`. Dev: `docker compose up -d postgres`. Staging: `docker compose --profile staging`. |
 | 2026-11-08 | Local Node tooling (mise)                 | **mise** on development host only (`mise.toml` + `NODE_VERSION` in `example.env`). Staging droplet / staging containers do **not** require mise — they use Docker stock Node tags from the same env vars. Task 3.4. |
 | 2026-11-08 | Root test coverage                        | Fast shell suite only (Architecture I / Task 3.7): stackrun overlays + package/mise/example.env/compose/docs shape. Staging-profile asserts added in Task 3.6. Skip full FE/BE builds in suite. Actions wiring = Task 12. |
-| 2026-11-08 | Unified compose profiles (Task 3.6)       | One `docker-compose.yml` + `staging` profile; stock Node via `scripts/docker-compose.sh`; `$staging` builds then containers; `$development` stays db-only + host hot reload. |
+| 2026-11-08 | Unified compose profiles (Task 3.6)       | One `docker-compose.yml` + `staging` profile; stock Node tags (nested defaults after Task 3.8); `$staging` builds then containers; `$development` stays db-only + host hot reload. |
 | 2026-11-08 | Audit track                               | Plan `tasks/audit-issues-plan.md`; progress `tasks/audit-issues-todo.md`; specs `tasks/audit-issues.md`. Remediation not started — explicit go / Task 17.                                                                                                            |
 |            | Archive old repos when?                   |                                                                                                                                                                                                                                                                       |
 |            | Cutover approved?                         |                                                                                                                                                                                                                                                                       |
