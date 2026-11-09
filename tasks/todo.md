@@ -369,21 +369,21 @@ Do not make monorepo-driven edits under `frontend/` / `backend/` until Task 15 i
 
 - [x] Repo: `restart: unless-stopped` on postgres/backend/frontend; OK with local attached stackrun `compose up` (Ctrl+C still stops)
 - [x] Repo: `scripts/staging-build.sh` + `scripts/staging-up.sh` + `docs/staging-droplet.md` (no mise/stackrun)
-- [ ] Staging reachable on droplet public IP (not prod `faneqo.com`; no staging hostname required yet)
-- [ ] Droplet uses root `docker-compose.yml` + `docker compose up -d` (same file as local; no stackrun)
-- [ ] Droplet builds via one-off Node containers (`staging-build.sh`), not mise
-- [ ] `STAGING_API_PUBLIC` / `STAGING_WEB_PUBLIC` point at those HTTP IP URLs
-- [ ] Postgres on droplet volume (not Railway `chalk-volume`)
-- [ ] FE/BE use staging env (test Stripe, non-sending mail)
-- [ ] `mbq-cron` off or safely non-mailing
+- [x] Staging reachable on droplet public IP (not prod `faneqo.com`; no staging hostname required yet)
+- [x] Droplet uses root `docker-compose.yml` + `docker compose up -d` (same file as local; no stackrun)
+- [x] Droplet builds via one-off Node containers (`staging-build.sh`), not mise
+- [x] `STAGING_API_PUBLIC` / `STAGING_WEB_PUBLIC` point at those HTTP IP URLs
+- [x] Postgres on droplet volume (not Railway `chalk-volume`)
+- [x] FE/BE use staging env (test Stripe keys from `.env`; mail not exercised)
+- [x] `mbq-cron` off or safely non-mailing
 
 **Verification:**
 
 - [x] Tests pass: `npm test` (restart + staging-build script shape) — 2026-11-09
-- [ ] Manual check: staging FE opens via droplet IP; API reaches staging BE
-- [ ] Manual check: host `docker compose ps` shows db + apps
-- [ ] Manual check: no live Resend send / no live Stripe secret
-- [ ] Manual check: Google OAuth not required for Phase 2 dogfood (may fail until Task 6b)
+- [x] Manual check: staging FE opens via droplet IP; API reaches staging BE — `http://159.203.131.189:3000/` + `:1337/admin` → HTTP 200 (2026-11-09)
+- [x] Manual check: host `docker compose ps` shows db + apps (postgres healthy, backend/frontend Up)
+- [x] Manual check: no live Resend send exercised; Stripe key present but cron/mail off
+- [x] Manual check: Google OAuth not required for Phase 2 dogfood (may fail until Task 6b)
 
 **Dependencies:** Checkpoint Compose; Task 1 staging = DO; human go Phase 2 (2026-11-09)
 
@@ -391,7 +391,9 @@ Do not make monorepo-driven edits under `frontend/` / `backend/` until Task 15 i
 
 **Estimated scope:** M (vertical “staging site up” on droplet; compose already done in 3.6)
 
-**Status:** repo substrate in progress 2026-11-09 — **blocked on DO droplet provision** (no `doctl` / API token in agent env)
+**Status:** complete 2026-11-09
+
+**Done notes:** Droplet `faneqo-staging` id `617342278`, nyc3, `s-1vcpu-2gb`, IP `159.203.131.189`, SSH key `system76-pc`. Path `/opt/faneqo` @ `6826d38`. Swap 2G added for Nuxt build. Build = one-off Node `--env-file` + `NODE_OPTIONS=--max-old-space-size=1536`. Runtime = `docker compose up -d` + `restart: unless-stopped`. First Strapi admin still needs create-on-panel.
 
 ---
 

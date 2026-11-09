@@ -206,7 +206,7 @@ Caveats (accept for v1):
 - [x] Staging FE/BE containers mount **built** app dirs as volumes
 - [x] `npm run dev` host-runs FE/BE with mise (no compose prerequisite)
 - [x] Local `npm run staging` uses compose containers (not host develop as the server)
-- [ ] Droplet deploy uses the same file + IP public URLs; **no mise** / no stackrun on droplet (`scripts/staging-up.sh`) — repo substrate 2026-11-09; live droplet still open
+- [x] Droplet deploy uses the same file + IP public URLs; **no mise** / no stackrun on droplet (`scripts/staging-up.sh`) — live 2026-11-09 (`faneqo-staging` / `159.203.131.189`)
 - [x] No monorepo-driven product source edits under `frontend/` / `backend/` for this slice
 
 **Locked (2026-11-08 — Task 3.5 / Checkpoint Compose design):** **No custom Dockerfiles unless needed.** Staging FE/BE services use stock Node image(s) (same image OK twice when versions match), different `command` / ports / volume mounts for built output. Image tags driven by env (Architecture H). Do **not** add root `docker/Dockerfile.frontend` / `docker/Dockerfile.backend` (or product-tree Dockerfiles) unless stock Node proves insufficient later. Unrelated `frontend/workers/studio-video/Dockerfile` stays out of scope.
