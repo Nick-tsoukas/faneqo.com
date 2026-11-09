@@ -55,12 +55,14 @@ grep -Fq '_.file = ".env"' mise.toml || fail 'mise.toml must load .env via _.fil
 grep -Fq 'node = "{{ env.NODE_VERSION }}"' mise.toml || fail 'mise.toml must pin node = "{{ env.NODE_VERSION }}"'
 ok mise.toml
 
-# --- example.env Node pins ---
+# --- example.env Node pins + STAGING_* host ports ---
 [[ -f example.env ]] || fail "example.env missing"
 grep -Eq '^NODE_VERSION=' example.env || fail "example.env missing NODE_VERSION="
 grep -Eq '^FRONTEND_NODE_VERSION=' example.env || fail "example.env missing FRONTEND_NODE_VERSION="
 grep -Eq '^BACKEND_NODE_VERSION=' example.env || fail "example.env missing BACKEND_NODE_VERSION="
-ok example.env Node pins
+grep -Eq '^STAGING_STRAPI_PORT=' example.env || fail "example.env missing STAGING_STRAPI_PORT="
+grep -Eq '^STAGING_NUXT_PORT=' example.env || fail "example.env missing STAGING_NUXT_PORT="
+ok example.env Node pins + STAGING_* ports
 
 # --- stack.config.ts overlays (text shape; stackrun suite loads it for real) ---
 [[ -f stack.config.ts ]] || fail "stack.config.ts missing"
@@ -137,12 +139,40 @@ printf '%s\n' "$literal_cfg" | grep -Fq 'image: node:22.11.0' \
   || fail "unset NODE_VERSION + FE/BE must fall back to node:22.11.0"
 # Built-app volume mounts present
 printf '%s\n' "$dual_cfg" | grep -Eq '\.output|/app' || fail "staging config missing built-app volume mounts"
+# Host publish ports use STAGING_* (not remapped unprefixed names in stack.config)
+grep -Fq '"${STAGING_STRAPI_PORT:-1337}:1337"' docker-compose.yml \
+  || fail "backend host port must interpolate STAGING_STRAPI_PORT"
+grep -Fq '"${STAGING_NUXT_PORT:-3000}:3000"' docker-compose.yml \
+  || fail "frontend host port must interpolate STAGING_NUXT_PORT"
+# Prove dotenv/process env inheritance: non-default STAGING_* appear in published ports
+port_cfg="$(
+  STAGING_STRAPI_PORT=1338 \
+  STAGING_NUXT_PORT=3001 \
+  docker compose --profile staging config
+)"
+printf '%s\n' "$port_cfg" | grep -Fq 'published: "1338"' \
+  || fail "STAGING_STRAPI_PORT=1338 must publish host 1338 (got no published: \"1338\")"
+printf '%s\n' "$port_cfg" | grep -Fq 'published: "3001"' \
+  || fail "STAGING_NUXT_PORT=3001 must publish host 3001 (got no published: \"3001\")"
+# Guard silent fallback: when STAGING_* differ, published must not stay only on defaults
+backend_pub="$(printf '%s\n' "$port_cfg" | awk '
+  /^  backend:/ { in_be=1; next }
+  in_be && /^  [a-z]/ { in_be=0 }
+  in_be && /published:/ { print; exit }
+')"
+frontend_pub="$(printf '%s\n' "$port_cfg" | awk '
+  /^  frontend:/ { in_fe=1; next }
+  in_fe && /^  [a-z]/ { in_fe=0 }
+  in_fe && /published:/ { print; exit }
+')"
+[[ "$backend_pub" == *'"1338"'* ]] || fail "backend published port want 1338, got: ${backend_pub:-<empty>}"
+[[ "$frontend_pub" == *'"3001"'* ]] || fail "frontend published port want 3001, got: ${frontend_pub:-<empty>}"
 # Dev overlay pins postgres service explicitly
 grep -Fq 'docker compose up -d postgres' stack.config.ts \
   || fail "stack.config.ts \$development must up postgres only"
 grep -Fq 'scripts/docker-compose.sh' stack.config.ts \
   && fail "stack.config.ts must not reference scripts/docker-compose.sh"
-ok compose node tags + volume mounts
+ok compose node tags + volume mounts + STAGING_* host ports
 
 # --- cheap docs presence + staging modes described ---
 [[ -f README.md ]] || fail "README.md missing"

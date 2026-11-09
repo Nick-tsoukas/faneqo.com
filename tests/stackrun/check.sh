@@ -46,6 +46,7 @@ check staging \
   "NUXT_PORT=3000"
 
 # Staging must not inject STAGING_* remaps into command env.
+# STAGING_* host ports belong to compose (see tests/root/check.sh), not stackrun command env.
 stg_out="$(NODE_ENV=staging npx stackrun -c "$CFG" 2>&1)" || {
   echo "FAIL staging remap check: stackrun exit $?"
   printf '%s\n' "$stg_out"
@@ -61,7 +62,18 @@ if printf '%s\n' "$stg_out" | grep -Fq "NUXT_PORT=3001"; then
   printf '%s\n' "$stg_out"
   exit 1
 fi
-echo "ok staging no STAGING_* command-env remap"
+# Fixture must still see unprefixed inheritance (dotenv), not blank ports.
+if ! printf '%s\n' "$stg_out" | grep -Fq "STRAPI_PORT=1337"; then
+  echo "FAIL staging: expected inherited STRAPI_PORT=1337 without remap"
+  printf '%s\n' "$stg_out"
+  exit 1
+fi
+if ! printf '%s\n' "$stg_out" | grep -Fq "NUXT_PORT=3000"; then
+  echo "FAIL staging: expected inherited NUXT_PORT=3000 without remap"
+  printf '%s\n' "$stg_out"
+  exit 1
+fi
+echo "ok staging no STAGING_* command-env remap (compose owns STAGING_* ports)"
 
 # Root config: command env port blocks must stay commented (not active).
 if grep -E '^[[:space:]]+env:[[:space:]]*\{[[:space:]]*(STRAPI_PORT|NUXT_PORT)' \
