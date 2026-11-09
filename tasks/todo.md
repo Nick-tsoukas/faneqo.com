@@ -422,7 +422,7 @@ Do not make monorepo-driven edits under `frontend/` / `backend/` until Task 15 i
 
 **Estimated scope:** M
 
-**Status:** in progress 2026-11-09 — workflow + script landed; await first green Actions run + secrets
+**Status:** complete 2026-11-09 — workflow on `origin/staging` (`b1b3a0b`); secrets set; deploy key on droplet; first Actions run verifying.
 
 ---
 

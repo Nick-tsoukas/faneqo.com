@@ -24,7 +24,6 @@ jobs:
           host: ${{ secrets.STAGING_HOST }}
           username: ${{ secrets.STAGING_USER }}
           key: ${{ secrets.STAGING_SSH_PRIVATE_KEY }}
-          script_stop: true
           command_timeout: 40m
           script: |
             set -euo pipefail
