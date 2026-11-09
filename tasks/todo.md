@@ -20,7 +20,7 @@ Do not make monorepo-driven edits under `frontend/` / `backend/` until Task 15 i
 
 - [x] Temp path chosen: **YES** — local nested-`.git` removal for one deployable tree (re-clone before history merge)
 - [x] History approach: **LATER** — defer filter-repo vs subtree until history phase
-- [x] Staging host: **DO only** for now (no Railway staging yet)
+- [x] Staging host: **DO only** — Railway staging **never** (locked Checkpoint B 2026-11-09)
 - [x] Branch model confirmed: keep `main` empty for now; all work on `staging`; `staging` deploys to droplet
 - [x] Content-only `faneqo.com` during staging: **YES** — push full `staging` branch content without product commit history (throwaway history OK); history merge later
 - [x] Staging public URLs: **droplet IP** (HTTP) for `STAGING_API_PUBLIC` / `STAGING_WEB_PUBLIC` until a staging domain exists; domain + TLS + Google redirects deferred (Task 6b)
@@ -518,10 +518,12 @@ Do not make monorepo-driven edits under `frontend/` / `backend/` until Task 15 i
 
 - [x] Checkpoint Compose + Tasks 4–6 done (Task 6b still deferred OK) — 2026-11-09
 - [x] Staging reachable via droplet IP HTTP URLs on unified compose (no profiles)
-- [ ] Human uses staging without touching prod (OAuth may wait for Task 6b) — **awaiting human**
-- [ ] Decision: need Railway staging smoke before cutover? (yes/no)
-- [x] History merge still not started
+- [x] Human uses staging without touching prod — Strapi admin created at `http://159.203.131.189:1337/admin` (2026-11-09); OAuth may wait for Task 6b
+- [x] Decision: Railway staging? **NO — never.** Staging stays on DO only. Do not discuss Railway again until **prod cutover** to the monorepo (Phase 8 / Task 16)
+- [x] History merge still not started — **hold** until human says go Phase 3
 - [x] Product remotes still receiving normal development as needed
+
+**End state order (locked 2026-11-09):** (1) keep dogfooding DO staging as needed → (2) **git history merge** into `faneqo.com` → (3) **switch prod** to the new repo. No Railway staging in between.
 
 ---
 
@@ -901,7 +903,9 @@ Do not make monorepo-driven edits under `frontend/` / `backend/` until Task 15 i
 | 2026-11-08 | Temp nested-`.git` removal?               | **YES** — remove `frontend/.git` + `backend/.git` locally for single-tree staging; re-clone / restore `.git` before history migrate. Never push surgery to product remotes.                                                                                                                                            |
 | 2026-11-08 | History method                            | **LATER** — defer filter-repo vs subtree until history phase                                                                                                                                                                                                                                                           |
 | 2026-11-08 | Staging host                              | **DO only** for now                                                                                                                                                                                                                                                                                                    |
-| 2026-11-08 | Railway staging before cutover?           | **Not now** — revisit at Checkpoint B                                                                                                                                                                                                                                                                                  |
+| 2026-11-08 | Railway staging before cutover?           | **Not now** — revisited Checkpoint B                                                                                                                                                                                                                                                                                   |
+| 2026-11-09 | Railway staging (final)                   | **NEVER.** Staging = DO droplet only. Do not bring up Railway staging. Do not discuss Railway until prod cutover to monorepo.                                                                                                                         |
+| 2026-11-09 | Checkpoint B                              | Admin created on droplet Strapi. History merge **held**. Final order: history merge → then prod switch to new repo.                                                                                                                                  |
 | 2026-11-08 | Droplet size                              | **2GB**                                                                                                                                                                                                                                                                                                                |
 | 2026-11-08 | Branch model                              | Keep `main` empty for now; all work on `staging`; `staging` deploys to droplet                                                                                                                                                                                                                                         |
 | 2026-11-08 | Content-only `faneqo.com` during staging? | **YES** — push full `staging` branch content without product commit history (throwaway history OK). Get staging running without history; history merge later (history does not affect whether staging runs).                                                                                                           |

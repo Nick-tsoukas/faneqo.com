@@ -152,7 +152,7 @@ User lean: DO droplet + compose. Droplet runs the **same** root `docker-compose.
 | **Railway staging env** | Often ~$20–50+ | Low | **Highest** | Optional later before cutover |
 | Fly / Render free/low | Low or sleep-prone | Medium | Medium | Weak for always-on Strapi+Postgres |
 
-**Locked:** **DO droplet 2GB** — Postgres + backend + frontend via unified compose `staging` profile; cron off. No Railway staging for now. Production stays on current two-repo Railway until cutover. Optional Railway staging later for Railpack/Nixpacks parity (revisit Checkpoint B).
+**Locked:** **DO droplet 2GB** — Postgres + backend + frontend via unified compose; cron off. **Staging never on Railway** (Checkpoint B 2026-11-09). Production stays on current two-repo Railway until **prod cutover** (Phase 8). Do not discuss Railway again until that cutover.
 
 **DO sizing:** 1GB thrash under Nuxt SSR + Strapi + Postgres. Locked start **2GB/$12**; bump if OOM.
 
@@ -303,7 +303,7 @@ Audit remediation plan: `tasks/audit-issues-plan.md`. Start product fixes only a
 | Local Node tooling | **mise** on host only (`mise.toml` + `NODE_VERSION`); not required on droplet / staging containers (Architecture H / Task 3.4) |
 | Audit track | **`tasks/audit-issues-*.md`** — plan / todo / specs; remediation waits on Task 17 / explicit go (Decision 11) |
 
-Still open: old-repo archival after cutover?; Railway staging smoke before cutover (revisit at Checkpoint B).
+Still open: old-repo archival after cutover? Railway staging = **closed (never)**.
 
 ### Phase 1 — Root workspace + optional temp single tree (no remote surgery)
 
@@ -340,11 +340,11 @@ Provision droplet; deploy with **same** root `docker-compose.yml` + `docker comp
 
 ### Checkpoint B — Staging dogfood
 
-- [ ] Staging reachable via droplet IP: FE + staging BE + staging Postgres (same compose file as local)
-- [ ] `STAGING_API_PUBLIC` / `STAGING_WEB_PUBLIC` set to those HTTP IP URLs (or ports as needed)
-- [ ] No prod domains / live mail / live Stripe / `chalk-volume`
-- [ ] Human dogfoods (OAuth/Google login may still be off until Task 6b); prod Railway still on product remotes
-- [ ] Still no monorepo history rewrite
+- [x] Staging reachable via droplet IP: FE + staging BE + staging Postgres (same compose file as local)
+- [x] `STAGING_API_PUBLIC` / `STAGING_WEB_PUBLIC` set to those HTTP IP URLs (or ports as needed)
+- [x] No prod domains / live mail / live Stripe / `chalk-volume`
+- [x] Human dogfoods — Strapi admin created (2026-11-09); OAuth may wait for Task 6b
+- [x] Railway staging = **never**; history merge **held** until human go; final order = history merge → prod switch to monorepo
 
 ### Phase 3 — Restore pristine FE/BE checkouts
 
@@ -401,7 +401,7 @@ Begin remediation per `tasks/audit-issues-plan.md` once daily development is the
 | Force-push / rewrite product remotes | High | Local-only temp path; scratch clones for filter-repo; never push rewritten SHAs to old remotes |
 | Staging trees lag active product `main` | Med | Remotes stay source of truth; re-pull/re-clone before merge; redeploy staging when needed |
 | FE change redeploys BE on monorepo | Med | Path filters + Railway watch paths (Phase 5 / 8) |
-| DO staging ≠ Railway runtime | Med | Align `NODE_VERSION` / FE/BE overrides with prod builders; optional Railway staging smoke before cutover |
+| DO staging ≠ Railway runtime | Med | Align `NODE_VERSION` / FE/BE pins with prod builders at **prod cutover** only (no Railway staging) |
 | Host mise pin vs dual FE/BE engines | Med | **Task 3.9:** host `mise exec node@${BACKEND_NODE_VERSION:-…}` (and optional FE); containers keep separate image tags; no redundant stackrun `env:` wrappers |
 | Live Resend/Stripe on staging | High | Non-sending / test keys; cron off |
 | HTTP IP staging breaks Google OAuth / Secure cookies | Med | Accept for Phase 2; Task 6b when domain + HTTPS exist |
@@ -430,7 +430,7 @@ Begin remediation per `tasks/audit-issues-plan.md` once daily development is the
 
 11. ~~**Audit track**~~ → Plan/todo/specs under `tasks/audit-issues-*.md` (2026-11-08). Remediation still waits on Task 17 / explicit go.
 12. **Old repos after cutover:** archive on GitHub, or leave writable for emergency?
-13. **Railway staging smoke before cutover?** Revisit at Checkpoint B.
+13. ~~**Railway staging smoke before cutover?**~~ → **NEVER** (Checkpoint B 2026-11-09). Staging stays on DO. Railway talk only at prod cutover.
 
 ## Out of scope (this plan)
 

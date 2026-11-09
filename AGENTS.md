@@ -66,7 +66,7 @@ Canonical detail: [`tasks/todo.md`](tasks/todo.md) Decisions log + [`tasks/plan.
 
 - **Temp nested `.git`:** YES (local only; re-clone before history merge).
 - **History tool:** defer until history phase.
-- **Staging:** DO only for now; **2GB** droplet; no Railway staging yet.
+- **Staging:** DO only (**never** Railway staging); **2GB** droplet. Next big steps when approved: history merge → then prod cutover to monorepo.
 - **Staging public URLs:** droplet IP over HTTP for `STAGING_API_PUBLIC` / `STAGING_WEB_PUBLIC` until a staging domain + TLS + Google redirects (Task 6b later).
 - **Unified compose:** YES — one `docker-compose.yml` (no profiles); volume-mounted built apps for **staging only** (Architecture G). Dev = host + SQLite, no compose. Staging ups all services. Staging FE/BE: **stock Node** nested tags FE/BE → `NODE_VERSION` → `22.11.0` (dual versions allowed; Compose ≥ 2.18; no wrapper script); no custom Dockerfiles unless needed.
 - **Local Node tooling:** mise on host only (`mise.toml`); not required on droplet / staging containers (Architecture H).
