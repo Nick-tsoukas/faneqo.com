@@ -4,7 +4,7 @@ Monorepo root for Nuxt (`frontend/`) + Strapi (`backend/`) with Postgres via Doc
 
 ## Prerequisites
 
-- **Docker** with Compose V2 (`docker compose`) — local Postgres and staging containers
+- **Docker** with Compose V2 (`docker compose`) — local Postgres and staging containers (see [`docs/docker-install.md`](docs/docker-install.md))
 - **[mise](https://mise.jdx.dev/)** — on the host that builds/runs stack scripts; installs/pins Node from `.env` via `mise.toml` (see [`docs/mise-install.md`](docs/mise-install.md))
 
 `npm run staging` builds on the host with mise, then starts containers. The FE/BE **containers** themselves only run stock Node images — they do not need mise inside.
