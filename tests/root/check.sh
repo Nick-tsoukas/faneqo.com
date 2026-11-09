@@ -261,8 +261,38 @@ grep -Fq 'staging-build.sh' scripts/staging-up.sh \
   || fail "staging-up.sh must call staging-build.sh"
 grep -Fq 'docker compose up -d' scripts/staging-up.sh \
   || fail "staging-up.sh must docker compose up -d"
+[[ -f scripts/staging-droplet-deploy.sh ]] || fail "scripts/staging-droplet-deploy.sh missing"
+grep -Fq 'git reset --hard' scripts/staging-droplet-deploy.sh \
+  || fail "staging-droplet-deploy.sh must git reset --hard to deploy SHA"
+grep -Fq 'staging-build.sh' scripts/staging-droplet-deploy.sh \
+  || fail "staging-droplet-deploy.sh must call staging-build.sh"
+grep -Fq -- '--force-recreate' scripts/staging-droplet-deploy.sh \
+  || fail "staging-droplet-deploy.sh must force-recreate app containers"
+grep -Fq -- '--no-deps' scripts/staging-droplet-deploy.sh \
+  || fail "staging-droplet-deploy.sh must use --no-deps (leave postgres)"
+if grep -vE '^[[:space:]]*#' scripts/staging-droplet-deploy.sh | grep -Eq '\bmise\b|\bstackrun\b'; then
+  fail "staging-droplet-deploy.sh must not invoke mise or stackrun"
+fi
 grep -Fiq 'droplet' docs/staging-droplet.md || fail "docs/staging-droplet.md missing droplet guidance"
 grep -Fiq 'staging-build' README.md || fail "README.md must link droplet staging-build path"
+grep -Fiq 'staging-droplet-deploy' docs/staging-droplet.md \
+  || fail "docs/staging-droplet.md must document staging-droplet-deploy"
+grep -Fiq 'Rollback' docs/staging-droplet.md \
+  || fail "docs/staging-droplet.md must document Rollback"
+# Root GH Actions deploy (Task 5) — SSH thin wrapper; build stays on droplet
+[[ -f .github/workflows/deploy-staging.yml ]] || fail ".github/workflows/deploy-staging.yml missing"
+grep -Fq 'branches: [staging]' .github/workflows/deploy-staging.yml \
+  || grep -Fq $'branches:\n      - staging' .github/workflows/deploy-staging.yml \
+  || grep -Eq 'branches:[[:space:]]*\[staging\]|-\s*staging' .github/workflows/deploy-staging.yml \
+  || fail "deploy-staging.yml must trigger on staging branch"
+grep -Fq 'staging-droplet-deploy.sh' .github/workflows/deploy-staging.yml \
+  || fail "deploy-staging.yml must invoke staging-droplet-deploy.sh"
+grep -Fq 'STAGING_HOST' .github/workflows/deploy-staging.yml \
+  || fail "deploy-staging.yml must use STAGING_HOST secret"
+grep -Fq 'STAGING_SSH_PRIVATE_KEY' .github/workflows/deploy-staging.yml \
+  || fail "deploy-staging.yml must use STAGING_SSH_PRIVATE_KEY secret"
+grep -Fq 'STAGING_USER' .github/workflows/deploy-staging.yml \
+  || fail "deploy-staging.yml must use STAGING_USER secret"
 ok droplet staging-build scripts + docs
 
 echo "root shape checks passed"

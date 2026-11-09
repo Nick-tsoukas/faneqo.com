@@ -401,25 +401,28 @@ Do not make monorepo-driven edits under `frontend/` / `backend/` until Task 15 i
 
 ### Task 5: Staging deploy path
 
-**Description:** Wire deploy from workspace / GitHub `staging` (or agreed content deploy) to the droplet. Deploy must rebuild apps, then `docker compose up -d` (or restart) using the **same** root compose file. Document rebuild policy (whole stack v1 OK). History merge not required.
+**Description:** Wire deploy from workspace / GitHub `staging` to the droplet via SSH. Droplet runs `scripts/staging-droplet-deploy.sh` (fetch/reset SHA → `staging-build.sh` → recreate FE/BE). Same root compose file. History merge not required.
 
 **Acceptance criteria:**
 
-- [ ] Deploy updates the droplet from agreed source
-- [ ] Deploy invokes unified compose all-services up (not a divergent compose stack)
-- [ ] Prod Railway deploys still come from product remotes
-- [ ] Rollback to previous compose image/commit documented
+- [x] Deploy updates the droplet from agreed source (`staging` branch / `$GITHUB_SHA`)
+- [x] Deploy invokes unified compose recreate FE/BE (`--force-recreate --no-deps`; not a divergent stack)
+- [x] Prod Railway deploys still come from product remotes (workflow only on `faneqo.com` `staging`)
+- [x] Rollback to previous compose image/commit documented (`docs/staging-droplet.md`)
 
 **Verification:**
 
-- [ ] Manual check: deploy runs; running commit/tree id visible on host
-- [ ] Manual check: prod service sources unchanged
+- [x] Tests pass: root shape asserts workflow + `staging-droplet-deploy.sh`
+- [ ] Manual check: Actions deploy runs; running commit/tree id visible on host (`git rev-parse HEAD`)
+- [x] Manual check: prod service sources unchanged (no Railway retarget)
 
 **Dependencies:** Task 4
 
-**Files likely touched:** `.github/workflows/deploy-staging.yml` or root `deploy/`, docs
+**Files likely touched:** `.github/workflows/deploy-staging.yml`, `scripts/staging-droplet-deploy.sh`, docs/tests/todo
 
 **Estimated scope:** M
+
+**Status:** in progress 2026-11-09 — workflow + script landed; await first green Actions run + secrets
 
 ---
 

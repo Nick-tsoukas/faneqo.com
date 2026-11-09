@@ -15,7 +15,7 @@ Side-by-side product trees under one root git (content-only `staging` on [`Nick-
 | `frontend/` | Nuxt — checkout `Nick-tsoukas/musicbizqr`. Product operating loop: `frontend/AGENTS.md`. |
 | `backend/` | Strapi v4, canonical data — checkout `Nick-tsoukas/qrserver`. Defers to frontend loop: `backend/AGENTS.md`. |
 | `docker-compose.yml` | Staging only. One compose file, no profiles. `POSTGRES_DB=faneqo_staging`. `restart: unless-stopped` on all services. Local = host mise build + attached `docker compose up … --no-log-prefix`. Droplet = `scripts/staging-build.sh` + `docker compose up -d` (no stackrun). Tags FE/BE → `NODE_VERSION` → `22.11.0`. See `tasks/plan.md` Architecture G. |
-| `scripts/staging-build.sh`, `scripts/staging-up.sh` | Droplet FE/BE install+build via one-off stock Node `docker run --rm` (same image tags as compose); then detached compose up. No mise. |
+| `scripts/staging-build.sh`, `scripts/staging-up.sh`, `scripts/staging-droplet-deploy.sh` | Droplet FE/BE install+build via one-off stock Node `docker run --rm`; first-up / SHA redeploy helpers. No mise. |
 | `stack.config.ts`, `example.env`, `mise.toml`, root `package.json` | stackrun orchestration + local mise. **Node pin SoT = root `.env`**. `$development` = host hot reload + SQLite (no Docker, no install). `$staging` = before install/build, then attached compose up per service. |
 | `docs/docker-install.md` | Docker Engine + Compose install (Linux / macOS / Windows / WSL); linked from README. Staging prerequisite. |
 | `docs/staging-droplet.md` | Droplet bootstrap: no mise/stackrun; IP public URLs; staging-build + compose up -d. |

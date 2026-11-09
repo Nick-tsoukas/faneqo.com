@@ -82,4 +82,6 @@ bash scripts/staging-up.sh    # staging-build.sh then docker compose up -d
 
 `scripts/staging-build.sh` runs `npm install` + `npm run build` in one-off `docker run --rm` containers using the same Node image tags as compose, then drops those containers. Detached compose keeps Postgres/FE/BE up with `restart: unless-stopped`.
 
-**Public URLs (Phase 2):** droplet IP over HTTP for `STAGING_API_PUBLIC` / `STAGING_WEB_PUBLIC`. Domain + TLS + Google OAuth redirects later (`tasks/todo.md` Task 6b). Ongoing deploy automation = Task 5.
+**CI deploy:** push to `staging` runs [`.github/workflows/deploy-staging.yml`](.github/workflows/deploy-staging.yml) → SSH → `scripts/staging-droplet-deploy.sh`. Secrets + rollback: [`docs/staging-droplet.md`](docs/staging-droplet.md).
+
+**Public URLs (Phase 2):** droplet IP over HTTP for `STAGING_API_PUBLIC` / `STAGING_WEB_PUBLIC`. Domain + TLS + Google OAuth redirects later (`tasks/todo.md` Task 6b).

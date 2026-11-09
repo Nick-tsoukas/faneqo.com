@@ -43,12 +43,40 @@ What that does:
 1. **`scripts/staging-build.sh`** — `docker run --rm --env-file .env` with the same nested Node tags as compose (`FRONTEND_` / `BACKEND_` → `NODE_VERSION` → `22.11.0`). Runs `npm install && npm run build` in one-off containers; bind-mounts write artifacts onto the host tree; containers exit and are removed (`--rm`). **Not** a compose service. `--env-file` is required so Strapi build sees secrets (e.g. `STRIPE_SECRET_KEY` loaded by `cron-tasks.js`).
 2. **`docker compose up -d`** — Postgres + backend + frontend. Services use `restart: unless-stopped` so they survive droplet reboots.
 
-Rebuild after a pull:
+Redeploy after a new commit (CI or manual) — sync SHA, rebuild, recreate FE/BE only:
 
 ```bash
-bash scripts/staging-build.sh
-docker compose up -d --force-recreate backend frontend
+bash scripts/staging-droplet-deploy.sh <git-sha>
+# or: GITHUB_SHA=<sha> bash scripts/staging-droplet-deploy.sh
 ```
+
+That runs `git fetch` + `reset --hard`, then `scripts/staging-build.sh`, then
+`docker compose up -d --force-recreate --no-deps backend frontend` (postgres untouched).
+
+### GitHub Actions (Task 5)
+
+Workflow: [`.github/workflows/deploy-staging.yml`](../.github/workflows/deploy-staging.yml).
+
+On push to `staging` (or `workflow_dispatch`), Actions SSHs to the droplet, resets to `$GITHUB_SHA`, then runs `scripts/staging-droplet-deploy.sh`. Build stays on the droplet — runner is a thin SSH client.
+
+Repo secrets (Settings → Secrets and variables → Actions):
+
+| Secret | Example |
+|--------|---------|
+| `STAGING_HOST` | droplet public IP |
+| `STAGING_USER` | `root` |
+| `STAGING_SSH_PRIVATE_KEY` | private key whose public half is in droplet `~/.ssh/authorized_keys` |
+
+Dedicated deploy key recommended (not your laptop login key). Timeout ≥ 45 min (Nuxt on 2GB is slow).
+
+### Rollback
+
+```bash
+cd /opt/faneqo
+bash scripts/staging-droplet-deploy.sh <previous_good_sha>
+```
+
+Same as forward deploy: hard reset + rebuild + recreate FE/BE. Postgres volume untouched. Confirm with `git rev-parse HEAD` and `docker compose ps`.
 
 Stop / remove:
 
@@ -82,4 +110,4 @@ docker compose down
 4. Copy/fill `.env` with IP public URLs
 5. `bash scripts/staging-up.sh`
 6. Open `http://DROPLET_IP:3000` and hit API on `:1337`
-)
+
