@@ -62,6 +62,8 @@ bash scripts/staging-droplet-deploy.sh <git-sha>
 
 Wall clock is droplet install/build, not the Actions runner. Path-aware skips are how docs-only pushes avoid another ~20m Nuxt build.
 
+*(Task 5.1 verify: this line is a docs-only deploy probe — should skip FE/BE build.)*
+
 ### GitHub Actions (Task 5)
 
 Workflow: [`.github/workflows/deploy-staging.yml`](../.github/workflows/deploy-staging.yml).
