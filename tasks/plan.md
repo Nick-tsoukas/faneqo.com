@@ -10,24 +10,40 @@ This file + `tasks/todo.md` are the **canonical** migration docs. Root `AGENTS.m
 
 This plan is **read-only for product code in the monorepo sense**. No monorepo-driven edits under `frontend/` or `backend/` until the final approved step. Day-to-day product commits continue on the existing remotes as usual. Root workspace files (`docker-compose.yml`, `stack.config.ts`, `example.env`, root `package.json`) already exist and may be used for staging without changing app code.
 
+## Where we are (2026-11-09)
+
+**Staging is done.** Checkpoint B passed. DO droplet runs FE+BE+Postgres; Actions SSH deploy + selective rebuild work; root `npm test` already runs locally (Task 3.7). Product remotes stay source of truth. History merge held until human go.
+
+**Real remaining migration work is two steps:**
+
+1. **History merge** (Tasks 7–10) — re-clone pristine FE/BE, filter-repo/subtree into `faneqo.com`, land root files on `main`.
+2. **Prod cutover** (Task 16) — point Railway at the monorepo. Separate explicit approval.
+
+**Everything between those two is small post-merge chores, not more “phases of migration”:**
+
+| Tasks | What it actually is | What it is *not* |
+|-------|---------------------|------------------|
+| 11–12 | Port existing FE/BE `ci.yml` + wire root `npm test` as GitHub Actions on the monorepo (path filters so FE≠BE≠docs). | Inventing a new test system. Local root tests already work; product CI already works on each remote. |
+| 13 | Point daily `/home/me/dev/faneqo` at `faneqo.com`. | A product feature. |
+| 14–15 | Optional monorepo product diffs **only if** cutover needs them (explicit go). | Required by default. |
+| 6b | Optional staging domain + TLS + Google OAuth. | Blocking history or prod. |
+| 17 | Separate audit track. | Part of history/prod migration. |
+
+Plain English: **history, then prod.** CI/workspace chores ride along after history because GitHub only runs workflows from repo-root `.github/workflows/` — nested `frontend/.github` / `backend/.github` stop mattering once trees live in one repo.
+
 ## Current state (verified)
 
 | Fact | Evidence |
 |------|----------|
-| Workspace root becomes content-only git on `staging` (Phase 1) | Local `.git` + push to `faneqo.com` `staging`; not history merge |
-| `frontend/` = `Nick-tsoukas/musicbizqr`, tip at nested-`.git` removal | `625decc619e9743c89600e6dda6b9564db53e937` (`main`) |
-| `backend/` = `Nick-tsoukas/qrserver`, tip at nested-`.git` removal | `bef413d7cb2b9903a0f6b53a6698ed26a2e5f3a1` (`main`) |
-| Target `Nick-tsoukas/faneqo.com` exists and is **empty** (will get content-only `staging` push before history merge) | GitHub API: empty default branch / 409 on ref; Phase 0 lock |
-| Local stack: compose Postgres + stackrun `$development` / `$staging` | Root `docker-compose.yml`, `stack.config.ts`, `example.env` |
-| Compose = unified file, no profiles (Architecture G) | Dev: no Docker (host + SQLite); staging: `up -d` all services — stock-Node FE/BE (nested tags FE/BE → `NODE_VERSION` → `22.11.0`) volume-mounted |
-| Compose Postgres DB | `POSTGRES_DB=faneqo_staging` (single DB; no init SQL sidecar) |
-| Local Node pin via mise (dev host only) | Root `mise.toml` + `NODE_VERSION` in `example.env` (Architecture H); staging droplet/containers do **not** need mise. **Gap (2026-11-08):** host `$development` / staging host builds still use shared `NODE_VERSION` only — `BACKEND_NODE_VERSION` is unused on the host path (Task 3.9). |
-| No custom app Dockerfiles planned for staging | Staging FE/BE use stock Node image tags from env + volume mounts (Architecture G locked); unrelated `frontend/workers/studio-video/Dockerfile` out of scope |
-| Root `npm test` runs stackrun + root shape checks | `tests/stackrun/` (import-root overlays) + `tests/root/` (scripts / mise / example.env / compose / docs); Task 3.7. Full FE/BE app builds **not** in root suite. GitHub Actions root workflow still Phase 5 / Task 12 |
-| Each app already has its own CI on its own remote | `frontend/.github/workflows/ci.yml`, `backend/.github/workflows/ci.yml` |
-| Prod Railway: two projects (FE `musicbizqr`+`mbq-cron`, BE `qrserver`+Postgres) | Root `AGENTS.md` |
-| Audit remediation track (not started) | `tasks/audit-issues-plan.md` + `tasks/audit-issues-todo.md` + `tasks/audit-issues.md` |
-| Prior Cursor plan (superseded) | `.cursor/plans/monorepo_staging_stack_641598ee.plan.md` — local compose/stackrun largely done; staging = **DO+compose**; history-first order **replaced** by this revision |
+| Content-only `faneqo.com` `staging` live; Checkpoint B done | Droplet `159.203.131.189`; Actions deploy + selective rebuild; Strapi admin created |
+| `frontend/` / `backend/` trees | Content from product remotes; nested `.git` removed locally (tips recorded); product remotes still SoT |
+| Target `Nick-tsoukas/faneqo.com` | Has content-only `staging` (throwaway history). Real history merge still TODO (Tasks 7–10). `main` still empty |
+| Local stack | Dev = host + SQLite (no Docker). Staging = same `docker-compose.yml` `up -d` (local attached or droplet) |
+| Root `npm test` | Works locally (Task 3.7) + Actions `.github/workflows/root-ci.yml` (Task 12 done early 2026-11-09). Not full FE/BE builds |
+| Product CI today | Still on `musicbizqr` / `qrserver` remotes (`frontend/.github/workflows/ci.yml`, `backend/.github/workflows/ci.yml`). **Task 11** = port those to monorepo root workflows with path filters after history |
+| Staging deploy CI | Already on `faneqo.com`: `.github/workflows/deploy-staging.yml` |
+| Prod Railway | Still two projects on product remotes until Task 16 |
+| Audit track | Not started (`tasks/audit-issues-*.md`) |
 
 No root `SPEC.md` / `STACK.md` / `PLAN.md` (on purpose: `AGENTS.md` + `tasks/` + short `README.md` are enough). Product loops stay in `frontend/AGENTS.md` and `backend/AGENTS.md` — do not deep-scan those trees unless a task needs product code.
 
@@ -40,56 +56,35 @@ No root `SPEC.md` / `STACK.md` / `PLAN.md` (on purpose: `AGENTS.md` + `tasks/` +
 5. Staging must not use live Stripe / live Resend / production domains / `chalk-volume`.
 6. One git merge does **not** merge the two Railway projects; cutover is a separate ops step.
 
-## Preferred sequence (user correction)
+## Preferred sequence
 
 ```
-1. Work at workspace root — no FE/BE remote rewrite, no history merge yet
-2. Optional temp: remove frontend/.git + backend/.git (local only)
-   → one deployable tree / one root git for staging
-   → never push that to musicbizqr / qrserver
-3. Unified compose for staging (local + droplet); host develop uses SQLite (no Docker)
-4. Tear down temp layout; re-clone current FE/BE from remotes (pristine history)
-5. Proper commit-history merge into Nick-tsoukas/faneqo.com (filter-repo etc.)
-6. Only then (+ approval): monorepo product edits / prod cutover / audit
+DONE  1–3  Root orchestration + temp single tree + unified compose + DO staging
+NEXT  4    Re-clone pristine FE/BE → history merge into faneqo.com (Tasks 7–10)
+THEN  5    Tiny post-merge chores: port CI workflows + point daily workspace (11–13)
+THEN  6    Prod cutover (16); optional product edits (14–15) only if needed
+LATER      Optional 6b (staging domain); audit (17) = separate track
 ```
 
-## Dependency graph
+## Dependency graph (remaining)
 
 ```
-Root orchestration (compose, stackrun, example.env, mise pin) — present / Task 3.4
+[DONE] Staging dogfood (Checkpoint B) — prod still on musicbizqr / qrserver
         │
-        ├── Optional: local root git + temp nested-.git removal (local only)
-        │
-        ├── Root test suite (stackrun overlays + shape checks) — Task 3.7
-        │
-        ├── Unified compose (staging only; host develop = SQLite)  ← before droplet
-        │       │  image tags from NODE_VERSION / FRONTEND_* / BACKEND_*
-        │       └── [CHECKPOINT: local staging profile OK; human OK stock Node]
-        │
-        ├── Staging host (DO droplet + same compose `up -d`)  ← EARLY
+        ├── History merge (7–10)  ← HOLD until human go
         │       │
-        │       └── [CHECKPOINT: staging dogfood OK; prod still on old remotes]
+        │               └── Post-merge chores (small):
+        │             • Port FE/BE CI Actions (11) — root npm test Actions already done (12)
+        │             • Daily workspace → faneqo.com (13)
         │
-        ├── Restore pristine FE/BE checkouts (re-clone from remotes)
+        ├── [CHECKPOINT: monorepo has real history; prod still on old remotes]
         │
-        ├── History merge into empty faneqo.com (filter-repo / subtree)
-        │       │
-        │       ├── Root files committed onto monorepo
-        │       │
-        │       └── Path-aware CI on monorepo
+        ├── Optional product edits (14–15) — only if cutover needs them
         │
-        ├── [CHECKPOINT: monorepo green; product remotes still source of truth until cutover]
+        ├── Prod cutover (16) — separate approval
         │
-        ├── Point daily workspace at faneqo.com
-        │
-        ├── Approved monorepo product edits — LAST code step in FE/BE trees here
-        │
-        ├── Production cutover (Railway → monorepo; watch paths)
-        │
-        └── Audit remediation (`tasks/audit-issues-plan.md`) — after single-dir/repo is daily reality
+        └── Audit (17) — separate track, not migration blocker
 ```
-
-Vertical slices: each phase leaves a usable system. Staging is not blocked on history merge.
 
 ## Architecture decisions
 
@@ -258,20 +253,20 @@ Own the tooling we own at workspace root. Prefer small bash (+ `node` JSON parse
 2. TDD for new checks: write assertion that would fail if the contract broke; green against current correct files.
 3. Extend `npm test` to the whole root suite; keep stackrun import-root approach.
 
-**Skipped (on purpose):** live `stackrun` with real FE/BE processes; full app builds inside the suite; droplet/CI workflow (Task 12). Staging Compose profile service asserts landed with Task 3.6.
+**Skipped (on purpose):** live `stackrun` with real FE/BE processes; full app builds inside the suite. Root Actions wiring = Task 12 (done). Staging Compose asserts landed with Task 3.6.
 
-### D. CI / deploy isolation (path filters — after monorepo exists)
+### D. CI after history merge (small chore — not new tests)
 
-Path filters stay relevant **after** history merge. Until then, product CI stays on `musicbizqr` / `qrserver` as today.
+**Already done today:**
+- Local root suite: `npm test` (Task 3.7) — run before push as usual.
+- Product CI: still on `musicbizqr` / `qrserver` via each repo’s `ci.yml`.
+- Staging deploy Actions: `.github/workflows/deploy-staging.yml` + selective droplet rebuild (Task 5.1).
 
-**GitHub Actions (monorepo, Phase 5):**
+**Root Actions (Task 12 — done early):** `.github/workflows/root-ci.yml` runs `npm test` on stack/compose/`tests/**` (etc.) path changes. No FE/BE builds.
 
-- Port FE/BE `ci.yml` with `paths:` filters and package working directories.
-- Thin root workflow for compose / stackrun / `tests/stackrun/**` / `tests/root/**` (suite itself lands early in Task 3.7; Actions wiring stays Phase 5).
+**Still needed after history merge (Task 11):** GitHub only runs workflows from the **repo-root** `.github/workflows/`. Once FE/BE histories live under `faneqo.com`, copy/adapt those existing product `ci.yml` files to root with `paths:` filters. This does **not** invent new test suites.
 
-**Railway (cutover):** service roots `frontend`, `backend`, `frontend/jobs/mbq-cron` + watch paths.
-
-**DO staging deploys:** branch `staging`; Actions SSH → droplet. Task 5 landed whole-stack rebuild; **Task 5.1** path-aware FE/BE rebuild on droplet (docs-only skips builds).
+**Railway (cutover Task 16):** service roots `frontend`, `backend`, `frontend/jobs/mbq-cron` + watch paths.
 
 ### E. Monorepo-driven product edits wait until last step
 
@@ -293,7 +288,7 @@ Audit remediation plan: `tasks/audit-issues-plan.md`. Start product fixes only a
 |------|--------|
 | Temp nested-`.git` removal | **YES** — local only; re-clone before history merge |
 | History tool | **LATER** — defer filter-repo vs subtree until history phase |
-| Staging host | **DO only** for now (no Railway staging yet) |
+| Staging host | **DO only** — never Railway staging (Checkpoint B) |
 | Droplet size | **2GB** |
 | Branch model | Keep `main` empty for now; all work on `staging`; `staging` deploys to droplet |
 | Content-only `faneqo.com` during staging | **YES** — push full `staging` branch content without product commit history (throwaway history OK). Staging runs without history; history merge later |
@@ -303,7 +298,7 @@ Audit remediation plan: `tasks/audit-issues-plan.md`. Start product fixes only a
 | Local Node tooling | **mise** on host only (`mise.toml` + `NODE_VERSION`); not required on droplet / staging containers (Architecture H / Task 3.4) |
 | Audit track | **`tasks/audit-issues-*.md`** — plan / todo / specs; remediation waits on Task 17 / explicit go (Decision 11) |
 
-Still open: old-repo archival after cutover? Railway staging = **closed (never)**.
+Still open: old-repo archival after cutover?
 
 ### Phase 1 — Root workspace + optional temp single tree (no remote surgery)
 
@@ -346,51 +341,27 @@ Provision droplet; deploy with **same** root `docker-compose.yml` + `docker comp
 - [x] Human dogfoods — Strapi admin created (2026-11-09); OAuth may wait for Task 6b
 - [x] Railway staging = **never**; history merge **held** until human go; final order = history merge → prod switch to monorepo
 
-### Phase 3 — Restore pristine FE/BE checkouts
+### Phase 3–4 — History merge (NEXT real work; HOLD until human go)
 
-If temp `.git` removal was used: remove temp root-git layout as needed; re-clone current `musicbizqr` / `qrserver` into `frontend/` / `backend/`. If temp path skipped: no-op aside from confirming nested remotes healthy.
+**Task 7:** re-clone pristine `musicbizqr` / `qrserver` (temp nested-`.git` was removed). **Tasks 8–10:** freeze SHAs, filter-repo/subtree in scratch, merge into `faneqo.com`, land root files, push `main`. Do not force-push product remotes.
 
-### Checkpoint C — Pristine trees ready for merge
+Checkpoint C = pristine trees ready. Checkpoint D = monorepo has real history; prod still on old remotes.
 
-- [ ] `frontend/.git` and `backend/.git` are full clones of product remotes
-- [ ] Tips match (or intentionally track) current remote `main`
-- [ ] Ready for filter-repo from **fresh scratch clones** (do not mutate daily checkouts in place if avoidable)
+### Phase 5–6 — Post-merge chores (small; after history)
 
-### Phase 4 — History merge into `faneqo.com` (LATE)
+**Not a second migration.** Task 12 (root `npm test` Actions) already landed early. Task 11 ports FE/BE product CI to monorepo root Actions with path filters; Task 13 points daily workspace at `faneqo.com`.
 
-Freeze merge SHAs (current product tips); filter-repo (or subtree) in scratch; merge into `faneqo.com`; add root workspace files; push. Do not force-push product remotes.
+### Phase 7 — Optional monorepo product edits
 
-### Checkpoint D — Monorepo has real history
-
-- [ ] `faneqo.com` has `frontend/`, `backend/`, root stack files
-- [ ] `git log` / blame work under prefixes
-- [ ] Prod still deploys from `musicbizqr` / `qrserver`
-- [ ] Human reviews layout before CI/workspace cutover
-
-### Phase 5 — Path-aware CI on the monorepo
-
-Port FE/BE workflows with path filters; wire root GitHub Actions to existing `npm test` (`tests/stackrun/` + `tests/root/` from Task 3.7).
-
-### Checkpoint E — CI isolation
-
-- [ ] FE-only / BE-only / root path behavior verified
-- [ ] Human OK with required checks
-
-### Phase 6 — Local workspace tracks monorepo
-
-Point `/home/me/dev/faneqo` at `faneqo.com`; nested product `.git` dirs gone as monorepo dirs. Update `AGENTS.md`. Product remotes remain valid GitHub archives/sources until cutover policy says otherwise.
-
-### Phase 7 — Approved monorepo product edits (LAST code step in trees)
-
-Explicit approval → minimal diffs (e.g. Postgres when `DATABASE_URL`). Prefer tiny PRs on `faneqo.com`.
+Tasks 14–15 only if cutover needs product-tree diffs. Explicit go required. Skip if nothing needed.
 
 ### Phase 8 — Production cutover (separate approval)
 
-Retarget Railway prod services to monorepo subdirs + watch paths; leave `chalk-volume`; rollback = old remotes.
+Task 16: retarget Railway prod to monorepo subdirs + watch paths; leave `chalk-volume`; rollback = old remotes.
 
-### Phase 9 — Audit
+### Phase 9 — Audit (separate track)
 
-Begin remediation per `tasks/audit-issues-plan.md` once daily development is the single repo/dir (Task 17).
+Task 17 / `tasks/audit-issues-plan.md`. Not a history/prod blocker.
 
 ## Risks and mitigations
 
@@ -400,7 +371,7 @@ Begin remediation per `tasks/audit-issues-plan.md` once daily development is the
 | Temp `.git` removal treated as final merge | High | Re-clone before filter-repo; content-only ≠ history merge |
 | Force-push / rewrite product remotes | High | Local-only temp path; scratch clones for filter-repo; never push rewritten SHAs to old remotes |
 | Staging trees lag active product `main` | Med | Remotes stay source of truth; re-pull/re-clone before merge; redeploy staging when needed |
-| FE change redeploys BE on monorepo | Med | Path filters + Railway watch paths (Phase 5 / 8) |
+| FE change redeploys BE on monorepo | Med | Post-merge CI path filters (11–12) + Railway watch paths at cutover (16) |
 | DO staging ≠ Railway runtime | Med | Align `NODE_VERSION` / FE/BE pins with prod builders at **prod cutover** only (no Railway staging) |
 | Host mise pin vs dual FE/BE engines | Med | **Task 3.9:** host `mise exec node@${BACKEND_NODE_VERSION:-…}` (and optional FE); containers keep separate image tags; no redundant stackrun `env:` wrappers |
 | Live Resend/Stripe on staging | High | Non-sending / test keys; cron off |

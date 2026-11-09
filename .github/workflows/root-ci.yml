@@ -1,0 +1,68 @@
+# Root stack suite only (Architecture I / Task 3.7).
+# Runs `npm test` = test:stack + test:root. No FE/BE app builds.
+# Path filters: skip when only frontend/** or backend/** product code changes.
+name: Root CI
+
+on:
+  pull_request:
+    paths:
+      - "docker-compose.yml"
+      - "stack.config.ts"
+      - "package.json"
+      - "package-lock.json"
+      - "mise.toml"
+      - "example.env"
+      - "tests/**"
+      - "scripts/**"
+      - "docs/**"
+      - "AGENTS.md"
+      - "README.md"
+      - ".github/workflows/root-ci.yml"
+      - ".github/workflows/deploy-staging.yml"
+  push:
+    branches:
+      - staging
+      - main
+    paths:
+      - "docker-compose.yml"
+      - "stack.config.ts"
+      - "package.json"
+      - "package-lock.json"
+      - "mise.toml"
+      - "example.env"
+      - "tests/**"
+      - "scripts/**"
+      - "docs/**"
+      - "AGENTS.md"
+      - "README.md"
+      - ".github/workflows/root-ci.yml"
+      - ".github/workflows/deploy-staging.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: root-ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  root-test:
+    name: npm test (stack + root shape)
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Use Node.js 22.11.0
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22.11.0"
+          cache: npm
+
+      - name: Install root dependencies
+        run: npm ci --no-audit --no-fund
+
+      - name: Run root suite
+        run: npm test

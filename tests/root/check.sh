@@ -321,6 +321,18 @@ grep -Fq 'STAGING_SSH_PRIVATE_KEY' .github/workflows/deploy-staging.yml \
   || fail "deploy-staging.yml must use STAGING_SSH_PRIVATE_KEY secret"
 grep -Fq 'STAGING_USER' .github/workflows/deploy-staging.yml \
   || fail "deploy-staging.yml must use STAGING_USER secret"
-ok droplet staging-build scripts + docs
+# Root CI (Task 12) — wires existing npm test; no FE/BE builds
+[[ -f .github/workflows/root-ci.yml ]] || fail ".github/workflows/root-ci.yml missing"
+grep -Fq 'npm test' .github/workflows/root-ci.yml \
+  || fail "root-ci.yml must run npm test"
+grep -Fq 'tests/**' .github/workflows/root-ci.yml \
+  || fail "root-ci.yml must path-filter on tests/**"
+grep -Fq 'docker-compose.yml' .github/workflows/root-ci.yml \
+  || fail "root-ci.yml must path-filter on docker-compose.yml"
+grep -Fq 'stack.config.ts' .github/workflows/root-ci.yml \
+  || fail "root-ci.yml must path-filter on stack.config.ts"
+grep -Fiq 'Architecture I' .github/workflows/root-ci.yml \
+  || fail "root-ci.yml must document Architecture I / Task 3.7 scope"
+ok droplet staging-build scripts + docs + root-ci.yml
 
 echo "root shape checks passed"

@@ -6,6 +6,24 @@ Canonical checklist for `[tasks/plan.md](plan.md)`. Track progress here only —
 
 Do not make monorepo-driven edits under `frontend/` / `backend/` until Task 15 is explicitly approved. Day-to-day commits on the product remotes are allowed throughout.
 
+## Status (2026-11-09)
+
+**Done:** Phase 0–2 (Tasks 1–6). Staging live on DO. Root `npm test` works locally. Staging deploy Actions live.
+
+**Next when human says go:** Tasks **7–10** (history merge). That is the real remaining migration work.
+
+**Done early:** Task **12** — root `npm test` GitHub Actions (`.github/workflows/root-ci.yml`) on content-only `staging`. No history/prod.
+
+**After history (small chores, not big phases):**
+- **11** = port FE/BE `ci.yml` onto monorepo root Actions with path filters (still waits on history).
+- **13** = daily workspace = `faneqo.com` checkout (housekeeping after merge).
+- **14–15** = only if cutover needs monorepo product diffs (explicit go). Often skippable.
+- **16** = prod Railway → monorepo (separate approval).
+
+**Optional / separate:** Task **6b** (staging domain+TLS+OAuth); Task **17** (audit track).
+
+Plain English leftover: **history merge → FE/BE CI port + workspace → prod cutover.**
+
 ---
 
 ## Phase 0: Decisions
@@ -529,7 +547,9 @@ Do not make monorepo-driven edits under `frontend/` / `backend/` until Task 15 i
 
 
 
-## Phase 3: Restore pristine FE/BE checkouts
+## Phase 3–4: History merge (NEXT real work — HOLD until human go)
+
+Prep (Task 7) + merge (Tasks 8–10). This is the remaining migration bulk. Do not start until human says go.
 
 
 
@@ -566,10 +586,6 @@ Do not make monorepo-driven edits under `frontend/` / `backend/` until Task 15 i
 - [ ] Merge will use **fresh scratch clones**, not in-place mutation of daily trees if avoidable
 
 ---
-
-
-
-## Phase 4: History merge into `faneqo.com` (LATE)
 
 
 
@@ -658,20 +674,22 @@ Do not make monorepo-driven edits under `frontend/` / `backend/` until Task 15 i
 
 
 
-## Phase 5: Path-aware CI on monorepo
+## Phase 5–6: Post-merge chores (small — after history)
+
+**Not inventing tests.** Root `npm test` already works locally (Task 3.7). FE/BE CI already work on product remotes. After history merge, GitHub only runs **repo-root** `.github/workflows/`, so copy those existing workflows to the monorepo with path filters. Task 13 = point daily workspace at `faneqo.com`.
 
 
 
 ### Task 11: Port FE and BE CI with path filters
 
-**Description:** Add monorepo workflows mirroring package CI with `paths:` filters and correct working directories / npm cache paths.
+**Description:** Copy/adapt existing `frontend/.github/workflows/ci.yml` and `backend/.github/workflows/ci.yml` into monorepo-root `.github/workflows/` with `paths:` filters and correct working directories. Same test/build steps as today — just relocated so monorepo PRs run them.
 
 **Acceptance criteria:**
 
 - [ ] FE workflow on `frontend/**` (+ workflow file)
 - [ ] BE workflow on `backend/**` (+ workflow file)
 - [ ] Steps equivalent to current package `ci.yml`
-- [ ] Both jobs not required on every PR
+- [ ] Docs-only / other-side PRs skip the unused package job
 
 **Verification:**
 
@@ -682,31 +700,34 @@ Do not make monorepo-driven edits under `frontend/` / `backend/` until Task 15 i
 
 **Files likely touched:** `.github/workflows/`* on monorepo
 
-**Estimated scope:** M
+**Estimated scope:** S–M
 
 ---
 
 
 
-### Task 12: Root stack CI workflow
+### Task 12: Wire root `npm test` as GitHub Actions
 
-**Description:** Suite itself lands in Task 3.7 (`tests/stackrun/` + `tests/root/`, `npm test`). This task wires a monorepo GitHub Actions workflow gated on stack/compose/docker/tests paths that runs `npm test`.
+**Description:** Suite already exists (Task 3.7). This task only adds a monorepo Actions workflow gated on stack/compose/`tests/**` paths that runs `npm test`. Local pre-push testing does not wait on this.
 
 **Acceptance criteria:**
 
-- [ ] Root workflow on stack/compose/docker/`tests/**` paths runs `npm test`
-- [ ] Document what the check covers (point at Architecture I / Task 3.7)
+- [x] Root workflow on stack/compose/`tests/**` paths runs `npm test` — `.github/workflows/root-ci.yml`
+- [x] Docs note: suite = Architecture I / Task 3.7 (not full FE/BE builds) — workflow header + AGENTS.md
 
 **Verification:**
 
-- [ ] Tests pass: `npm test` (local) / workflow green on a stack-path PR
-- [ ] Manual check: workflow path filters correct
+- [x] Tests pass: `npm test` (local asserts workflow shape)
+- [ ] Manual check: workflow green on a stack-path push/PR (after this lands on `staging`)
+- [x] Manual check: workflow path filters correct (compose / stack / tests / scripts / docs; not `frontend/**` / `backend/**`)
 
-**Dependencies:** Task 10; Task 3.7
+**Dependencies:** Task 3.7 (Task 10 not required — root suite already on content-only `staging`)
 
-**Files likely touched:** `.github/workflows/`*, maybe short README/`AGENTS.md` note
+**Files likely touched:** `.github/workflows/root-ci.yml`, `tests/root/check.sh`, `AGENTS.md`, `tasks/*`
 
 **Estimated scope:** S
+
+**Status:** complete 2026-11-09 — landed early before history merge; FE/BE CI port remains Task 11
 
 ---
 
@@ -714,15 +735,12 @@ Do not make monorepo-driven edits under `frontend/` / `backend/` until Task 15 i
 
 ## Checkpoint E: CI isolation
 
-- [ ] Tasks 11–12 done
-- [ ] Path-filter behavior verified
+- [x] Task 12 done (root Actions)
+- [ ] Task 11 done (FE/BE path-filtered CI — after history)
+- [ ] Path-filter behavior verified for FE/BE workflows
 - [ ] Human OK with CI minutes / required checks
 
 ---
-
-
-
-## Phase 6: Local workspace tracks monorepo
 
 
 
@@ -763,13 +781,13 @@ Do not make monorepo-driven edits under `frontend/` / `backend/` until Task 15 i
 
 
 
-## Phase 7: Approved monorepo product edits (LAST code step)
+## Phase 7: Optional monorepo product edits (only if cutover needs them)
 
 
 
 ### Task 14: Request explicit approval for FE/BE monorepo edits
 
-**Description:** List minimal product changes needed on the monorepo (at least: backend Postgres when `DATABASE_URL` set, per prior plan). Do not implement until approved.
+**Description:** List minimal product changes needed on the monorepo **if any** (example historically floated: backend Postgres when `DATABASE_URL` set). Skip this phase if cutover needs no product-tree diffs. Do not implement until approved.
 
 **Acceptance criteria:**
 
@@ -826,7 +844,7 @@ Do not make monorepo-driven edits under `frontend/` / `backend/` until Task 15 i
 
 
 
-## Phase 8: Production cutover (separate approval)
+## Phase 8: Production cutover (second real remaining step — separate approval)
 
 
 
@@ -906,6 +924,8 @@ Do not make monorepo-driven edits under `frontend/` / `backend/` until Task 15 i
 | 2026-11-08 | Railway staging before cutover?           | **Not now** — revisited Checkpoint B                                                                                                                                                                                                                                                                                   |
 | 2026-11-09 | Railway staging (final)                   | **NEVER.** Staging = DO droplet only. Do not bring up Railway staging. Do not discuss Railway until prod cutover to monorepo.                                                                                                                         |
 | 2026-11-09 | Checkpoint B                              | Admin created on droplet Strapi. History merge **held**. Final order: history merge → then prod switch to new repo.                                                                                                                                  |
+| 2026-11-09 | Remaining-work clarity                    | Leftover migration = **history (7–10)** then **prod (16)**. Tasks 11–13 = small post-merge chores (port existing CI to monorepo Actions; point workspace). Local `npm test` already works — Task 12 ≠ invent tests. 14–15 optional. 6b/17 not blockers. |
+| 2026-11-09 | Task 12 early                             | Root CI Actions (`.github/workflows/root-ci.yml`) landed on content-only `staging` before history. Task 11 (FE/BE CI port) still after history. No prod cutover.                                                                                         |
 | 2026-11-08 | Droplet size                              | **2GB**                                                                                                                                                                                                                                                                                                                |
 | 2026-11-08 | Branch model                              | Keep `main` empty for now; all work on `staging`; `staging` deploys to droplet                                                                                                                                                                                                                                         |
 | 2026-11-08 | Content-only `faneqo.com` during staging? | **YES** — push full `staging` branch content without product commit history (throwaway history OK). Get staging running without history; history merge later (history does not affect whether staging runs).                                                                                                           |
