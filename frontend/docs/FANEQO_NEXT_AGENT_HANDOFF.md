@@ -1,6 +1,6 @@
 # FANEQO NEXT AGENT HANDOFF
 
-Updated 2026-09-09.
+Updated 2026-11-08 (performance work; see LATEST).
 
 Read first:
 
@@ -12,6 +12,58 @@ Read first:
 Older docs may contain history. They must not override these four.
 
 This is a continuation brief, not a changelog.
+
+---
+
+## LATEST: PERFORMANCE WORK, STATE AS OF 2026-11-08
+
+Read before touching the build, Railway or dependencies. Reports on `main`:
+- `docs/BUILD_AND_IMAGE_OPTIMIZATION_2026-11-08.md`: Railway build/image audit (PR #46)
+- `docs/CODEBASE_OPTIMIZATION_AUDIT_2026-11-08.md`: dependency, plugin, dead-code and runtime audit, with the ranked roadmap (sections F and G)
+
+### Shipped
+
+| PR | Merge | What | Measured result |
+|---|---|---|---|
+| #46 | `fcc7822` | Untracked 235 MB of `.tmp-*` browser profiles and captures; removed 44 unreferenced `assets/` files; added `npm run test:hygiene` | Deploy 12m 21s -> 10m 39s; source snapshot 597 -> 281 MB; image push ~1,005 -> 835 MB |
+| #47 | `6b367b0` | Removed global ECharts, Quill and Font Awesome SVG plugins, `components/EChart.vue`, the `nuxt-aos`, `nuxt-particles` and `nuxt-tiptap-editor` modules, and 15 packages | Entry JS **513 -> 237 kB gz (-54%)** on every page; inline global CSS 390 -> 344 kB; 1,834 -> 1,776 packages |
+
+**#47 post-deploy check:** Railway `0ea63c51` SUCCESS on `6b367b0`; `/`, artist pages, `/login`, `/signup`, `/article`, `/event/1`, `/sitemap.xml` and backend `/api/health` all return 200. The live entry file transfers **239.6 kB, down from 517.7 kB (-54%)**, matching CI.
+
+Kept on purpose in #47: the Font Awesome CSS (`pages/event/[id].vue` uses `fa-*` classes), Chart.js and its global plugin, Firebase, Tiptap, `tsparticles`.
+
+### Next, in roadmap order (approve each separately)
+1. **Stage 2, unused packages:** `@nuxt/ui-pro`, `luxon`, `dayjs`, `chartjs-adapter-luxon` (also drop it from `vite.optimizeDeps.include` and `build.transpile`), `chartjs-adapter-date-fns`, `vue-chartjs`, `yup`, `resend`, `vue-advanced-chat`, `qr-border-plugin`, `nuxt-headlessui`, and the Nuxt 2 dev packages `@nuxt/types` (also in `tsconfig.json`), `@nuxt/typescript-build` and `@nuxtjs/date-fns`. Evidence and confidence are in audit section B1.
+2. **Dead code:** 48 components and 5 composables with no references (audit section D). Check against the uncommitted homepage-v3 work in `C:\code\musicbizqr` first; it edits some `home-v2` components.
+3. **Article retirement (PR #44)**, as its own PR: it removes the **whole** prerender stage (48-68 s per build) and the build-time Strapi call. The branch `seo/retire-legacy-articles`, the private archive of 98 articles and the Strapi records are untouched.
+4. ~~Railway watch patterns~~ **done 2026-11-08**; see "Railway watch paths" below.
+5. **Medium:** move the Font Awesome CSS into `pages/event/[id].vue` (-65 kB inline CSS on every other page); drop the global `plugins/chart.js` after checking each of the 5 consumers registers its own chart parts (-55 kB gz); remove animate.css after a visual check of the 22 `animation: pulse` usages, because its `@keyframes pulse` collides with Tailwind's.
+6. **Founder decisions:** the public test pages returning 200 (`/test`, `/testing`, `/test-qr`, `/debug-qr`, `/testsite`, `/home-classic`, `/marketing-component-preview`, `/internal/rive-sandbox`); Firebase lazy-init (touches Google sign-in); stale worktrees.
+7. **Advanced:** artist page SSR (today the band is fetched twice per view, server for head then browser); a slim runtime image, which first needs the `geoip-lite` fix, since it is loaded via `createRequire` from root `node_modules`.
+
+### Railway watch paths (applied 2026-11-08, verified)
+
+Set through the Railway API on both production services; no other setting changed. Railway treats them as gitignore-style rules from the **repo root** (even for a service with a root directory). Matched = deploy.
+
+| Service | Watch paths |
+|---|---|
+| `musicbizqr` (frontend) | `**`, `!/docs/`, `!/docs/**`, `!/.cursor/`, `!/.cursor/**`, `!/.github/`, `!/.github/**`, `!/.vscode/`, `!/.vscode/**`, `!/jobs/`, `!/jobs/**`, `!/*.md` |
+| `mbq-cron` (root `/jobs/mbq-cron`) | `/jobs/mbq-cron/**`, `!/jobs/mbq-cron/*.md` |
+
+- **Frontend still deploys** on app code, `nuxt.config.ts`, `package.json`/lockfile, `tsconfig.json`, `public/`, `server/`, `scripts/`, `assets/`, `workers/`, and any new top-level folder. It **skips** `docs/`, root `*.md`, `.cursor/`, `.github/`, `.vscode/` and `jobs/`. Markdown inside code folders still deploys (strict gitignore cannot re-include a file under an excluded parent).
+- **Cron deploys** only on changes in `jobs/mbq-cron/` (not its `.md`); it has no dependencies outside that folder.
+- **Verified:** 25 path cases simulated with a gitignore matcher before applying; applying created no deployment; docs-only merge `65ecc9c` (PR #48) shows **SKIPPED** on both services (`1609c44e`, `2778d147`); production stayed on `0ea63c51` / `31c64574`.
+- **Gotcha:** `!/docs/**` alone does NOT work after `**`. The directory itself must be un-excluded first (`!/docs/`).
+- **To change:** Railway dashboard → service → Settings → Build → Watch Paths, or the `serviceInstanceUpdate` API (`watchPatterns`). Clearing the list restores deploy-on-every-push. A manual redeploy is unaffected.
+
+### Facts that change decisions
+- Pruning dev dependencies inside the single-stage Nixpacks image does **not** shrink it (layers are additive), and dev-only packages are just 62 MB. The image lever is shipping `.output` only (advanced item 7).
+- Measure bundle changes from the CI build log (Vite chunk list and the Nitro `entry-styles` line) and compare against main's CI run. Do not run `nuxt build` on the founder's laptop (out of memory).
+- Dev verification without touching production: run `nuxi dev` with `STRAPI_URL=http://127.0.0.1:9` and the CI dummy Stripe keys. Pointing it at production Strapi would write analytics on artist-page views.
+- After every merge, do the post-deploy check (Railway SUCCESS, smoke 200s, `/api/health`).
+
+### Worktrees from this work
+`C:\code\mb-optimize` (#46, merged), `C:\code\mb-perf1` (#47, merged), `C:\code\mb-audit` (audit drafts; now on `main`), `C:\code\mb-handoff` (this update). All can be removed once this is merged.
 
 ---
 

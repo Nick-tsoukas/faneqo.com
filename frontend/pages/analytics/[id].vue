@@ -525,6 +525,8 @@
         <div v-else class="text-gray-400 text-sm">No device data yet.</div>
       </div>
 
+      <!-- YouTube Connect temporarily hidden (2026-11-08); remove this wrapper to re-enable. -->
+      <template v-if="false">
       <!-- 🎬 YouTube Analytics -->
       <div
         v-if="!youtubeData"
@@ -944,6 +946,7 @@
           </div>
         </div>
       </div>
+      </template>
       <!-- end youtube -->
 
       <!-- Payments: totals, fees, chart and full transaction history -->

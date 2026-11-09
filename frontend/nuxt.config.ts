@@ -9,30 +9,30 @@ export default defineNuxtConfig({
 
   // Router scroll behavior is configured in app/router.options.ts
 
-  // vue-advanced-chat registers as a web component (chat lab / future Inbox UI only)
+  // emoji-picker-element registers as a web component (messaging composer)
   vue: {
     compilerOptions: {
-      isCustomElement: (tag) => tag === 'vue-advanced-chat' || tag === 'emoji-picker',
+      isCustomElement: (tag) => tag === 'emoji-picker',
     },
   },
 
   vite: {
     optimizeDeps: {
-      include: ['chart.js', 'chartjs-adapter-luxon',    '@tiptap/vue-3',
+      include: ['chart.js', '@tiptap/vue-3',
         '@tiptap/starter-kit',],
       exclude: ['@rive-app/webgl2'],
     },
     vue: {
       template: {
         compilerOptions: {
-          isCustomElement: (tag) => tag === 'vue-advanced-chat' || tag === 'emoji-picker',
+          isCustomElement: (tag) => tag === 'emoji-picker',
         },
       },
     },
   },
   
   build: {
-    transpile: ['chart.js', 'chartjs-adapter-luxon',   '@tiptap/vue-3',
+    transpile: ['chart.js', '@tiptap/vue-3',
       '@tiptap/starter-kit']
   },
   css: ['@/assets/css/tailwind.css', 'animate.css/animate.min.css', '@fortawesome/fontawesome-free/css/all.css'],
@@ -127,14 +127,10 @@ export default defineNuxtConfig({
   devtools: { enabled: true },
 
   modules: [
-    'nuxt-aos',
-    'nuxt-headlessui',
     "@nuxtjs/tailwindcss",
     "@nuxtjs/strapi",
-    'nuxt-tiptap-editor',
     '@vee-validate/nuxt',
     "@nuxt/image",
-    "nuxt-particles",
     "@unlok-co/nuxt-stripe",
     '@nuxtjs/seo',
     '@pinia/nuxt',
@@ -421,27 +417,6 @@ export default defineNuxtConfig({
     },
   },
 
-  aos: {
-    // Global settings:
-    disable: false, // Disable AOS globally (e.g., for mobile devices)
-    startEvent: 'DOMContentLoaded', // Event to initialize AOS
-    initClassName: 'aos-init', // Class applied after initialization
-    animatedClassName: 'aos-animate', // Class applied on animation
-    useClassNames: false, // Add content of `data-aos` as classes on scroll
-    disableMutationObserver: false, // Disable automatic mutations' detections
-    debounceDelay: 50, // Delay on debounce used while resizing window
-    throttleDelay: 99, // Delay on throttle used while scrolling the page
-
-    // Settings that can be overridden on per-element basis:
-    offset: 50, // Offset (in px) from the original trigger point - reduced for mobile
-    delay: 0, // Delay value from 0 to 3000 (in ms)
-    duration: 400, // Duration value from 0 to 3000 (in ms)
-    easing: 'ease', // Default easing for AOS animations
-    once: true, // Whether animation should happen only once - set true so elements stay visible
-    mirror: false, // Whether elements should animate out while scrolling past them
-    anchorPlacement: 'top-bottom', // Defines which position of the element regarding to window should trigger the animation
-  },
-
   stripe: {
     server: {
       key: process.env.STRIPE_SECRET_KEY,
@@ -456,11 +431,6 @@ export default defineNuxtConfig({
         // Optional: Additional Stripe.js configuration options
       },
     },
-  },
-
-  particles: {
-    mode: 'full',
-    lazy: true
   },
 
   strapi: {
@@ -516,9 +486,6 @@ export default defineNuxtConfig({
 
   plugins: [
     '~/plugins/chart.js',
-    '~/plugins/fontawesome.js',
-     '~/plugins/vue-echarts.client.ts'
-   
   ],
 
   compatibilityDate: '2025-04-11',
