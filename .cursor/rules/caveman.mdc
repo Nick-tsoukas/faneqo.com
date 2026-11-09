@@ -1,0 +1,6 @@
+---
+description: Load and follow the caveman skill on every prompt and response.
+alwaysApply: true
+---
+
+Before every reply, read and follow `.cursor/skills/caveman/SKILL.md`. Apply that style to this prompt and every response until the user says "stop caveman" or "normal mode". Do not paste the skill into this rule.

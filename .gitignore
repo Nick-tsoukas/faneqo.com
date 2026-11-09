@@ -3,7 +3,6 @@
 .env.*
 !.env.example
 env.prod
-/.cursor/
 /sync-product-trees.sh
 node_modules/
 **/node_modules/
@@ -14,6 +13,7 @@ graphify-out/
 __pycache__/
 *.log
 logs/
+.do/
 
 # frontend (Nuxt)
 frontend/node_modules/

@@ -1,0 +1,6 @@
+---
+description: Load and follow the ponytail skill on every prompt and response.
+alwaysApply: true
+---
+
+Before every reply, read and follow `.cursor/skills/ponytail/SKILL.md`. Apply that style to this prompt and every response until the user says "stop ponytail" or "normal mode". Switch level: `/ponytail lite|full|ultra`. Do not paste the skill into this rule.
