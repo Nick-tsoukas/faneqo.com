@@ -1004,7 +1004,7 @@ export interface ApiBandBand extends Schema.CollectionType {
   };
   attributes: {
     name: Attribute.String & Attribute.Required & Attribute.Unique;
-    genre: Attribute.String & Attribute.Required;
+    genre: Attribute.String;
     bio: Attribute.Text &
       Attribute.Required &
       Attribute.SetMinMaxLength<{
@@ -1512,7 +1512,7 @@ export interface ApiBandPageViewBandPageView extends Schema.CollectionType {
     fbclid: Attribute.String;
     ttclid: Attribute.String;
     twclid: Attribute.String;
-    ipAddress: Attribute.String;
+    ipAddress: Attribute.String & Attribute.Private;
     userAgent: Attribute.String;
     path: Attribute.String;
     city: Attribute.String;
@@ -2385,7 +2385,7 @@ export interface ApiFanMomentFanMoment extends Schema.CollectionType {
       'manyToOne',
       'api::band.band'
     >;
-    visitorId: Attribute.String;
+    visitorId: Attribute.String & Attribute.Private;
     sessionId: Attribute.String;
     momentType: Attribute.Enumeration<
       [
@@ -4040,7 +4040,17 @@ export interface ApiSupportMomentSupportMoment extends Schema.CollectionType {
     badgeId: Attribute.String;
     amount: Attribute.Integer;
     currency: Attribute.String;
-    status: Attribute.Enumeration<['pending', 'paid', 'failed', 'refunded']> &
+    status: Attribute.Enumeration<
+      [
+        'pending',
+        'paid',
+        'partially_refunded',
+        'refunded',
+        'disputed',
+        'failed',
+        'canceled'
+      ]
+    > &
       Attribute.DefaultTo<'pending'>;
     paidAt: Attribute.DateTime;
     stripeCheckoutSessionId: Attribute.String;
@@ -4056,6 +4066,14 @@ export interface ApiSupportMomentSupportMoment extends Schema.CollectionType {
     source: Attribute.String & Attribute.DefaultTo<'band-profile'>;
     qrId: Attribute.String;
     eventId: Attribute.String;
+    amountCents: Attribute.Integer;
+    refundedAmountCents: Attribute.Integer & Attribute.DefaultTo<0>;
+    refundedAt: Attribute.DateTime;
+    platformFeeCents: Attribute.Integer;
+    stripeFeeCents: Attribute.Integer;
+    netCents: Attribute.Integer;
+    disputeStatus: Attribute.String;
+    receiptToken: Attribute.String & Attribute.Private;
     createdAt: Attribute.DateTime;
     updatedAt: Attribute.DateTime;
     publishedAt: Attribute.DateTime;

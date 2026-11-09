@@ -1,3 +1,4 @@
+/// <reference types="node" />
 import { defineStackrunConfig, type StackrunConfig } from "stackrun";
 
 // Port remaps only fed command env / tunnels. Both commented — children inherit
