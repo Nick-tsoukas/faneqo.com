@@ -6,12 +6,12 @@ services:
     environment:
       POSTGRES_USER: faneqo
       POSTGRES_PASSWORD: faneqo
-      POSTGRES_DB: faneqo_dev
+      # Staging only (host develop uses SQLite). One DB — no init SQL sidecar.
+      POSTGRES_DB: faneqo_staging
     volumes:
       - faneqo_pg:/var/lib/postgresql/data
-      - ./docker/postgres-init.sql:/docker-entrypoint-initdb.d/01-init.sql:ro
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U faneqo -d faneqo_dev"]
+      test: ["CMD-SHELL", "pg_isready -U faneqo -d faneqo_staging"]
       interval: 5s
       timeout: 5s
       retries: 10

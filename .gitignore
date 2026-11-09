@@ -5,8 +5,6 @@
 env.prod
 /.cursor/
 /sync-product-trees.sh
-/jsconfig.json.bak
-backend/jsconfig.json.bak
 node_modules/
 **/node_modules/
 .ua/

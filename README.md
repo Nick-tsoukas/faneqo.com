@@ -2,8 +2,6 @@
 
 Monorepo root for Nuxt (`frontend/`) + Strapi (`backend/`) with Postgres via Docker for **staging**. Orchestration is [stackrun](https://github.com/unjs/stackrun) (`stack.config.ts`). Agent/migration notes: [`AGENTS.md`](AGENTS.md).
 
-Root TypeScript for `stack.config.ts` lives in `tsconfig.stack.json` (not `tsconfig.json`) so host Strapi build does not walk up into a parent TypeScript project.
-
 ## Prerequisites
 
 **Local development** (`npm run dev`):

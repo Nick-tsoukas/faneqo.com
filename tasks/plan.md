@@ -20,7 +20,7 @@ This plan is **read-only for product code in the monorepo sense**. No monorepo-d
 | Target `Nick-tsoukas/faneqo.com` exists and is **empty** (will get content-only `staging` push before history merge) | GitHub API: empty default branch / 409 on ref; Phase 0 lock |
 | Local stack: compose Postgres + stackrun `$development` / `$staging` | Root `docker-compose.yml`, `stack.config.ts`, `example.env` |
 | Compose = unified file, no profiles (Architecture G) | Dev: no Docker (host + SQLite); staging: `up -d` all services — stock-Node FE/BE (nested tags FE/BE → `NODE_VERSION` → `22.11.0`) volume-mounted |
-| Init creates `faneqo_staging` DB | `docker/postgres-init.sql` |
+| Compose Postgres DB | `POSTGRES_DB=faneqo_staging` (single DB; no init SQL sidecar) |
 | Local Node pin via mise (dev host only) | Root `mise.toml` + `NODE_VERSION` in `example.env` (Architecture H); staging droplet/containers do **not** need mise. **Gap (2026-11-08):** host `$development` / staging host builds still use shared `NODE_VERSION` only — `BACKEND_NODE_VERSION` is unused on the host path (Task 3.9). |
 | No custom app Dockerfiles planned for staging | Staging FE/BE use stock Node image tags from env + volume mounts (Architecture G locked); unrelated `frontend/workers/studio-video/Dockerfile` out of scope |
 | Root `npm test` runs stackrun + root shape checks | `tests/stackrun/` (import-root overlays) + `tests/root/` (scripts / mise / example.env / compose / docs); Task 3.7. Full FE/BE app builds **not** in root suite. GitHub Actions root workflow still Phase 5 / Task 12 |
@@ -170,7 +170,7 @@ Caveats (accept for v1):
 
 **Ponytail:** one root `docker-compose.yml` for **staging** (local + droplet). No Compose profiles / duplicate stacks. Root orchestration only — no monorepo-driven FE/BE product source edits.
 
-**Dev DB (amended 2026-11-08):** Product `backend/config/database.js` uses **SQLite** when `NODE_ENV=development` and Postgres otherwise. Therefore `$development` must **not** start compose. Host develop → Postgres is deferred (maybe later / Task 15-era). Keep `faneqo_dev` + `postgres-init.sql` `faneqo_staging` for staging / future host Postgres.
+**Dev DB (amended 2026-11-08):** Product `backend/config/database.js` uses **SQLite** when `NODE_ENV=development` and Postgres otherwise. Therefore `$development` must **not** start compose. Host develop → Postgres is deferred (maybe later / Task 15-era). Compose Postgres uses a single DB `faneqo_staging` via `POSTGRES_DB` (no `docker/postgres-init.sql`).
 
 **Implemented (Task 3.6 — 2026-11-08; wrapper removed Task 3.8; profiles removed 2026-11-08; dev compose dropped 2026-11-08):**
 - `docker-compose.yml` = `postgres` + `frontend` + `backend` (all eligible; no `profiles` key). Stock Node + volume mounts for FE/BE. Used by staging only.
