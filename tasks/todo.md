@@ -445,7 +445,7 @@ Do not make monorepo-driven edits under `frontend/` / `backend/` until Task 15 i
 **Verification:**
 
 - [x] Tests pass: `npm test`
-- [ ] Manual check: docs-only push finishes without Nuxt/Strapi build (follow-up after this stack-script push)
+- [x] Manual check: docs-only push finishes without Nuxt/Strapi build — run `42645593391` (`c6a94db`) ~11s success; containers stayed Up 7h (no recreate)
 - [x] Manual check: path rules documented in `docs/staging-droplet.md`
 
 **Dependencies:** Task 5
@@ -454,7 +454,7 @@ Do not make monorepo-driven edits under `frontend/` / `backend/` until Task 15 i
 
 **Estimated scope:** S
 
-**Status:** complete 2026-11-09 — selective rebuild landed; this push touches `scripts/staging-*` so expects full rebuild once; next docs-only should skip
+**Status:** complete 2026-11-09 — selective rebuild proven (docs-only ~11s skip)
 
 ---
 
