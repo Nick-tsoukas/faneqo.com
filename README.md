@@ -41,13 +41,13 @@ Sets `NODE_ENV=development`, runs `docker compose up -d postgres` (DB only; host
 npm run staging
 ```
 
-Sets `NODE_ENV=staging`. Stackrun `$staging` installs + builds FE/BE on the host, then runs `docker compose --profile staging up -d` (same root `docker-compose.yml`). That profile starts Postgres + **stock Node** FE/BE containers (tags: FE/BE → `NODE_VERSION` → `22.11.0`). Built artifacts are volume-mounted (`frontend/.output`, whole `backend/` including Strapi build output) — no custom Dockerfiles. Containers talk to Postgres on the compose network (`faneqo_staging`). Stackrun then follows container logs (not host `develop`/`dev`). Ports: `STAGING_STRAPI_PORT` / `STAGING_NUXT_PORT`, else unprefixed defaults. Droplet/containers do **not** need mise.
+Sets `NODE_ENV=staging`. Stackrun `$staging` installs + builds FE/BE on the host, then runs `docker compose up -d` (same root `docker-compose.yml` — all services). That starts Postgres + **stock Node** FE/BE containers (tags: FE/BE → `NODE_VERSION` → `22.11.0`). Built artifacts are volume-mounted (`frontend/.output`, whole `backend/` including Strapi build output) — no custom Dockerfiles. Containers talk to Postgres on the compose network. Stackrun then follows container logs (not host `develop`/`dev`). Ports: `STAGING_STRAPI_PORT` / `STAGING_NUXT_PORT`, else unprefixed defaults. Droplet/containers do **not** need mise.
 
 `mbq-cron` stays off locally.
 
 ## Build / start (host)
 
-Production-style builds and servers (after `npm install` in `frontend/` / `backend/` as needed). `npm run staging` builds on the host then serves via compose profile containers; `npm run start:*` remains available for host-only starts.
+Production-style builds and servers (after `npm install` in `frontend/` / `backend/` as needed). `npm run staging` builds on the host then serves via compose containers; `npm run start:*` remains available for host-only starts.
 
 ```bash
 npm run build            # backend then frontend
@@ -59,6 +59,6 @@ npm run start:frontend
 
 ## Remote staging deploy
 
-TBD — push to the `staging` branch will deploy staging with the **same** compose file + `--profile staging`. Steps not documented yet (Task 5).
+TBD — push to the `staging` branch will deploy staging with the **same** compose file (`docker compose up -d`). Steps not documented yet (Task 5).
 
 **Public URLs (Phase 2):** use the DigitalOcean droplet IP (`http://IP` or `http://IP:port`) for `STAGING_API_PUBLIC` / `STAGING_WEB_PUBLIC`. Staging domain + HTTPS + Google OAuth redirects come later (see `tasks/todo.md` Task 6b).

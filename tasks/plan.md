@@ -19,7 +19,7 @@ This plan is **read-only for product code in the monorepo sense**. No monorepo-d
 | `backend/` = `Nick-tsoukas/qrserver`, tip at nested-`.git` removal | `bef413d7cb2b9903a0f6b53a6698ed26a2e5f3a1` (`main`) |
 | Target `Nick-tsoukas/faneqo.com` exists and is **empty** (will get content-only `staging` push before history merge) | GitHub API: empty default branch / 409 on ref; Phase 0 lock |
 | Local stack: compose Postgres + stackrun `$development` / `$staging` | Root `docker-compose.yml`, `stack.config.ts`, `example.env` |
-| Compose = unified profiles (Architecture G) | Dev: `up -d postgres`; `--profile staging` adds stock-Node FE/BE (nested tags FE/BE → `NODE_VERSION` → `22.11.0`) volume-mounted |
+| Compose = unified file, no profiles (Architecture G) | Dev: `up -d postgres`; staging: `up -d` all services — stock-Node FE/BE (nested tags FE/BE → `NODE_VERSION` → `22.11.0`) volume-mounted |
 | Init creates `faneqo_staging` DB | `docker/postgres-init.sql` |
 | Local Node pin via mise (dev host only) | Root `mise.toml` + `NODE_VERSION` in `example.env` (Architecture H); staging droplet/containers do **not** need mise. **Gap (2026-11-08):** host `$development` / staging host builds still use shared `NODE_VERSION` only — `BACKEND_NODE_VERSION` is unused on the host path (Task 3.9). |
 | No custom app Dockerfiles planned for staging | Staging FE/BE use stock Node image tags from env + volume mounts (Architecture G locked); unrelated `frontend/workers/studio-video/Dockerfile` out of scope |
@@ -66,7 +66,7 @@ Root orchestration (compose, stackrun, example.env, mise pin) — present / Task
         │       │  image tags from NODE_VERSION / FRONTEND_* / BACKEND_*
         │       └── [CHECKPOINT: local staging profile OK; human OK stock Node]
         │
-        ├── Staging host (DO droplet + same compose --profile staging)  ← EARLY
+        ├── Staging host (DO droplet + same compose `up -d`)  ← EARLY
         │       │
         │       └── [CHECKPOINT: staging dogfood OK; prod still on old remotes]
         │
@@ -166,44 +166,44 @@ Caveats (accept for v1):
 
 **Later (not Phase 2 now):** attach a staging hostname (not prod `faneqo.com`), terminate TLS, point DNS at the droplet, then re-set public URL env vars and wire Google (and other) redirect URIs. Tracked as deferred Task 6b in `tasks/todo.md`.
 
-### G. Unified docker-compose — one file, profiles (locked intent 2026-11-08; implement before droplet)
+### G. Unified docker-compose — one file, service selection (locked intent 2026-11-08; profiles dropped 2026-11-08)
 
-**Ponytail:** one root `docker-compose.yml`. Prefer Compose **profiles** over `docker-compose.staging.yml` / duplicate stacks. Root orchestration only — no monorepo-driven FE/BE product source edits.
+**Ponytail:** one root `docker-compose.yml`. Prefer service-name selection over Compose profiles / `docker-compose.staging.yml` / duplicate stacks. Root orchestration only — no monorepo-driven FE/BE product source edits.
 
-**Implemented (Task 3.6 — 2026-11-08; wrapper removed Task 3.8):**
-- `docker-compose.yml` = `postgres` always; `frontend` / `backend` under `profiles: ["staging"]` (stock Node + volume mounts).
+**Implemented (Task 3.6 — 2026-11-08; wrapper removed Task 3.8; profiles removed 2026-11-08):**
+- `docker-compose.yml` = `postgres` + `frontend` + `backend` (all eligible; no `profiles` key). Stock Node + volume mounts for FE/BE.
 - Nested image tags (Compose ≥ 2.18): `node:${FRONTEND_NODE_VERSION:-${NODE_VERSION:-22.11.0}}` (same for `BACKEND_*`). No `scripts/docker-compose.sh`.
-- `$development`: `docker compose up -d postgres` + host hot reload. `$staging`: host install/build then `docker compose --profile staging up -d`; follows container logs (not host `develop`/`dev`).
+- `$development`: `docker compose up -d postgres` + host hot reload. `$staging`: host install/build then `docker compose up -d` (all services); follows container logs (not host `develop`/`dev`).
 
 **Behavior:**
 
 | Mode | How invoked | Compose | Apps |
 |------|-------------|---------|------|
 | **Dev** | `npm run dev` / stackrun `$development` | `docker compose up -d postgres` | FE + BE on host (hot reload) — unchanged |
-| **Local staging** | `npm run staging` / stackrun `$staging` | `docker compose --profile staging up -d` → Postgres + FE + BE containers | **Built** apps; containers mount build output as **volumes** (not image-bake-only) |
-| **Droplet staging** | deploy / host `compose --profile staging` | **Same file + same profile** | Same volume-mounted built apps + DB; cron off |
+| **Local staging** | `npm run staging` / stackrun `$staging` | `docker compose up -d` → Postgres + FE + BE containers | **Built** apps; containers mount build output as **volumes** (not image-bake-only) |
+| **Droplet staging** | deploy / host `docker compose up -d` | **Same file** | Same volume-mounted built apps + DB; cron off |
 
-**Chosen approach — profiles + stackrun hooks:**
+**Chosen approach — service selection + stackrun hooks:**
 
-1. **`postgres`** — no `profiles` key (always eligible). Default `docker compose up -d` starts DB only.
-2. **`frontend`** and **`backend`** — `profiles: ["staging"]`. Appear only with `--profile staging` (or `COMPOSE_PROFILES=staging`).
+1. **All services** eligible in one file (no Compose `profiles`).
+2. **Dev** selects `postgres` by name: `docker compose up -d postgres`. Bare `docker compose up -d` starts all services (staging path).
 3. **Runtime images** — **stock Node image(s)** tagged from the **same env vars** as local tooling (Architecture H). Chain: `FRONTEND_NODE_VERSION` / `BACKEND_NODE_VERSION` → `NODE_VERSION` → literal `22.11.0` via Compose nested defaults (Task 3.8; Compose ≥ 2.18). Dual versions allowed. Same image name OK twice when versions match. No custom `docker/Dockerfile.*` unless stock Node later proves insufficient. Per service: different `command`, ports, and **volume mounts** for built app output. **Build on host** (or deploy script): `frontend` / `backend` `npm run build`, then mount artifacts into containers, e.g. Nuxt `.output` (and any required node_modules/runtime bits) and Strapi build/dist as bind mounts. Honor “built apps mounted as volumes” for local + droplet parity: rebuild on host → remount/restart without baking a new app image every time.
 4. **`stack.config.ts` (Task 3.6; wrapper drop Task 3.8):**
-   - `$development` `before`/`after`: `docker compose up -d postgres` / `stop`.
-   - `$staging` `before`: host `npm install` (FE+BE) + `npm run build`, then `docker compose --profile staging up -d`.
+   - `$development` `before`/`after`: `docker compose up -d postgres` / `down postgres`.
+   - `$staging` `before`: host `npm install` (FE+BE) + `npm run build`, then `docker compose up -d`.
    - `$staging` `commands`: compose `logs -f` only (no host `develop`/`dev`). Dev hot-reload stays `$development` only.
-5. **Droplet:** rsync/git pull tree + env → same `docker compose --profile staging up -d`. No second compose file.
+5. **Droplet:** rsync/git pull tree + env → same `docker compose up -d`. No second compose file.
 
 **Acceptance criteria (Architecture G — verified in Tasks 3.5–3.6 / 4):**
 
 - [x] One `docker-compose.yml` at root; no parallel staging-only compose file as the source of truth
-- [x] `docker compose up -d` (no staging profile) starts **only** Postgres
-- [x] `docker compose --profile staging up -d` starts Postgres + FE + BE
+- [x] `docker compose up -d postgres` starts **only** Postgres (dev path)
+- [x] `docker compose up -d` starts Postgres + FE + BE (staging path)
 - [x] Staging FE/BE image tags come from `FRONTEND_NODE_VERSION` / `BACKEND_NODE_VERSION` → `NODE_VERSION` → `22.11.0` (dual versions allowed; nested Compose defaults)
 - [x] Staging FE/BE containers mount **built** app dirs as volumes
 - [x] `npm run dev` still host-runs FE/BE after db-only compose
-- [x] Local `npm run staging` uses staging profile containers (not host develop as the server)
-- [ ] Droplet deploy uses the same file + staging profile + IP public URLs; **no mise** on droplet
+- [x] Local `npm run staging` uses compose containers (not host develop as the server)
+- [ ] Droplet deploy uses the same file + IP public URLs; **no mise** on droplet
 - [x] No monorepo-driven product source edits under `frontend/` / `backend/` for this slice
 
 **Locked (2026-11-08 — Task 3.5 / Checkpoint Compose design):** **No custom Dockerfiles unless needed.** Staging FE/BE services use stock Node image(s) (same image OK twice when versions match), different `command` / ports / volume mounts for built output. Image tags driven by env (Architecture H). Do **not** add root `docker/Dockerfile.frontend` / `docker/Dockerfile.backend` (or product-tree Dockerfiles) unless stock Node proves insufficient later. Unrelated `frontend/workers/studio-video/Dockerfile` stays out of scope.
@@ -314,28 +314,28 @@ Confirm root orchestration; optionally init root git and remove nested `.git` **
 
 ### Phase 2 prep — mise pins + unified compose + root tests (local first)
 
-Architecture H (mise + env Node pins) landed in Task 3.4. Architecture G **implemented** locally in Task 3.6; wrapper removed in Task 3.8 (nested Compose Node defaults, dual FE/BE versions allowed, no custom Dockerfiles). Prove: db-only for `npm run dev`; staging profile mounts built FE/BE for `npm run staging`. **Do not** invent a second compose file. **Do not** install mise on the droplet.
+Architecture H (mise + env Node pins) landed in Task 3.4. Architecture G **implemented** locally in Task 3.6; wrapper removed in Task 3.8 (nested Compose Node defaults, dual FE/BE versions allowed, no custom Dockerfiles). Prove: db-only for `npm run dev`; staging `docker compose up -d` mounts built FE/BE for `npm run staging`. **Do not** invent a second compose file. **Do not** install mise on the droplet.
 
 **Task 3.9 (additive — host dual Node):** Compose tags already respect `BACKEND_NODE_VERSION`; host `$development` / staging host builds do not. Close Architecture H.1 before relying on local Strapi develop (and before droplet dogfood if host builds feed volume mounts). See Amendment H.1 above.
 
 **Root test coverage (Task 3.7, Architecture I)** landed; Task 3.6 extended suite with staging-profile asserts. Extend suite in Task 3.9 for host `mise exec` / `BACKEND_NODE_VERSION`. Checkpoint before droplet.
 
-### Checkpoint Compose — Design OK / local profile works
+### Checkpoint Compose — Design OK / local staging works
 
 - [x] Human OK on stock-Node approach (no custom Dockerfiles unless needed) — 2026-11-08
-- [ ] Task 3.9: host dual Node (`mise exec` + `BACKEND_NODE_VERSION`) — no Strapi `EBADENGINE` on `npm run dev`
-- [ ] Local: `docker compose up -d` = Postgres only
-- [ ] Local: `--profile staging` = Postgres + FE + BE with volume-mounted builds
-- [ ] `npm run dev` still hot-reloads on host (FE on 22 OK; BE on ≤20 when pinned)
-- [ ] No product-source monorepo edits for this slice
+- [x] Task 3.9: host dual Node (`mise exec` + `BACKEND_NODE_VERSION`) — no Strapi `EBADENGINE` on `npm run dev`
+- [x] Local: `docker compose up -d postgres` = Postgres only (dev path; no Compose profiles)
+- [x] Local: `docker compose up -d` = Postgres + FE + BE with volume-mounted builds (staging path)
+- [x] `npm run dev` still hot-reloads on host (FE on 22 OK; BE on ≤20 when pinned)
+- [x] No product-source monorepo edits for this slice (root orchestration only)
 
 ### Phase 2 — Cheap staging on DO (EARLY)
 
-Provision droplet; deploy with **same** root `docker-compose.yml` + `--profile staging`; staging env (test Stripe, non-sending mail); data strategy; deploy path. **Public URLs = droplet IP over HTTP** (`STAGING_API_PUBLIC` / `STAGING_WEB_PUBLIC`). Defer staging domain, TLS terminator, and Google OAuth redirect wiring (Task 6b). **No history merge required.**
+Provision droplet; deploy with **same** root `docker-compose.yml` + `docker compose up -d`; staging env (test Stripe, non-sending mail); data strategy; deploy path. **Public URLs = droplet IP over HTTP** (`STAGING_API_PUBLIC` / `STAGING_WEB_PUBLIC`). Defer staging domain, TLS terminator, and Google OAuth redirect wiring (Task 6b). **No history merge required.**
 
 ### Checkpoint B — Staging dogfood
 
-- [ ] Staging reachable via droplet IP: FE + staging BE + staging Postgres (same compose profile as local)
+- [ ] Staging reachable via droplet IP: FE + staging BE + staging Postgres (same compose file as local)
 - [ ] `STAGING_API_PUBLIC` / `STAGING_WEB_PUBLIC` set to those HTTP IP URLs (or ports as needed)
 - [ ] No prod domains / live mail / live Stripe / `chalk-volume`
 - [ ] Human dogfoods (OAuth/Google login may still be off until Task 6b); prod Railway still on product remotes
@@ -401,9 +401,9 @@ Begin remediation per `tasks/audit-issues-plan.md` once daily development is the
 | Live Resend/Stripe on staging | High | Non-sending / test keys; cron off |
 | HTTP IP staging breaks Google OAuth / Secure cookies | Med | Accept for Phase 2; Task 6b when domain + HTTPS exist |
 | Droplet IP changes on rebuild | Low | Reserved IP optional; else update `STAGING_*_PUBLIC` after recreate |
-| Duplicate compose files / drift local vs droplet | Med | One file + profiles (Architecture G); droplet uses `--profile staging` only |
+| Duplicate compose files / drift local vs droplet | Med | One file, no profiles (Architecture G); droplet uses `docker compose up -d` |
 | Staging volume mounts miss runtime deps (node_modules, Nuxt `.output`) | Med | Document exact mount paths in Task 3.6; verify local staging before droplet |
-| Accidental staging profile in `npm run dev` | Med | Postgres unprofiled; FE/BE only under `staging` profile; keep `$development` before db-only |
+| Accidental full compose in `npm run dev` | Med | `$development` before uses `up -d postgres` only; staging uses bare `up -d` |
 | Root suite drifts from compose/stack reality | Low | Task 3.7 shape checks; extend after Task 3.6 for staging profile |
 
 ## Open questions (need human forks)

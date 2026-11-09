@@ -51,15 +51,15 @@ export default defineStackrunConfig({
     ],
   },
   $staging: {
-    // Build on host with per-app Node, then stock-Node containers (--profile staging).
+    // Build on host with per-app Node, then stock-Node containers (all compose services).
     before: [
       `cd backend && mise exec ${hostBackendNode} -- npm install`,
       `cd frontend && mise exec ${hostFrontendNode} -- npm install`,
       `mise exec ${hostBackendNode} -- npm run build --prefix backend`,
       `mise exec ${hostFrontendNode} -- npm run build --prefix frontend`,
-      "docker compose --profile staging up -d",
+      "docker compose up -d",
     ],
-    after: ["docker compose --profile staging stop"],
+    after: ["docker compose down"],
     commands: [
       {
         name: "backend",

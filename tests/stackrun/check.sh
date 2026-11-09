@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Prove $development / $staging overlays from root stack.config.ts.
 # Ports live in root .env (inherited); command env port blocks are absent.
-# Dev: host FE/BE. Staging: compose profile path (not host develop/dev).
+# Dev: host FE/BE + postgres only. Staging: all compose services (not host develop/dev).
 set -euo pipefail
 ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
 CFG="$ROOT/tests/stackrun/stack.config.ts"
@@ -83,7 +83,7 @@ if grep -E '^[[:space:]]+env:[[:space:]]*\{[[:space:]]*(STRAPI_PORT|NUXT_PORT)' 
 fi
 echo "ok stack.config.ts command env ports commented"
 
-# Dry-run root config: staging uses profile containers; development stays db-only + host apps.
+# Dry-run root config: staging ups all services; development stays db-only + host apps.
 dev_dry="$(NODE_ENV=development npx stackrun --dry-run 2>/dev/null)"
 printf '%s\n' "$dev_dry" | grep -Fq 'docker compose up -d postgres' \
   || { echo "FAIL development dry-run missing db-only compose up postgres"; printf '%s\n' "$dev_dry"; exit 1; }
@@ -99,8 +99,12 @@ printf '%s\n' "$dev_dry" | grep -Fq 'FRONTEND_NODE_VERSION' \
   || { echo "FAIL development dry-run missing FRONTEND_NODE_VERSION fallback"; printf '%s\n' "$dev_dry"; exit 1; }
 
 stg_dry="$(NODE_ENV=staging npx stackrun --dry-run 2>/dev/null)"
-printf '%s\n' "$stg_dry" | grep -Fq -- '--profile staging' \
-  || { echo "FAIL staging dry-run missing --profile staging"; printf '%s\n' "$stg_dry"; exit 1; }
+printf '%s\n' "$stg_dry" | grep -Fq 'docker compose up -d postgres' \
+  && { echo "FAIL staging dry-run must up all services, not postgres only"; printf '%s\n' "$stg_dry"; exit 1; }
+printf '%s\n' "$stg_dry" | grep -Fq 'docker compose up -d' \
+  || { echo "FAIL staging dry-run missing docker compose up -d"; printf '%s\n' "$stg_dry"; exit 1; }
+printf '%s\n' "$stg_dry" | grep -Fq -- '--profile' \
+  && { echo "FAIL staging dry-run still uses Compose --profile"; printf '%s\n' "$stg_dry"; exit 1; }
 printf '%s\n' "$stg_dry" | grep -Fq 'mise exec' \
   || { echo "FAIL staging dry-run missing mise exec for host install/build"; printf '%s\n' "$stg_dry"; exit 1; }
 if printf '%s\n' "$stg_dry" | grep -Fq '"run": "npm run develop"'; then
@@ -113,6 +117,6 @@ if printf '%s\n' "$stg_dry" | grep -Fq '"run": "npm run dev"'; then
   printf '%s\n' "$stg_dry"
   exit 1
 fi
-echo "ok staging compose-profile path (dry-run)"
+echo "ok staging all-services compose path (dry-run)"
 
 echo "stackrun overlay env checks passed"

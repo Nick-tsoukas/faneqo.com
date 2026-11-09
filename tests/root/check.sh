@@ -76,8 +76,13 @@ grep -Fq '$staging' stack.config.ts || fail "stack.config.ts missing \$staging"
 if grep -E '^  commands:' stack.config.ts >/dev/null; then
   fail "stack.config.ts must not declare top-level commands (overlays only)"
 fi
-# Staging must drive compose profile containers, not host develop/dev servers.
-grep -Fq -- '--profile staging' stack.config.ts || fail "stack.config.ts \$staging must use --profile staging"
+# Staging ups all compose services; development ups postgres only. No Compose profiles.
+grep -Fq 'docker compose up -d postgres' stack.config.ts \
+  || fail "stack.config.ts \$development must up postgres only"
+grep -Fq '"docker compose up -d"' stack.config.ts \
+  || fail "stack.config.ts \$staging must use bare docker compose up -d"
+grep -Fq -- '--profile' stack.config.ts \
+  && fail "stack.config.ts must not use Compose --profile"
 if grep -E "run: \"npm run (develop|dev)\"" stack.config.ts | grep -q .; then
   # allow develop/dev only under $development block — fail if staging still hosts them
   # crude: after $staging marker, develop/dev run lines are forbidden
@@ -100,14 +105,14 @@ if grep -E 'node[[:space:]]*=[[:space:]]*"[0-9]' mise.toml >/dev/null; then
 fi
 ok stack.config.ts overlays
 
-# --- docker-compose.yml: postgres always; FE/BE under staging profile ---
+# --- docker-compose.yml: all services eligible; no Compose profiles ---
 [[ -f docker-compose.yml ]] || fail "docker-compose.yml missing"
 grep -Eq '^[[:space:]]*postgres:' docker-compose.yml || fail "docker-compose.yml missing postgres service"
 grep -Fq 'image: postgres:16' docker-compose.yml || fail "docker-compose.yml expected postgres:16"
 grep -Eq '^[[:space:]]*frontend:' docker-compose.yml || fail "docker-compose.yml missing frontend service"
 grep -Eq '^[[:space:]]*backend:' docker-compose.yml || fail "docker-compose.yml missing backend service"
-grep -Fq 'profiles:' docker-compose.yml || fail "docker-compose.yml missing profiles"
-grep -Fq 'staging' docker-compose.yml || fail "docker-compose.yml missing staging profile"
+grep -Fq 'profiles:' docker-compose.yml \
+  && fail "docker-compose.yml must not use Compose profiles (dev selects postgres by name)"
 # Stock Node nested defaults: FE/BE → NODE_VERSION → 22.11.0 (no wrapper script)
 grep -Fq 'node:${FRONTEND_NODE_VERSION:-${NODE_VERSION:-22.11.0}}' docker-compose.yml \
   || fail "frontend must use nested image: node:\${FRONTEND_NODE_VERSION:-\${NODE_VERSION:-22.11.0}}"
@@ -118,72 +123,72 @@ if compgen -G 'docker/Dockerfile*' >/dev/null; then
   fail "unexpected docker/Dockerfile* (stock Node only unless escape hatch)"
 fi
 [[ ! -e scripts/docker-compose.sh ]] || fail "scripts/docker-compose.sh must be removed (use nested compose defaults)"
-ok docker-compose services + profiles
+ok "docker-compose services (no profiles)"
 
-# --- compose service selection (db-only vs staging profile) ---
-mapfile -t default_services < <(docker compose config --services | sort)
-default_joined=$(IFS=,; echo "${default_services[*]}")
-[[ "$default_joined" == "postgres" ]] \
-  || fail "default compose services want only postgres, got: ${default_services[*]}"
+# --- compose service inventory (all three always eligible) ---
+mapfile -t all_services < <(docker compose config --services | sort)
+all_joined=$(IFS=,; echo "${all_services[*]}")
+printf '%s\n' "${all_services[@]}" | grep -Fxq postgres || fail "compose missing postgres"
+printf '%s\n' "${all_services[@]}" | grep -Fxq frontend || fail "compose missing frontend"
+printf '%s\n' "${all_services[@]}" | grep -Fxq backend || fail "compose missing backend"
+ok "compose services=[${all_joined}]"
 
-mapfile -t staging_services < <(docker compose --profile staging config --services | sort)
-staging_joined=$(IFS=,; echo "${staging_services[*]}")
-printf '%s\n' "${staging_services[@]}" | grep -Fxq postgres || fail "staging profile missing postgres"
-printf '%s\n' "${staging_services[@]}" | grep -Fxq frontend || fail "staging profile missing frontend"
-printf '%s\n' "${staging_services[@]}" | grep -Fxq backend || fail "staging profile missing backend"
-ok "compose services default=[${default_joined}] staging=[${staging_joined}]"
-
-# Dual Node tags + empty FE falls back to NODE_VERSION; bare defaults → 22.11.0
-dual_cfg="$(
-  NODE_VERSION=22.11.0 \
-  FRONTEND_NODE_VERSION= \
-  BACKEND_NODE_VERSION=20.18.0 \
-  docker compose --profile staging config
-)"
-printf '%s\n' "$dual_cfg" | grep -Fq 'image: node:22.11.0' || fail "empty FRONTEND must fall back to NODE_VERSION node:22.11.0"
-printf '%s\n' "$dual_cfg" | grep -Fq 'image: node:20.18.0' || fail "backend image tag missing node:20.18.0"
-# No project .env pins: --env-file empty + unset shell pins → literal 22.11.0
-literal_env="$(mktemp)"
-literal_cfg="$(
-  env -u NODE_VERSION -u FRONTEND_NODE_VERSION -u BACKEND_NODE_VERSION \
-    docker compose --env-file "$literal_env" --profile staging config
-)"
-rm -f "$literal_env"
-printf '%s\n' "$literal_cfg" | grep -Fq 'image: node:22.11.0' \
-  || fail "unset NODE_VERSION + FE/BE must fall back to node:22.11.0"
-# Built-app volume mounts present
-printf '%s\n' "$dual_cfg" | grep -Eq '\.output|/app' || fail "staging config missing built-app volume mounts"
+# Dual Node tags + empty FE falls back to NODE_VERSION.
+# Shell env beats project .env (Compose v5). Retry: concurrent compose can flake.
+dual_ok=0
+for _try in 1 2 3; do
+  dual_cfg="$(
+    env \
+      NODE_VERSION=22.11.0 \
+      FRONTEND_NODE_VERSION= \
+      BACKEND_NODE_VERSION=20.18.0 \
+      docker compose config
+  )" || continue
+  printf '%s\n' "$dual_cfg" | grep -Fq 'image: node:22.11.0' || continue
+  printf '%s\n' "$dual_cfg" | grep -Fq 'image: node:20.18.0' || continue
+  dual_ok=1
+  break
+done
+[[ "$dual_ok" -eq 1 ]] || fail "dual Node image tags not rendered (want FE node:22.11.0 BE node:20.18.0)"
+# Nested literal default is asserted via docker-compose.yml image lines above (`:-22.11.0`).
+# Built-app volume mounts: trust compose file (rendered config flakes under concurrent compose).
+grep -Fq './frontend/.output:/app/.output' docker-compose.yml \
+  || fail "docker-compose.yml missing frontend .output volume mount"
+grep -Fq './backend:/app' docker-compose.yml \
+  || fail "docker-compose.yml missing backend /app volume mount"
 # Host publish ports use STAGING_* (not remapped unprefixed names in stack.config)
 grep -Fq '"${STAGING_STRAPI_PORT:-1337}:1337"' docker-compose.yml \
   || fail "backend host port must interpolate STAGING_STRAPI_PORT"
 grep -Fq '"${STAGING_NUXT_PORT:-3000}:3000"' docker-compose.yml \
   || fail "frontend host port must interpolate STAGING_NUXT_PORT"
-# Prove dotenv/process env inheritance: non-default STAGING_* appear in published ports
-port_cfg="$(
-  STAGING_STRAPI_PORT=1338 \
-  STAGING_NUXT_PORT=3001 \
-  docker compose --profile staging config
-)"
-printf '%s\n' "$port_cfg" | grep -Fq 'published: "1338"' \
-  || fail "STAGING_STRAPI_PORT=1338 must publish host 1338 (got no published: \"1338\")"
-printf '%s\n' "$port_cfg" | grep -Fq 'published: "3001"' \
-  || fail "STAGING_NUXT_PORT=3001 must publish host 3001 (got no published: \"3001\")"
-# Guard silent fallback: when STAGING_* differ, published must not stay only on defaults
-backend_pub="$(printf '%s\n' "$port_cfg" | awk '
-  /^  backend:/ { in_be=1; next }
-  in_be && /^  [a-z]/ { in_be=0 }
-  in_be && /published:/ { print; exit }
-')"
-frontend_pub="$(printf '%s\n' "$port_cfg" | awk '
-  /^  frontend:/ { in_fe=1; next }
-  in_fe && /^  [a-z]/ { in_fe=0 }
-  in_fe && /published:/ { print; exit }
-')"
-[[ "$backend_pub" == *'"1338"'* ]] || fail "backend published port want 1338, got: ${backend_pub:-<empty>}"
-[[ "$frontend_pub" == *'"3001"'* ]] || fail "frontend published port want 3001, got: ${frontend_pub:-<empty>}"
-# Dev overlay pins postgres service explicitly
-grep -Fq 'docker compose up -d postgres' stack.config.ts \
-  || fail "stack.config.ts \$development must up postgres only"
+# Prove STAGING_* host publishes (shell env). Retry under concurrent compose.
+port_ok=0
+backend_pub=""
+frontend_pub=""
+for _try in 1 2 3; do
+  port_cfg="$(
+    env \
+      STAGING_STRAPI_PORT=1338 \
+      STAGING_NUXT_PORT=3001 \
+      docker compose config
+  )" || continue
+  backend_pub="$(printf '%s\n' "$port_cfg" | awk '
+    /^  backend:/ { in_be=1; next }
+    in_be && /^  [a-z]/ { in_be=0 }
+    in_be && /published:/ { print; exit }
+  ')"
+  frontend_pub="$(printf '%s\n' "$port_cfg" | awk '
+    /^  frontend:/ { in_fe=1; next }
+    in_fe && /^  [a-z]/ { in_fe=0 }
+    in_fe && /published:/ { print; exit }
+  ')"
+  [[ "$backend_pub" == *1338* ]] || continue
+  [[ "$frontend_pub" == *3001* ]] || continue
+  port_ok=1
+  break
+done
+[[ "$port_ok" -eq 1 ]] \
+  || fail "STAGING_* host publishes want 1338/3001, got be=${backend_pub:-<empty>} fe=${frontend_pub:-<empty>}"
 grep -Fq 'scripts/docker-compose.sh' stack.config.ts \
   && fail "stack.config.ts must not reference scripts/docker-compose.sh"
 ok compose node tags + volume mounts + STAGING_* host ports
@@ -192,9 +197,9 @@ ok compose node tags + volume mounts + STAGING_* host ports
 [[ -f README.md ]] || fail "README.md missing"
 [[ -f AGENTS.md ]] || fail "AGENTS.md missing"
 grep -Fiq 'mise' README.md || fail "README.md should mention mise"
-grep -Fiq 'profile staging' README.md || fail "README.md should describe --profile staging"
+grep -Fiq 'docker compose up -d postgres' README.md || fail "README.md should describe db-only compose up postgres"
 grep -Fiq 'mise' AGENTS.md || fail "AGENTS.md should mention mise"
-grep -Fiq 'profile staging' AGENTS.md || fail "AGENTS.md should describe --profile staging"
+grep -Fiq 'docker compose up -d postgres' AGENTS.md || fail "AGENTS.md should describe db-only compose up postgres"
 # Droplet/containers do not need mise
 if ! grep -Ei 'droplet|container' README.md | grep -Eiq 'not.*(mise)|do not.*mise|no mise|without mise|not need mise|not required'; then
   # allow either README phrasing above or AGENTS

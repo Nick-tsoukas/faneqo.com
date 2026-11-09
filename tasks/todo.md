@@ -24,7 +24,7 @@ Do not make monorepo-driven edits under `frontend/` / `backend/` until Task 15 i
 - [x] Branch model confirmed: keep `main` empty for now; all work on `staging`; `staging` deploys to droplet
 - [x] Content-only `faneqo.com` during staging: **YES** — push full `staging` branch content without product commit history (throwaway history OK); history merge later
 - [x] Staging public URLs: **droplet IP** (HTTP) for `STAGING_API_PUBLIC` / `STAGING_WEB_PUBLIC` until a staging domain exists; domain + TLS + Google redirects deferred (Task 6b)
-- [x] Unified compose: **YES** — one `docker-compose.yml`; Compose profiles; dev = DB only + host FE/BE; local + droplet staging = DB + FE/BE containers with built apps volume-mounted (Architecture G in `tasks/plan.md`)
+- [x] Unified compose: **YES** — one `docker-compose.yml`; **no Compose profiles**; `npm run dev` selects `postgres` by name; staging = `docker compose up -d` (all services); local + droplet staging = DB + FE/BE containers with built apps volume-mounted (Architecture G in `tasks/plan.md`)
 - [x] Staging runtime images: **stock Node** (same image OK twice when versions match); tags from `NODE_VERSION` / `FRONTEND_NODE_VERSION` / `BACKEND_NODE_VERSION`; dual FE/BE versions allowed; **no custom Dockerfiles unless needed** (Task 3.5)
 - [x] Local Node tooling: **mise** on development host only; droplet/containers do **not** need mise (Architecture H / Task 3.4)
 - [x] Audit track: plan `tasks/audit-issues-plan.md`, progress `tasks/audit-issues-todo.md`, specs `tasks/audit-issues.md` (not started)
@@ -317,8 +317,8 @@ Do not make monorepo-driven edits under `frontend/` / `backend/` until Task 15 i
 - [x] Tasks 3.5–3.6 done (3.5 design lock; 3.6 implement complete 2026-11-08)
 - [x] Task 3.8 done (wrapper removed; nested compose defaults) — 2026-11-08
 - [x] Task 3.9 done (host dual Node via `mise exec` + `BACKEND_NODE_VERSION`; SoT = root `.env`) — 2026-11-08
-- [ ] Human OK on local staging profile behavior (incl. image tags from env / dual Node when set)
-- [ ] Ready for DO droplet using the **same** compose file + `--profile staging` (**no mise** on droplet)
+- [ ] Human OK on local staging all-services compose behavior (incl. image tags from env / dual Node when set)
+- [ ] Ready for DO droplet using the **same** compose file + `docker compose up -d` (**no mise** on droplet)
 - [ ] Still no history merge / Railway prod retarget
 
 ---
@@ -329,14 +329,14 @@ Do not make monorepo-driven edits under `frontend/` / `backend/` until Task 15 i
 
 
 
-### Task 4: Provision DO droplet; run same compose staging profile
+### Task 4: Provision DO droplet; run same compose staging stack
 
-**Description:** Create droplet (2GB+), firewall, and host env. Deploy with the **same** root `docker-compose.yml` + `--profile staging` (from Task 3.6) — Postgres + FE + BE containers with volume-mounted builds. Do **not** add a second compose file. **Public reachability = droplet IP over HTTP** — set `STAGING_API_PUBLIC` / `STAGING_WEB_PUBLIC` (and related `STAGING_*` URL overlays) to `http://DROPLET_IP` or `http://DROPLET_IP:port` as needed. No staging domain, TLS terminator, or Google OAuth redirect wiring in this task (see Task 6b).
+**Description:** Create droplet (2GB+), firewall, and host env. Deploy with the **same** root `docker-compose.yml` + `docker compose up -d` (from Task 3.6 lineage; no Compose profiles) — Postgres + FE + BE containers with volume-mounted builds. Do **not** add a second compose file. **Public reachability = droplet IP over HTTP** — set `STAGING_API_PUBLIC` / `STAGING_WEB_PUBLIC` (and related `STAGING_*` URL overlays) to `http://DROPLET_IP` or `http://DROPLET_IP:port` as needed. No staging domain, TLS terminator, or Google OAuth redirect wiring in this task (see Task 6b).
 
 **Acceptance criteria:**
 
 - [ ] Staging reachable on droplet public IP (not prod `faneqo.com`; no staging hostname required yet)
-- [ ] Droplet uses root `docker-compose.yml` + `--profile staging` (same as local)
+- [ ] Droplet uses root `docker-compose.yml` + `docker compose up -d` (same as local)
 - [ ] `STAGING_API_PUBLIC` / `STAGING_WEB_PUBLIC` point at those HTTP IP URLs
 - [ ] Postgres on droplet volume (not Railway `chalk-volume`)
 - [ ] FE/BE use staging env (test Stripe, non-sending mail)
@@ -345,7 +345,7 @@ Do not make monorepo-driven edits under `frontend/` / `backend/` until Task 15 i
 **Verification:**
 
 - [ ] Manual check: staging FE opens via droplet IP; API reaches staging BE
-- [ ] Manual check: host `docker compose --profile staging ps` (or equivalent) shows db + apps
+- [ ] Manual check: host `docker compose ps` shows db + apps
 - [ ] Manual check: no live Resend send / no live Stripe secret
 - [ ] Manual check: Google OAuth not required for Phase 2 dogfood (may fail until Task 6b)
 
@@ -361,12 +361,12 @@ Do not make monorepo-driven edits under `frontend/` / `backend/` until Task 15 i
 
 ### Task 5: Staging deploy path
 
-**Description:** Wire deploy from workspace / GitHub `staging` (or agreed content deploy) to the droplet. Deploy must rebuild apps, then `docker compose --profile staging up -d` (or restart) using the **same** root compose file. Document rebuild policy (whole stack v1 OK). History merge not required.
+**Description:** Wire deploy from workspace / GitHub `staging` (or agreed content deploy) to the droplet. Deploy must rebuild apps, then `docker compose up -d` (or restart) using the **same** root compose file. Document rebuild policy (whole stack v1 OK). History merge not required.
 
 **Acceptance criteria:**
 
 - [ ] Deploy updates the droplet from agreed source
-- [ ] Deploy invokes unified compose staging profile (not a divergent compose stack)
+- [ ] Deploy invokes unified compose all-services up (not a divergent compose stack)
 - [ ] Prod Railway deploys still come from product remotes
 - [ ] Rollback to previous compose image/commit documented
 
@@ -829,13 +829,14 @@ Do not make monorepo-driven edits under `frontend/` / `backend/` until Task 15 i
 | 2026-11-08 | Content-only `faneqo.com` during staging? | **YES** — push full `staging` branch content without product commit history (throwaway history OK). Get staging running without history; history merge later (history does not affect whether staging runs).                                                          |
 | 2026-11-08 | Phase 1 temp tips                         | FE `musicbizqr` `625decc619e9743c89600e6dda6b9564db53e937`; BE `qrserver` `bef413d7cb2b9903a0f6b53a6698ed26a2e5f3a1`. Nested `.git` removed locally; content-only `staging` @ `7be36cb` on `faneqo.com`. Three >50MB FE media files deferred from pack (local only).  |
 | 2026-11-08 | Staging public URLs                       | **Droplet IP** — `http://DROPLET_IP` / `:port` for `STAGING_API_PUBLIC` / `STAGING_WEB_PUBLIC` until a staging domain exists. HTTP-only caveats: Google OAuth often needs HTTPS + registered redirects (Task 6b later); Secure cookies may need lax staging settings. |
-| 2026-11-08 | Unified docker-compose                    | **YES** — one root `docker-compose.yml`; Compose profiles (`staging` for FE/BE). Dev: DB only + host hot reload. Local staging + DO droplet: same file + `--profile staging`; built apps **volume-mounted** into runtime containers. Implement Tasks 3.5–3.6 before droplet Task 4. No duplicate staging compose file. |
+| 2026-11-08 | Unified docker-compose                    | **YES** — one root `docker-compose.yml`; **no Compose profiles**. Dev: `up -d postgres` + host hot reload. Staging + DO droplet: same file + `up -d` (all services); built apps **volume-mounted**. Implement Tasks 3.5–3.6 before droplet Task 4. No duplicate staging compose file. |
 | 2026-11-08 | Staging runtime images                    | **Stock Node** — tags `FRONTEND_/BACKEND_NODE_VERSION` → `NODE_VERSION` → `22.11.0` (Compose nested defaults; Compose ≥ 2.18). Dual FE/BE versions allowed; same image OK when equal; different `command` / ports / volume mounts. **No custom Dockerfiles unless needed**. Task 3.5 locked; wrapper removed Task 3.8. |
-| 2026-11-08 | Drop compose wrapper (Task 3.8)           | Nested Compose defaults replace `scripts/docker-compose.sh`. Dev: `docker compose up -d postgres`. Staging: `docker compose --profile staging`. |
+| 2026-11-08 | Drop compose wrapper (Task 3.8)           | Nested Compose defaults replace `scripts/docker-compose.sh`. Dev: `docker compose up -d postgres`. Staging: `docker compose up -d`. |
+| 2026-11-08 | Drop Compose profiles                     | **Done** — FE/BE no longer under `profiles: ["staging"]`. Dev selects `postgres` by name; staging ups all services. Docs/tests/Architecture G updated. |
 | 2026-11-08 | Local Node tooling (mise)                 | **mise** on development host only (`mise.toml` + `NODE_VERSION` in `example.env`). Staging droplet / staging containers do **not** require mise — they use Docker stock Node tags from the same env vars. Task 3.4. |
-| 2026-11-08 | Host dual Node (Task 3.9)                 | **Done** — SoT = root `.env`. Host FE/BE + staging install/build via `mise exec node@${FE|BE_NODE_VERSION:-${NODE_VERSION}}`; compose tags same vars; `BACKEND_NODE_VERSION=20.20.2`; FE empty → `NODE_VERSION`; restored `profiles: ["staging"]`. |
-| 2026-11-08 | Root test coverage                        | Fast shell suite only (Architecture I / Task 3.7): stackrun overlays + package/mise/example.env/compose/docs shape. Staging-profile asserts added in Task 3.6. Skip full FE/BE builds in suite. Actions wiring = Task 12. |
-| 2026-11-08 | Unified compose profiles (Task 3.6)       | One `docker-compose.yml` + `staging` profile; stock Node tags (nested defaults after Task 3.8); `$staging` builds then containers; `$development` stays db-only + host hot reload. |
+| 2026-11-08 | Host dual Node (Task 3.9)                 | **Done** — SoT = root `.env`. Host FE/BE + staging install/build via `mise exec node@${FE|BE_NODE_VERSION:-${NODE_VERSION}}`; compose tags same vars; `BACKEND_NODE_VERSION=20.20.2`; FE empty → `NODE_VERSION`. |
+| 2026-11-08 | Root test coverage                        | Fast shell suite only (Architecture I / Task 3.7): stackrun overlays + package/mise/example.env/compose/docs shape. Compose asserts (no profiles) from Task 3.6 lineage. Skip full FE/BE builds in suite. Actions wiring = Task 12. |
+| 2026-11-08 | Unified compose (Task 3.6)                | One `docker-compose.yml`; stock Node tags (nested defaults after Task 3.8); `$staging` builds then all containers; `$development` stays db-only + host hot reload. Profiles later removed. |
 | 2026-11-08 | Audit track                               | Plan `tasks/audit-issues-plan.md`; progress `tasks/audit-issues-todo.md`; specs `tasks/audit-issues.md`. Remediation not started — explicit go / Task 17.                                                                                                            |
 |            | Archive old repos when?                   |                                                                                                                                                                                                                                                                       |
 |            | Cutover approved?                         |                                                                                                                                                                                                                                                                       |

@@ -18,7 +18,6 @@ services:
 
   # Staging only (Architecture G). Stock Node: FE/BE pin → NODE_VERSION → 22.11.0 (Compose nested defaults).
   backend:
-    profiles: ["staging"]
     image: node:${BACKEND_NODE_VERSION:-${NODE_VERSION:-22.11.0}}
     working_dir: /app
     volumes:
@@ -34,7 +33,8 @@ services:
       HOST: "0.0.0.0"
       PORT: "1337"
       # Containers reach Postgres on the compose network (not 127.0.0.1).
-      DATABASE_URL: postgresql://faneqo:faneqo@postgres:5433/faneqo_staging?sslmode=disable
+      # Inside the network use container port 5432. Host publish is 5433:5432.
+      DATABASE_URL: postgresql://faneqo:faneqo@postgres:5432/faneqo_staging?sslmode=disable
       DATABASE_SSL: "false"
       NODE_ENV: staging
     depends_on:
@@ -42,7 +42,6 @@ services:
         condition: service_healthy
 
   frontend:
-    profiles: ["staging"]
     image: node:${FRONTEND_NODE_VERSION:-${NODE_VERSION:-22.11.0}}
     working_dir: /app
     volumes:

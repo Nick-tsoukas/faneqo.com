@@ -4,6 +4,7 @@
 !.env.example
 env.prod
 /.cursor/
+/sync-product-trees.sh
 node_modules/
 **/node_modules/
 .ua/
