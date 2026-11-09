@@ -1,13 +1,16 @@
 #!/usr/bin/env bash
 # Prove $development / $staging overlays from root stack.config.ts.
-# Dev: host FE/BE env ports. Staging: compose profile path (not host develop/dev).
+# Ports live in root .env (inherited); command env port blocks are absent.
+# Dev: host FE/BE. Staging: compose profile path (not host develop/dev).
 set -euo pipefail
 ROOT="$(cd "$(dirname "$0")/../.." && pwd)"
 CFG="$ROOT/tests/stackrun/stack.config.ts"
 cd "$ROOT"
 
+# Simulate root .env inheritance (stackrun loads .env before config).
 export STRAPI_PORT=1337
 export NUXT_PORT=3000
+# Compose may use STAGING_* separately; must NOT remap into command env.
 export STAGING_STRAPI_PORT=1338
 export STAGING_NUXT_PORT=3001
 
@@ -31,13 +34,42 @@ check() {
   echo "ok $env_name"
 }
 
+# No command-level env map → fixture echoes inherited .env ports.
 check development \
+  "no-command-env" \
   "STRAPI_PORT=1337" \
   "NUXT_PORT=3000"
 
 check staging \
-  "STRAPI_PORT=1338" \
-  "NUXT_PORT=3001"
+  "no-command-env" \
+  "STRAPI_PORT=1337" \
+  "NUXT_PORT=3000"
+
+# Staging must not inject STAGING_* remaps into command env.
+stg_out="$(NODE_ENV=staging npx stackrun -c "$CFG" 2>&1)" || {
+  echo "FAIL staging remap check: stackrun exit $?"
+  printf '%s\n' "$stg_out"
+  exit 1
+}
+if printf '%s\n' "$stg_out" | grep -Fq "STRAPI_PORT=1338"; then
+  echo "FAIL staging: command env still remaps STAGING_STRAPI_PORT"
+  printf '%s\n' "$stg_out"
+  exit 1
+fi
+if printf '%s\n' "$stg_out" | grep -Fq "NUXT_PORT=3001"; then
+  echo "FAIL staging: command env still remaps STAGING_NUXT_PORT"
+  printf '%s\n' "$stg_out"
+  exit 1
+fi
+echo "ok staging no STAGING_* command-env remap"
+
+# Root config: command env port blocks must stay commented (not active).
+if grep -E '^[[:space:]]+env:[[:space:]]*\{[[:space:]]*(STRAPI_PORT|NUXT_PORT)' \
+  "$ROOT/stack.config.ts" >/dev/null; then
+  echo "FAIL stack.config.ts has active command env port blocks"
+  exit 1
+fi
+echo "ok stack.config.ts command env ports commented"
 
 # Dry-run root config: staging uses profile containers; development stays db-only + host apps.
 dev_dry="$(NODE_ENV=development npx stackrun --dry-run 2>/dev/null)"

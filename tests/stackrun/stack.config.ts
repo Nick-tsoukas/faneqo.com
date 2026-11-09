@@ -1,10 +1,15 @@
 import { defineStackrunConfig } from "stackrun";
 import root from "../../stack.config.ts";
 
-/** Echo every key from a command's env map so check.sh can grep values. */
+/**
+ * Echo inherited ports when command has no env map (ports live in root .env).
+ * If a command still sets env keys, echo those instead so regressions show up.
+ */
 function echoEnv(env: Record<string, unknown> | undefined): string {
   const keys = Object.keys(env ?? {});
-  if (keys.length === 0) return "echo ok";
+  if (keys.length === 0) {
+    return 'echo "no-command-env" "STRAPI_PORT=$STRAPI_PORT" "NUXT_PORT=$NUXT_PORT"';
+  }
   return `echo ${keys.map((k) => `${k}=$${k}`).join(" ")}`;
 }
 
