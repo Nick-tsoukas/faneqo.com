@@ -28,7 +28,6 @@ import FanAccountPrompt from '~/components/fan/FanAccountPrompt.vue'
 import FanMobileBottomNav from '~/components/messages/FanMobileBottomNav.vue'
 import { isImmersiveMessagesPath, isMessagesWorkspacePath } from '~/utils/messages/messageChrome'
 import { isFanAuthPath, isFaneqoAppPath } from '~/utils/ui/appSurface'
-provideHeadlessUseId(() => useId())
 
 const route = useRoute()
 // Fan auth surfaces own their viewport and show no bottom nav to inset for.
