@@ -1,13 +1,17 @@
 # Faneqo
 
-Monorepo root for Nuxt (`frontend/`) + Strapi (`backend/`) with Postgres via Docker. Orchestration is [stackrun](https://github.com/unjs/stackrun) (`stack.config.ts`). Agent/migration notes: [`AGENTS.md`](AGENTS.md).
+Monorepo root for Nuxt (`frontend/`) + Strapi (`backend/`) with Postgres via Docker for **staging**. Orchestration is [stackrun](https://github.com/unjs/stackrun) (`stack.config.ts`). Agent/migration notes: [`AGENTS.md`](AGENTS.md).
 
 ## Prerequisites
 
-- **Docker** with Compose V2 (`docker compose`) — local Postgres and staging containers (see [`docs/docker-install.md`](docs/docker-install.md))
-- **[mise](https://mise.jdx.dev/)** — on the host that builds/runs stack scripts; installs/pins Node from `.env` via `mise.toml` (see [`docs/mise-install.md`](docs/mise-install.md))
+**Local development** (`npm run dev`):
 
-`npm run staging` builds on the host with mise, then starts containers. The FE/BE **containers** themselves only run stock Node images — they do not need mise inside.
+- **[mise](https://mise.jdx.dev/)** — installs/pins Node from `.env` via `mise.toml` (see [`docs/mise-install.md`](docs/mise-install.md))
+
+**Local / remote staging** (`npm run staging` / droplet):
+
+- **Docker** with Compose V2 (`docker compose`) — Postgres + FE + BE containers (see [`docs/docker-install.md`](docs/docker-install.md))
+- **mise** on the host that builds (stackrun install/build steps). FE/BE **containers** only run stock Node images — no mise inside.
 
 ## Setup
 
@@ -22,7 +26,7 @@ mise install          # install Node pins from .env
 npm install           # root stackrun + jiti
 ```
 
-Host FE/BE use `mise exec` with FE/BE → `NODE_VERSION` fallbacks. Compose staging images use the same vars (then `22.11.0`). Default `BACKEND_NODE_VERSION=20.20.2` for Strapi’s `<=20.x` engines. Needs Docker Compose ≥ 2.18.
+Host FE/BE use `mise exec` with FE/BE → `NODE_VERSION` fallbacks. Compose staging images use the same vars (then `22.11.0`). Default `BACKEND_NODE_VERSION=20.20.2` for Strapi’s `<=20.x` engines. Staging needs Docker Compose ≥ 2.18.
 
 Frontend/backend `node_modules` install when you run the stack (or `npm install` inside those folders).
 
@@ -32,7 +36,9 @@ Frontend/backend `node_modules` install when you run the stack (or `npm install`
 npm run dev
 ```
 
-`NODE_ENV=development` → `docker compose up -d postgres` (host `5433→5432`, DB `faneqo_dev`) → host Strapi + Nuxt hot reload via mise. Ports: Strapi `1337`, Nuxt `3000`. Exit stops Compose postgres.
+No Docker. `NODE_ENV=development` → host Strapi + Nuxt hot reload via mise. Strapi uses **SQLite** (`DATABASE_FILENAME`, default `backend/.tmp/data.db`) — product `database.js` ignores `DATABASE_URL` in development. Ports: Strapi `1337`, Nuxt `3000`.
+
+Postgres for host develop is deferred (maybe later); compose Postgres is for staging only.
 
 ## Local staging
 
@@ -40,7 +46,7 @@ npm run dev
 npm run staging
 ```
 
-Host builds the apps (install + build via mise inside stackrun), then Compose runs Postgres + FE + BE containers (same `docker-compose.yml`, no profiles, no custom Dockerfiles).
+Requires Docker. Host builds the apps (install + build via mise inside stackrun), then Compose runs Postgres + FE + BE containers (same `docker-compose.yml`, no profiles, no custom Dockerfiles).
 
 1. `NODE_ENV=staging`
 2. Host `npm install` + `npm run build` for backend and frontend (mise Node pins)
@@ -59,7 +65,7 @@ npm run test:stack       # stackrun / compose wiring
 npm run test:root        # root env + compose assertions
 ```
 
-Needs Docker available (compose config checks). No app servers required.
+Staging compose config checks need Docker. No app servers required.
 
 ## Remote staging deploy
 

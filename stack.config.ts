@@ -24,10 +24,8 @@ type StackrunFileConfig = StackrunConfig & {
 };
 
 const config: StackrunFileConfig = {
-  // No global before/after — overlays own compose lifecycle (Architecture G).
+  // Architecture G: compose is staging-only. Dev = host hot reload + SQLite (no Docker).
   $development: {
-    before: ["docker compose up -d postgres"],
-    after: ["docker compose down postgres"],
     commands: [
       {
         name: "backend",

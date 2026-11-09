@@ -1,10 +1,10 @@
 # Docker + Compose installation
 
-Faneqo needs **Docker Engine** and **Compose V2** as `docker compose` (plugin). Local `npm run dev` starts Postgres; `npm run staging` starts Postgres + FE + BE from root `docker-compose.yml`. Needs **Compose ≥ 2.18**.
+Faneqo needs **Docker Engine** and **Compose V2** as `docker compose` (plugin) for **staging** (`npm run staging` / droplet). Local `npm run dev` does **not** use Docker (host apps + SQLite). Staging starts Postgres + FE + BE from root `docker-compose.yml`. Needs **Compose ≥ 2.18**.
 
 Official docs: [Docker Engine install](https://docs.docker.com/engine/install/) · [Compose plugin](https://docs.docker.com/compose/install/) · [Docker Desktop](https://docs.docker.com/desktop/)
 
-After install, from this repo you only need a working daemon — stackrun drives compose.
+After install, from this repo you only need a working daemon for staging — stackrun drives compose.
 
 ---
 

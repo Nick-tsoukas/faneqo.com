@@ -24,7 +24,7 @@ Do not make monorepo-driven edits under `frontend/` / `backend/` until Task 15 i
 - [x] Branch model confirmed: keep `main` empty for now; all work on `staging`; `staging` deploys to droplet
 - [x] Content-only `faneqo.com` during staging: **YES** — push full `staging` branch content without product commit history (throwaway history OK); history merge later
 - [x] Staging public URLs: **droplet IP** (HTTP) for `STAGING_API_PUBLIC` / `STAGING_WEB_PUBLIC` until a staging domain exists; domain + TLS + Google redirects deferred (Task 6b)
-- [x] Unified compose: **YES** — one `docker-compose.yml`; **no Compose profiles**; `npm run dev` selects `postgres` by name; staging = `docker compose up -d` (all services); local + droplet staging = DB + FE/BE containers with built apps volume-mounted (Architecture G in `tasks/plan.md`)
+- [x] Unified compose: **YES** — one `docker-compose.yml`; **no Compose profiles**; staging = `docker compose up -d` (all services); local + droplet staging = DB + FE/BE containers with built apps volume-mounted (Architecture G). **Amended 2026-11-08:** `npm run dev` = host + SQLite, **no Docker** (product `database.js`); host develop → Postgres deferred
 - [x] Staging runtime images: **stock Node** (same image OK twice when versions match); tags from `NODE_VERSION` / `FRONTEND_NODE_VERSION` / `BACKEND_NODE_VERSION`; dual FE/BE versions allowed; **no custom Dockerfiles unless needed** (Task 3.5)
 - [x] Local Node tooling: **mise** on development host only; droplet/containers do **not** need mise (Architecture H / Task 3.4)
 - [x] Audit track: plan `tasks/audit-issues-plan.md`, progress `tasks/audit-issues-todo.md`, specs `tasks/audit-issues.md` (not started)
@@ -159,7 +159,7 @@ Do not make monorepo-driven edits under `frontend/` / `backend/` until Task 15 i
 **Acceptance criteria:**
 
 - [x] Architecture G in `tasks/plan.md` accepted (or edited) by human — stock-Node / no-custom-Dockerfile lock 2026-11-08
-- [x] Runtime image approach chosen: **stock Node** (same image OK for FE + BE); different `command` / ports / volume mounts; **no** custom `docker/Dockerfile.*` unless stock Node proves insufficient later
+- [x] Runtime image approach chosen: **stock Node** (same image OK for FE + BE); different `command` / ports / volume mounts; **no** custom `docker/Dockerfile.`* unless stock Node proves insufficient later
 - [x] Explicit: no second staging-only compose file as source of truth
 - [x] Explicit: staging containers mount built app output as volumes (local + droplet)
 
@@ -180,7 +180,7 @@ Do not make monorepo-driven edits under `frontend/` / `backend/` until Task 15 i
 
 ### Task 3.6: Implement unified compose profiles + stackrun hooks (local)
 
-**Description:** Extend root `docker-compose.yml` with `frontend` / `backend` services under `profiles: ["staging"]` using **stock Node image(s)** tagged from `FRONTEND_NODE_VERSION` / `BACKEND_NODE_VERSION` with fallback to `NODE_VERSION` (dual versions allowed; same image OK twice when equal) with different `command` / ports / volume mounts for built Nuxt/Strapi artifacts — **no** custom `docker/Dockerfile.*` unless Task 3.5 escape hatch is needed later. Update `stack.config.ts` so `$development` keeps db-only compose + host apps (mise Node), and `$staging` builds then `docker compose --profile staging up -d` (containers serve). Prove locally before droplet. No mise requirement for container runtime. No monorepo-driven product source edits.
+**Description:** Extend root `docker-compose.yml` with `frontend` / `backend` services under `profiles: ["staging"]` using **stock Node image(s)** tagged from `FRONTEND_NODE_VERSION` / `BACKEND_NODE_VERSION` with fallback to `NODE_VERSION` (dual versions allowed; same image OK twice when equal) with different `command` / ports / volume mounts for built Nuxt/Strapi artifacts — **no** custom `docker/Dockerfile.`* unless Task 3.5 escape hatch is needed later. Update `stack.config.ts` so `$development` keeps db-only compose + host apps (mise Node), and `$staging` builds then `docker compose --profile staging up -d` (containers serve). Prove locally before droplet. No mise requirement for container runtime. No monorepo-driven product source edits.
 
 **Acceptance criteria:**
 
@@ -206,7 +206,7 @@ Do not make monorepo-driven edits under `frontend/` / `backend/` until Task 15 i
 
 **Dependencies:** Task 3.5 (stock-Node / no-custom-Dockerfile approach locked); Task 3.4 (env pin names exist)
 
-**Files likely touched:** `docker-compose.yml`, `stack.config.ts`, `scripts/docker-compose.sh`, root `package.json` (optional helper scripts), `example.env` (if compose needs more keys), `AGENTS.md`, `README.md`, `tests/**` — **not** `docker/Dockerfile.*` unless escape hatch needed
+**Files likely touched:** `docker-compose.yml`, `stack.config.ts`, `scripts/docker-compose.sh`, root `package.json` (optional helper scripts), `example.env` (if compose needs more keys), `AGENTS.md`, `README.md`, `tests/`** — **not** `docker/Dockerfile.`* unless escape hatch needed
 
 **Estimated scope:** M
 
@@ -309,6 +309,37 @@ Do not make monorepo-driven edits under `frontend/` / `backend/` until Task 15 i
 
 
 
+### Task 3.10: Dev = SQLite, no Docker (Architecture G amend)
+
+**Description:** Product Strapi uses SQLite when `NODE_ENV=development`. Stop `$development` from starting compose Postgres. Docker becomes a **staging** prerequisite only. Amend Architecture G + docs/tests. Host develop → Postgres deferred (maybe later). No product source edits.
+
+**Acceptance criteria:**
+
+- [x] `$development` has no compose `before`/`after`
+- [x] Root tests forbid compose in development dry-run; require SQLite mentioned in README/AGENTS
+- [x] README: Docker not required for `npm run dev`; staging still needs Docker + mise for build
+- [x] Architecture G in `tasks/plan.md` + decisions log amended
+- [x] `faneqo_staging` / compose Postgres retained for staging; host Postgres develop deferred
+- [x] No monorepo-driven product source edits under `frontend/` / `backend/`
+
+**Verification:**
+
+- [x] Tests pass: `npm test`
+- [x] Manual check: `NODE_ENV=development npx stackrun --dry-run` has no `docker compose`
+- [x] Manual check: staging dry-run still has `docker compose up -d`
+
+**Dependencies:** Task 3.9; Architecture G amend
+
+**Files likely touched:** `stack.config.ts`, `tests/root/check.sh`, `tests/stackrun/check.sh`, `README.md`, `AGENTS.md`, `example.env`, `docs/docker-install.md`, `docker-compose.yml`, `tasks/plan.md`, `tasks/todo.md`
+
+**Estimated scope:** S
+
+**Status:** complete 2026-11-08
+
+---
+
+
+
 ## Checkpoint Compose: Local unified stack OK
 
 - [x] Human OK on stock-Node approach (no custom Dockerfiles unless needed) — 2026-11-08 / Task 3.5
@@ -317,9 +348,10 @@ Do not make monorepo-driven edits under `frontend/` / `backend/` until Task 15 i
 - [x] Tasks 3.5–3.6 done (3.5 design lock; 3.6 implement complete 2026-11-08)
 - [x] Task 3.8 done (wrapper removed; nested compose defaults) — 2026-11-08
 - [x] Task 3.9 done (host dual Node via `mise exec` + `BACKEND_NODE_VERSION`; SoT = root `.env`) — 2026-11-08
-- [ ] Human OK on local staging all-services compose behavior (incl. image tags from env / dual Node when set)
-- [ ] Ready for DO droplet using the **same** compose file + `docker compose up -d` (**no mise** on droplet)
-- [ ] Still no history merge / Railway prod retarget
+- [x] Task 3.10 done (dev = SQLite / no Docker; compose = staging only) — 2026-11-08
+- [x] Human OK on local staging all-services compose behavior (incl. image tags from env / dual Node when set)
+- [x] Ready for DO droplet using the **same** compose file + `docker compose up -d` (**no mise** on droplet)
+- [x] Still no history merge / Railway prod retarget
 
 ---
 
@@ -331,7 +363,7 @@ Do not make monorepo-driven edits under `frontend/` / `backend/` until Task 15 i
 
 ### Task 4: Provision DO droplet; run same compose staging stack
 
-**Description:** Create droplet (2GB+), firewall, and host env. Deploy with the **same** root `docker-compose.yml` + `docker compose up -d` (from Task 3.6 lineage; no Compose profiles) — Postgres + FE + BE containers with volume-mounted builds. Do **not** add a second compose file. **Public reachability = droplet IP over HTTP** — set `STAGING_API_PUBLIC` / `STAGING_WEB_PUBLIC` (and related `STAGING_*` URL overlays) to `http://DROPLET_IP` or `http://DROPLET_IP:port` as needed. No staging domain, TLS terminator, or Google OAuth redirect wiring in this task (see Task 6b).
+**Description:** Create droplet (2GB+), firewall, and host env. Deploy with the **same** root `docker-compose.yml` + `docker compose up -d` (from Task 3.6 lineage; no Compose profiles) — Postgres + FE + BE containers with volume-mounted builds. Do **not** add a second compose file. **Public reachability = droplet IP over HTTP** — set `STAGING_API_PUBLIC` / `STAGING_WEB_PUBLIC` (and related `STAGING_`* URL overlays) to `http://DROPLET_IP` or `http://DROPLET_IP:port` as needed. No staging domain, TLS terminator, or Google OAuth redirect wiring in this task (see Task 6b).
 
 **Acceptance criteria:**
 
@@ -624,7 +656,7 @@ Do not make monorepo-driven edits under `frontend/` / `backend/` until Task 15 i
 
 **Dependencies:** Task 10; Task 3.7
 
-**Files likely touched:** `.github/workflows/*`, maybe short README/`AGENTS.md` note
+**Files likely touched:** `.github/workflows/`*, maybe short README/`AGENTS.md` note
 
 **Estimated scope:** S
 
@@ -793,7 +825,7 @@ Do not make monorepo-driven edits under `frontend/` / `backend/` until Task 15 i
 
 ### Task 17: Begin audit remediation from `tasks/audit-issues.md`
 
-**Description:** With single-dir/repo daily workflow in place, start product remediation per [`tasks/audit-issues-plan.md`](audit-issues-plan.md). Progress in [`audit-issues-todo.md`](audit-issues-todo.md); specs in [`audit-issues.md`](audit-issues.md). One approved step at a time. Do **not** change Stripe amounts, Lifetime Pro / `free` meaning, or fan charges.
+**Description:** With single-dir/repo daily workflow in place, start product remediation per `[tasks/audit-issues-plan.md](audit-issues-plan.md)`. Progress in `[audit-issues-todo.md](audit-issues-todo.md)`; specs in `[audit-issues.md](audit-issues.md)`. One approved step at a time. Do **not** change Stripe amounts, Lifetime Pro / `free` meaning, or fan charges.
 
 **Acceptance criteria:**
 
@@ -818,28 +850,29 @@ Do not make monorepo-driven edits under `frontend/` / `backend/` until Task 15 i
 ## Decisions log
 
 
-| Date       | Decision                                  | Choice                                                                                                                                                                                                                                                                |
-| ---------- | ----------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| 2026-11-08 | Temp nested-`.git` removal?               | **YES** — remove `frontend/.git` + `backend/.git` locally for single-tree staging; re-clone / restore `.git` before history migrate. Never push surgery to product remotes.                                                                                           |
-| 2026-11-08 | History method                            | **LATER** — defer filter-repo vs subtree until history phase                                                                                                                                                                                                          |
-| 2026-11-08 | Staging host                              | **DO only** for now                                                                                                                                                                                                                                                   |
-| 2026-11-08 | Railway staging before cutover?           | **Not now** — revisit at Checkpoint B                                                                                                                                                                                                                                 |
-| 2026-11-08 | Droplet size                              | **2GB**                                                                                                                                                                                                                                                               |
-| 2026-11-08 | Branch model                              | Keep `main` empty for now; all work on `staging`; `staging` deploys to droplet                                                                                                                                                                                        |
-| 2026-11-08 | Content-only `faneqo.com` during staging? | **YES** — push full `staging` branch content without product commit history (throwaway history OK). Get staging running without history; history merge later (history does not affect whether staging runs).                                                          |
-| 2026-11-08 | Phase 1 temp tips                         | FE `musicbizqr` `625decc619e9743c89600e6dda6b9564db53e937`; BE `qrserver` `bef413d7cb2b9903a0f6b53a6698ed26a2e5f3a1`. Nested `.git` removed locally; content-only `staging` @ `7be36cb` on `faneqo.com`. Three >50MB FE media files deferred from pack (local only).  |
-| 2026-11-08 | Staging public URLs                       | **Droplet IP** — `http://DROPLET_IP` / `:port` for `STAGING_API_PUBLIC` / `STAGING_WEB_PUBLIC` until a staging domain exists. HTTP-only caveats: Google OAuth often needs HTTPS + registered redirects (Task 6b later); Secure cookies may need lax staging settings. |
-| 2026-11-08 | Unified docker-compose                    | **YES** — one root `docker-compose.yml`; **no Compose profiles**. Dev: `up -d postgres` + host hot reload. Staging + DO droplet: same file + `up -d` (all services); built apps **volume-mounted**. Implement Tasks 3.5–3.6 before droplet Task 4. No duplicate staging compose file. |
+| Date       | Decision                                  | Choice                                                                                                                                                                                                                                                                                                                 |
+| ---------- | ----------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 2026-11-08 | Temp nested-`.git` removal?               | **YES** — remove `frontend/.git` + `backend/.git` locally for single-tree staging; re-clone / restore `.git` before history migrate. Never push surgery to product remotes.                                                                                                                                            |
+| 2026-11-08 | History method                            | **LATER** — defer filter-repo vs subtree until history phase                                                                                                                                                                                                                                                           |
+| 2026-11-08 | Staging host                              | **DO only** for now                                                                                                                                                                                                                                                                                                    |
+| 2026-11-08 | Railway staging before cutover?           | **Not now** — revisit at Checkpoint B                                                                                                                                                                                                                                                                                  |
+| 2026-11-08 | Droplet size                              | **2GB**                                                                                                                                                                                                                                                                                                                |
+| 2026-11-08 | Branch model                              | Keep `main` empty for now; all work on `staging`; `staging` deploys to droplet                                                                                                                                                                                                                                         |
+| 2026-11-08 | Content-only `faneqo.com` during staging? | **YES** — push full `staging` branch content without product commit history (throwaway history OK). Get staging running without history; history merge later (history does not affect whether staging runs).                                                                                                           |
+| 2026-11-08 | Phase 1 temp tips                         | FE `musicbizqr` `625decc619e9743c89600e6dda6b9564db53e937`; BE `qrserver` `bef413d7cb2b9903a0f6b53a6698ed26a2e5f3a1`. Nested `.git` removed locally; content-only `staging` @ `7be36cb` on `faneqo.com`. Three >50MB FE media files deferred from pack (local only).                                                   |
+| 2026-11-08 | Staging public URLs                       | **Droplet IP** — `http://DROPLET_IP` / `:port` for `STAGING_API_PUBLIC` / `STAGING_WEB_PUBLIC` until a staging domain exists. HTTP-only caveats: Google OAuth often needs HTTPS + registered redirects (Task 6b later); Secure cookies may need lax staging settings.                                                  |
+| 2026-11-08 | Unified docker-compose                    | **YES** — one root `docker-compose.yml`; **no Compose profiles**. Staging + DO droplet: `up -d` (all services); built apps **volume-mounted**. Dev amended below. No duplicate staging compose file.                                                                                                                  |
 | 2026-11-08 | Staging runtime images                    | **Stock Node** — tags `FRONTEND_/BACKEND_NODE_VERSION` → `NODE_VERSION` → `22.11.0` (Compose nested defaults; Compose ≥ 2.18). Dual FE/BE versions allowed; same image OK when equal; different `command` / ports / volume mounts. **No custom Dockerfiles unless needed**. Task 3.5 locked; wrapper removed Task 3.8. |
-| 2026-11-08 | Drop compose wrapper (Task 3.8)           | Nested Compose defaults replace `scripts/docker-compose.sh`. Dev: `docker compose up -d postgres`. Staging: `docker compose up -d`. |
-| 2026-11-08 | Drop Compose profiles                     | **Done** — FE/BE no longer under `profiles: ["staging"]`. Dev selects `postgres` by name; staging ups all services. Docs/tests/Architecture G updated. |
-| 2026-11-08 | Local Node tooling (mise)                 | **mise** on development host only (`mise.toml` + `NODE_VERSION` in `example.env`). Staging droplet / staging containers do **not** require mise — they use Docker stock Node tags from the same env vars. Task 3.4. |
-| 2026-11-08 | Host dual Node (Task 3.9)                 | **Done** — SoT = root `.env`. Host FE/BE + staging install/build via `mise exec node@${FE|BE_NODE_VERSION:-${NODE_VERSION}}`; compose tags same vars; `BACKEND_NODE_VERSION=20.20.2`; FE empty → `NODE_VERSION`. |
-| 2026-11-08 | Root test coverage                        | Fast shell suite only (Architecture I / Task 3.7): stackrun overlays + package/mise/example.env/compose/docs shape. Compose asserts (no profiles) from Task 3.6 lineage. Skip full FE/BE builds in suite. Actions wiring = Task 12. |
-| 2026-11-08 | Unified compose (Task 3.6)                | One `docker-compose.yml`; stock Node tags (nested defaults after Task 3.8); `$staging` builds then all containers; `$development` stays db-only + host hot reload. Profiles later removed. |
-| 2026-11-08 | Audit track                               | Plan `tasks/audit-issues-plan.md`; progress `tasks/audit-issues-todo.md`; specs `tasks/audit-issues.md`. Remediation not started — explicit go / Task 17.                                                                                                            |
-|            | Archive old repos when?                   |                                                                                                                                                                                                                                                                       |
-|            | Cutover approved?                         |                                                                                                                                                                                                                                                                       |
-|            | Monorepo product edit list approved?      |                                                                                                                                                                                                                                                                       |
+| 2026-11-08 | Drop compose wrapper (Task 3.8)           | Nested Compose defaults replace `scripts/docker-compose.sh`. Staging: `docker compose up -d`.                                                                                                                                                                                                                          |
+| 2026-11-08 | Drop Compose profiles                     | **Done** — FE/BE no longer under `profiles: ["staging"]`. Staging ups all services. Docs/tests/Architecture G updated.                                                                                                                                                                                                 |
+| 2026-11-08 | Dev DB / compose (Architecture G amend)   | **Option A** — `npm run dev` = host + **SQLite** (product `database.js`); **no Docker**. Compose Postgres only for staging (`faneqo_staging`). Host develop → Postgres deferred (maybe later). README/AGENTS/tests/stack.config updated.                                                                              |
+| 2026-11-08 | Local Node tooling (mise)                 | **mise** on development host only (`mise.toml` + `NODE_VERSION` in `example.env`). Staging droplet / staging containers do **not** require mise — they use Docker stock Node tags from the same env vars. Task 3.4.                                                                                                    |
+| 2026-11-08 | Host dual Node (Task 3.9)                 | **Done** — SoT = root `.env`. Host FE/BE + staging install/build via `mise exec node@${FE                                                                                                                                                                                                                              |
+| 2026-11-08 | Root test coverage                        | Fast shell suite only (Architecture I / Task 3.7): stackrun overlays + package/mise/example.env/compose/docs shape. Compose asserts (no profiles) from Task 3.6 lineage. Skip full FE/BE builds in suite. Actions wiring = Task 12.                                                                                    |
+| 2026-11-08 | Unified compose (Task 3.6)                | One `docker-compose.yml`; stock Node tags (nested defaults after Task 3.8); `$staging` builds then all containers. `$development` later amended to SQLite / no Docker (Task 3.10). Profiles later removed.                                                                                                              |
+| 2026-11-08 | Audit track                               | Plan `tasks/audit-issues-plan.md`; progress `tasks/audit-issues-todo.md`; specs `tasks/audit-issues.md`. Remediation not started — explicit go / Task 17.                                                                                                                                                              |
+|            | Archive old repos when?                   |                                                                                                                                                                                                                                                                                                                        |
+|            | Cutover approved?                         |                                                                                                                                                                                                                                                                                                                        |
+|            | Monorepo product edit list approved?      |                                                                                                                                                                                                                                                                                                                        |
 
 

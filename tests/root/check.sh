@@ -76,9 +76,9 @@ grep -Fq '$staging' stack.config.ts || fail "stack.config.ts missing \$staging"
 if grep -E '^  commands:' stack.config.ts >/dev/null; then
   fail "stack.config.ts must not declare top-level commands (overlays only)"
 fi
-# Staging ups all compose services; development ups postgres only. No Compose profiles.
+# Dev = host SQLite (no compose). Staging ups all compose services. No Compose profiles.
 grep -Fq 'docker compose up -d postgres' stack.config.ts \
-  || fail "stack.config.ts \$development must up postgres only"
+  && fail "stack.config.ts \$development must not start postgres (Strapi uses SQLite in development)"
 grep -Fq '"docker compose up -d"' stack.config.ts \
   || fail "stack.config.ts \$staging must use bare docker compose up -d"
 grep -Fq -- '--profile' stack.config.ts \
@@ -112,7 +112,7 @@ grep -Fq 'image: postgres:16' docker-compose.yml || fail "docker-compose.yml exp
 grep -Eq '^[[:space:]]*frontend:' docker-compose.yml || fail "docker-compose.yml missing frontend service"
 grep -Eq '^[[:space:]]*backend:' docker-compose.yml || fail "docker-compose.yml missing backend service"
 grep -Fq 'profiles:' docker-compose.yml \
-  && fail "docker-compose.yml must not use Compose profiles (dev selects postgres by name)"
+  && fail "docker-compose.yml must not use Compose profiles (staging ups all services)"
 # Stock Node nested defaults: FE/BE → NODE_VERSION → 22.11.0 (no wrapper script)
 grep -Fq 'node:${FRONTEND_NODE_VERSION:-${NODE_VERSION:-22.11.0}}' docker-compose.yml \
   || fail "frontend must use nested image: node:\${FRONTEND_NODE_VERSION:-\${NODE_VERSION:-22.11.0}}"
@@ -197,9 +197,9 @@ ok compose node tags + volume mounts + STAGING_* host ports
 [[ -f README.md ]] || fail "README.md missing"
 [[ -f AGENTS.md ]] || fail "AGENTS.md missing"
 grep -Fiq 'mise' README.md || fail "README.md should mention mise"
-grep -Fiq 'docker compose up -d postgres' README.md || fail "README.md should describe db-only compose up postgres"
+grep -Fiq 'SQLite' README.md || fail "README.md should describe SQLite for local development"
 grep -Fiq 'mise' AGENTS.md || fail "AGENTS.md should mention mise"
-grep -Fiq 'docker compose up -d postgres' AGENTS.md || fail "AGENTS.md should describe db-only compose up postgres"
+grep -Fiq 'SQLite' AGENTS.md || fail "AGENTS.md should describe SQLite for local development"
 # Droplet/containers do not need mise
 if ! grep -Ei 'droplet|container' README.md | grep -Eiq 'not.*(mise)|do not.*mise|no mise|without mise|not need mise|not required'; then
   # allow either README phrasing above or AGENTS

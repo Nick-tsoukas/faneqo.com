@@ -83,10 +83,10 @@ if grep -E '^[[:space:]]+env:[[:space:]]*\{[[:space:]]*(STRAPI_PORT|NUXT_PORT)' 
 fi
 echo "ok stack.config.ts command env ports commented"
 
-# Dry-run root config: staging ups all services; development stays db-only + host apps.
+# Dry-run root config: development = host apps only (SQLite); staging ups all compose services.
 dev_dry="$(NODE_ENV=development npx stackrun --dry-run 2>/dev/null)"
-printf '%s\n' "$dev_dry" | grep -Fq 'docker compose up -d postgres' \
-  || { echo "FAIL development dry-run missing db-only compose up postgres"; printf '%s\n' "$dev_dry"; exit 1; }
+printf '%s\n' "$dev_dry" | grep -Fq 'docker compose' \
+  && { echo "FAIL development dry-run must not invoke docker compose (SQLite on host)"; printf '%s\n' "$dev_dry"; exit 1; }
 printf '%s\n' "$dev_dry" | grep -Fq 'npm run develop' \
   || { echo "FAIL development dry-run missing host backend develop"; printf '%s\n' "$dev_dry"; exit 1; }
 printf '%s\n' "$dev_dry" | grep -Fq 'npm run dev' \
@@ -99,8 +99,6 @@ printf '%s\n' "$dev_dry" | grep -Fq 'FRONTEND_NODE_VERSION' \
   || { echo "FAIL development dry-run missing FRONTEND_NODE_VERSION fallback"; printf '%s\n' "$dev_dry"; exit 1; }
 
 stg_dry="$(NODE_ENV=staging npx stackrun --dry-run 2>/dev/null)"
-printf '%s\n' "$stg_dry" | grep -Fq 'docker compose up -d postgres' \
-  && { echo "FAIL staging dry-run must up all services, not postgres only"; printf '%s\n' "$stg_dry"; exit 1; }
 printf '%s\n' "$stg_dry" | grep -Fq 'docker compose up -d' \
   || { echo "FAIL staging dry-run missing docker compose up -d"; printf '%s\n' "$stg_dry"; exit 1; }
 printf '%s\n' "$stg_dry" | grep -Fq -- '--profile' \

@@ -16,7 +16,8 @@ services:
       timeout: 5s
       retries: 10
 
-  # Staging only (Architecture G). Stock Node: FE/BE pin → NODE_VERSION → 22.11.0 (Compose nested defaults).
+  # Staging only (Architecture G). Dev does not start compose — host SQLite.
+  # Stock Node: FE/BE pin → NODE_VERSION → 22.11.0 (Compose nested defaults).
   backend:
     image: node:${BACKEND_NODE_VERSION:-${NODE_VERSION:-22.11.0}}
     working_dir: /app
