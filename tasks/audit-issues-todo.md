@@ -55,7 +55,7 @@ Browsers must not see or call Strapi. Nuxt server proxies. CORS origins from pub
 
 ## Phase 3: Data + live exposure
 
-- [ ] `data-001` — stored pages no longer link to musicbizqr.com (migrate, not dump)
+- [ ] `data-001` — musicbizqr / musicbizqr.com → faneqo / faneqo.com in files + DB (`scripts/sql/migrate-musicbizqr-hosts-to-faneqo.sql`)
 - [ ] `dead-004` — test/internal preview pages not on the live site
 - [ ] `dead-005` — lab pages 404 in production
 

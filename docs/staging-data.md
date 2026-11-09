@@ -50,12 +50,23 @@ Only if dogfood needs realistic rows:
 
 Until that exists, prefer empty migrate + manual fixture bands/users in staging admin.
 
+### D. Brand/host SQL migrate (audit `data-001`)
+
+When a DB still contains `musicbizqr.com` / `MusicBizQR` in content (e.g. after a scrubbed dump):
+
+```bash
+# From workspace root; adjust URL for droplet/local compose.
+psql "$DATABASE_URL" -v ON_ERROR_STOP=1 -f scripts/sql/migrate-musicbizqr-hosts-to-faneqo.sql
+```
+
+On a copy, change the file’s final `COMMIT` to `ROLLBACK` first to validate. Protects `qr.musicbizqr.com` / `api.musicbizqr.com`. Spec: `tasks/audit-issues.md` → `data-001`.
+
 ## Hard rules
 
 1. **Do not** mount, clone, or proxy Railway `chalk-volume` into staging.
 2. **Do not** point staging `DATABASE_URL` at production Postgres.
 3. **Do not** enable `mbq-cron` until mail is safely non-sending.
-4. Staging public URLs stay droplet IP HTTP until Task 6b.
+4. Staging public URLs: prefer HTTPS hostnames (`docs/staging-droplet.md`); IP HTTP may remain open.
 
 ## Verification checklist
 

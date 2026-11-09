@@ -21,7 +21,7 @@ Specs for the **44** audit issues. **Plan (central):** [`tasks/audit-issues-plan
 | `sec-008` | 1 | High | XL | musicbizqr | sec-006 | Product traffic still hits Strapi from the browser; Nitro must same-origin proxy it |
 | `sec-009` | 1 | High | M | qrserver | sec-006 | Strapi CORS origins are hardcoded; drive them from public-URL env + optional extras |
 | `bill-001` | 1 | High | XS | musicbizqr | audit-parent | The value free on an artist account means Lifetime Pro, not a small free plan |
-| `data-001` | 1 | High | M | qrserver | audit-parent | Stored pages still link to musicbizqr.com |
+| `data-001` | 1 | High | L | both | audit-parent | Replace musicbizqr / musicbizqr.com with faneqo / faneqo.com in files and DB |
 | `dead-004` | 1 | High | S | musicbizqr | audit-parent | Test and internal preview pages are still on the live site |
 | `dead-005` | 1 | High | S | musicbizqr | audit-parent | Two local lab pages are missing the production 404 |
 | `mkt-001` | 1 | High | XL | musicbizqr | audit-parent | Ongoing list of code changes that gain users and paid subscribers |
@@ -377,48 +377,61 @@ Priority **1**, severity **High**, effort **XS**, repo **musicbizqr**, findings 
 
 ## P1 — Data
 
-### `data-001`: Stored pages still link to musicbizqr.com
+### `data-001`: Replace musicbizqr / musicbizqr.com with faneqo / faneqo.com in files and DB
 
 **Role:** Actionable
 
-**Description:** Problem. Article buttons and article text are stored in Strapi, in api::seo-page.seo-page. The essay HTML still contains https://musicbizqr.com and https://www.musicbizqr.com. mkt-002 rewrites those hosts when the page renders. The database row stays on the old host. A content seed of every article would copy the live site into a file and overwrite later edits. The change is a host swap on rows that already exist.
+**Description:** Problem. The product is Faneqo on faneqo.com. Source trees and Postgres still carry the old brand and host: `musicbizqr`, `MusicBizQR`, `musicbizqr.com`, `www.musicbizqr.com`, fallbacks like `https://musicbizqr.com`, and stored Strapi content (especially `seo_pages` richtext/JSON). `mkt-002` only rewrites some essay links at render time; the DB and most files stay wrong. `vocab-002` covers a few visible MusicBizQR strings — this issue is the **full** replace pass.
 
-Where. New file qrserver/src/utils/content/migrateLegacyHost.js, called from qrserver/src/index.js bootstrap only when FANEQO_MIGRATE_LEGACY_HOST is 1. The same shape as qrserver/src/utils/features/seedFounderLabs.js. Do not follow qrserver/scripts/seed-demo-data.js. That script puts a credential in the file. This one reads no token and has no default secret.
+**Replace rules (apply in this order):**
 
-Priority **1**, severity **High**, effort **M**, repo **qrserver**, findings `DATA-001`, labels: marketing, audit.
+1. `https://www.musicbizqr.com` → `https://www.faneqo.com` (and `http://` twin)
+2. `https://musicbizqr.com` → `https://faneqo.com` (and `http://` twin)
+3. Remaining `www.musicbizqr.com` / `musicbizqr.com` → `www.faneqo.com` / `faneqo.com` (emails, bare hosts)
+4. `MusicBizQR` → `Faneqo`
+5. Standalone `musicbizqr` → `faneqo` (case-sensitive token; not inside already-replaced hosts)
+
+**Carve-outs (do not rewrite):**
+
+- Inbound legacy hosts that must stay recognizable: `domain-migration.ts` / QR gateway **allowlist entries** for `musicbizqr.com` / `www.musicbizqr.com` (they redirect *to* faneqo; the Set must still list the old names).
+- Short / API legacy hosts until separately decided: `qr.musicbizqr.com`, `api.musicbizqr.com` (protect during bulk replace; `api.musicbizqr.com` remains `sec-010`).
+- GitHub product remote name / path `Nick-tsoukas/musicbizqr` and workspace path citations that mean “the FE repo” until history merge — do not rename the remote.
+- Legal pages (`termsofservice` / `privacypolicy`) only if company legal name is still MusicBizQR (same gate as `vocab-002`).
+- `qr.url` column values that are opaque short codes (not marketing URLs).
+
+**DB.** Ship and run SQL at `scripts/sql/migrate-musicbizqr-hosts-to-faneqo.sql` (root). Dry-run section counts matches; apply section updates text/`jsonb` (via text round-trip) with the protect/restore pattern for carve-out hosts. Prefer explicit `seo_pages` columns first, then a catalog scan of `text` / `varchar` / `jsonb` in `public`. Backup before apply. Idempotent second run = 0 rows changed. Optional JS bootstrap (`migrateLegacyHost.js` + `FANEQO_MIGRATE_LEGACY_HOST=1`) may wrap the same rules for app-side dry-run logging — SQL remains the SoT for Postgres.
+
+**Files.** Ripgrep `frontend/` + `backend/` (and root docs that state the live product host) for the old tokens; replace per rules. Defaults like `PUBLIC_APP_URL || 'https://musicbizqr.com'` become `https://faneqo.com`. Agency allowlist email `partner@musicbizqr.com` → `partner@faneqo.com` only if that mailbox is confirmed; otherwise move to carve-out + note.
+
+Priority **1**, severity **High**, effort **L**, repo **both** (`frontend/` + `backend/`), findings `DATA-001`, labels: marketing, audit, migration.
 
 **Acceptance criteria:**
 
-- [ ] A dry run changes no row and prints how many seo-page rows contain the old host.
-- [ ] With FANEQO_MIGRATE_LEGACY_HOST=1, those rows use https://faneqo.com and a second run changes nothing.
-- [ ] No qr.url, no email address, and no qr.musicbizqr.com string is rewritten.
-- [ ] domain-migration.ts and the QR gateway allowlists still name the old hosts.
-- [ ] The script file contains no token and no default secret.
-- [ ] PUBLIC_APP_URL fallbacks and the Corvana article URL constants use https://faneqo.com.
+- [ ] `scripts/sql/migrate-musicbizqr-hosts-to-faneqo.sql` exists: dry-run counts + apply updates; documents carve-outs; no secrets.
+- [ ] Dry-run on a DB copy reports match counts; apply then second dry-run shows zero remaining `musicbizqr.com` / `MusicBizQR` in scanned content columns (except protected hosts).
+- [ ] `seo_pages` (and other hit tables) store `faneqo.com` / `Faneqo`, not marketing `musicbizqr.com` / `MusicBizQR`.
+- [ ] Product source under `frontend/` + `backend/` (non-carve-out) has no remaining `musicbizqr.com` or user-facing `MusicBizQR` / stray `musicbizqr` brand token — verified by ripgrep with documented allowlist for carve-outs.
+- [ ] `PUBLIC_APP_URL` / similar code fallbacks default to `https://faneqo.com`.
+- [ ] `domain-migration.ts` and QR gateway still **list** legacy marketing hosts for redirect recognition.
+- [ ] `qr.musicbizqr.com` / `api.musicbizqr.com` not blindly rewritten to `qr.faneqo.com` / `api.faneqo.com`.
+- [ ] `mkt-002` / `vocab-002` either already satisfied by this pass or left only with their residual UI/render work.
 
 **Verification:**
 
 - [ ] Section `data-001` still matches this page’s inventory title and acceptance criteria
-- [ ] Manual check: acceptance criteria pass against product code
+- [ ] Manual check: SQL dry-run + apply on staging copy; ripgrep FE/BE; spot-check one article row and one public page
 
-**Dependencies:** audit-parent
+**Dependencies:** audit-parent; coordinate with `mkt-002`, `vocab-002`, `sec-010`
 
 **Files likely touched:**
 
-- `qrserver/src/utils/content/migrateLegacyHost.js` (citation from draft; local trees may be `frontend/` / `backend/`)
-- `qrserver/src/index.js` (citation from draft; local trees may be `frontend/` / `backend/`)
-- `qrserver/src/utils/features/seedFounderLabs.js` (citation from draft; local trees may be `frontend/` / `backend/`)
-- `qrserver/src/api/stripe/controllers/stripe.js` (citation from draft; local trees may be `frontend/` / `backend/`)
-- `qrserver/src/api/auth/controllers/email-confirmation.js` (citation from draft; local trees may be `frontend/` / `backend/`)
-- `musicbizqr/server/api/me/dashboard.get.js` (citation from draft; local trees may be `frontend/` / `backend/`)
-- `musicbizqr/server/api/seo/verify-redirects.get.ts` (citation from draft; local trees may be `frontend/` / `backend/`)
-- `musicbizqr/utils/shareables/demoDeck.js` (citation from draft; local trees may be `frontend/` / `backend/`)
-- `musicbizqr/server/utils/seoExportUtils.ts` (citation from draft; local trees may be `frontend/` / `backend/`)
-- `musicbizqr/server/api/corvana/seo` (citation from draft; local trees may be `frontend/` / `backend/`)
-- `qrserver/src/api/qr/controllers/qr.js` (citation from draft; local trees may be `frontend/` / `backend/`)
-- `qrserver/src/api/band/policies/only-one-band.js` (citation from draft; local trees may be `frontend/` / `backend/`)
+- `scripts/sql/migrate-musicbizqr-hosts-to-faneqo.sql` (SoT for DB)
+- `frontend/**`, `backend/**` product sources matching the tokens (fallbacks, copy, demos, policies)
+- optional `backend/src/utils/content/migrateLegacyHost.js` + `backend/src/index.js` if JS dry-run wrapper kept
+- `docs/staging-data.md` (how to run SQL on staging Postgres)
+- carve-out files kept intentional: `frontend/server/middleware/domain-migration.ts`, QR gateway
 
-**Estimated scope:** M
+**Estimated scope:** L
 
 ---
 
@@ -554,11 +567,13 @@ Priority **1**, severity **High**, effort **XL**, repo **musicbizqr**, findings 
 
 Where. musicbizqr/pages/article/[category]/[slug].vue. renderMarkdown calls marked.parse on page.content and does not rewrite hosts. The musicbizqr.com rewrite in that file applies only to JSON-LD. Example (not every URL): https://faneqo.com/article/qr-code-strategy/free-qr-code-generator-for-bands sends "Get Started Free" to https://musicbizqr.com/signup.
 
+**Overlap:** Stored HTML hosts are owned by **`data-001`** (SQL + file replace). This issue is the **render-time** safety net (rewrite in `renderMarkdown` / essay HTML) until/unless `data-001` has already cleaned every row. Prefer DB fix; keep a defensive rewrite if cheap.
+
 Priority **1**, severity **High**, effort **S**, repo **musicbizqr**, findings `MKT-001`, labels: marketing, audit.
 
 **Acceptance criteria:**
 
-- [ ] Essay links that used musicbizqr.com open on faneqo.com.
+- [ ] Essay links that used musicbizqr.com open on faneqo.com (via `data-001` DB fix and/or render rewrite).
 - [ ] A signup link from an essay opens https://faneqo.com/signup.
 - [ ] The template close button is still /signup.
 - [ ] Stripe amounts and plan=free are unchanged.
@@ -1001,6 +1016,8 @@ Priority **1**, severity **High**, effort **M**, repo **musicbizqr**, findings `
 
 Where. musicbizqr/pages/bands/all.vue title, meta description, heading, and the line "artists using MusicBizQR". musicbizqr/pages/offline.vue title "Offline - MusicBizQR". musicbizqr/pages/nys.vue title. musicbizqr/pages/improved-home.vue title and the MusicBizQR sentences in the page. musicbizqr/server/api/corvana/seo/export/chatgpt-prompt.get.ts and musicbizqr/server/utils/seoExportUtils.ts, which tell a model the site is MusicBizQR for musicians.
 
+**Overlap:** Broad `MusicBizQR` → `Faneqo` file replace is **`data-001`**. This issue verifies the listed live surfaces and keeps the legal-pages gate.
+
 Priority **1**, severity **High**, effort **S**, repo **musicbizqr**, findings `VOCAB-001`, labels: copy, audit.
 
 **Acceptance criteria:**
@@ -1008,7 +1025,7 @@ Priority **1**, severity **High**, effort **S**, repo **musicbizqr**, findings `
 - [ ] https://faneqo.com/bands/all title and heading do not say MusicBizQR.
 - [ ] The directory says bands, and the count line does not say artists using MusicBizQR.
 - [ ] The SEO prompt text names Faneqo and a band, and it does not name MusicBizQR.
-- [ ] Terms and privacy are unchanged.
+- [ ] Terms and privacy are unchanged (unless human confirms legal rename — same gate as `data-001`).
 
 **Verification:**
 

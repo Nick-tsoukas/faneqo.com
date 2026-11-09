@@ -130,7 +130,7 @@ Target: browser never learns Strapi URL/IP; browser only talks same-origin to Nu
 
 ### Phase 3 — Data + live exposure
 
-- [ ] `data-001` stored hosts → faneqo.com (one-time migrate, not article dump)
+- [ ] `data-001` musicbizqr / musicbizqr.com → faneqo / faneqo.com in files + DB (SQL SoT; not article dump)
 - [ ] `dead-004` test/preview pages off live site
 - [ ] `dead-005` lab pages 404 in production
 
