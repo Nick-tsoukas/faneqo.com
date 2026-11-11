@@ -1,5 +1,7 @@
 # MusicBizQR (MBQ)
 
+<!-- staging selective-rebuild probe 2026-11-11: expect BUILD_FRONTEND=1 only -->
+
 A Nuxt 3 application for musicians featuring smart links, QR codes, fan analytics, and an Agency Portal for label/management teams.
 
 ## Landing Page (Updated 2026-05-19)
