@@ -1,6 +1,6 @@
 # Audit issues
 
-Specs for the **45** audit issues. **Plan (central):** [`tasks/audit-issues-plan.md`](audit-issues-plan.md). **Progress:** check ids in [`tasks/audit-issues-todo.md`](audit-issues-todo.md) as each issue resolves.
+Specs for the **48** audit issues. **Plan (central):** [`tasks/audit-issues-plan.md`](audit-issues-plan.md). **Progress:** check ids in [`tasks/audit-issues-todo.md`](audit-issues-todo.md) as each issue resolves.
 
 **Status: not started.** Acceptance criteria below are the done definition for each id. Progress boxes live on the todo; mark criteria here when that issue ships.
 
@@ -24,6 +24,9 @@ Specs for the **45** audit issues. **Plan (central):** [`tasks/audit-issues-plan
 | `data-001` | 1 | High | L | both | audit-parent | Replace musicbizqr / musicbizqr.com with faneqo / faneqo.com in files and DB |
 | `dead-004` | 1 | High | S | musicbizqr | audit-parent | Test and internal preview pages are still on the live site |
 | `dead-005` | 1 | High | S | musicbizqr | audit-parent | Two local lab pages are missing the production 404 |
+| `build-001` | 1 | High | M | musicbizqr | audit-parent | Map: staging Nuxt build is ~17m of Vite/Nitro compile of dead + lab weight (not CMS prerender) |
+| `build-002` | 1 | High | S | musicbizqr | build-001 | Baseline droplet `nuxt build` phases and re-measure after each dead delete |
+| `build-003` | 2 | Medium | M | musicbizqr | build-001 | Optional: exclude labs/corvana/__dev/PWA from staging (or prod) build when product allows |
 | `mkt-001` | 1 | High | XL | musicbizqr | audit-parent | Ongoing list of code changes that gain users and paid subscribers |
 | `mkt-002` | 1 | High | S | musicbizqr | audit-parent | Article essays still send the button to musicbizqr.com |
 | `mkt-003` | 1 | High | M | musicbizqr | audit-parent | There is no pricing page, and signup is missing from the sitemap |
@@ -48,7 +51,7 @@ Specs for the **45** audit issues. **Plan (central):** [`tasks/audit-issues-plan
 | `sec-012` | 2 | Medium | S | qrserver | sec-006 | Strapi admin and :1337 stay reachable on the public API hostname |
 | `bill-002` | 2 | Medium | S | qrserver | audit-parent | The Connect fee, payment buttons, 30-day trial, and subscription check are already decided |
 | `dead-002` | 2 | High | M | musicbizqr | audit-parent | Unused pages and unused components are still in the app |
-| `dead-003` | 2 | High | S | musicbizqr | audit-parent | Old homepages are still on the live site |
+| `dead-003` | 2 | High | S | musicbizqr | audit-parent | Old homepages are still on the live site (also cuts Nuxt compile — see `build-001`) |
 | `test-002` | 2 | High | M | musicbizqr | audit-parent | FE `package.json` hardcodes a long `&&` test file list that drifts and merge-conflicts |
 | `mkt-013` | 2 | Medium | S | musicbizqr | audit-parent | Do not email the toy band pages |
 | `vocab-005` | 2 | Medium | S | musicbizqr | audit-parent | Team screens invent roles the product does not have |
@@ -511,6 +514,120 @@ Priority **1**, severity **High**, effort **S**, repo **musicbizqr**, findings `
 - `musicbizqr/pages/__dev/gallery.vue` (citation from draft; local trees may be `frontend/` / `backend/`)
 
 **Estimated scope:** S
+
+---
+
+## P1 — Staging / Nuxt build wall clock
+
+### `build-001`: Map: staging Nuxt build is ~17m of Vite/Nitro compile of dead + lab weight (not CMS prerender)
+
+**Role:** Map / parent (children + existing `dead-*` carry the work)
+
+**Description:** Problem. Droplet FE `npm run build` dominates staging deploy (~17–20 min on the 2GB box). Evidence from Actions job [130704363104](https://github.com/Nick-tsoukas/faneqo.com/actions/runs/43072620854/job/130704363104) (`99c0ccf`, FE-only, install already skipped):
+
+| Phase | Wall clock (approx) | Signal |
+|-------|---------------------|--------|
+| Client Vite | ~4m 11s | **4425** modules transformed |
+| SSR Vite | ~5m 25s | **1986** modules |
+| PWA `generateSW` | ~20s | `@vite-pwa/nuxt` |
+| Nitro `node-server` bundle | ~6m 38s | Huge `.output/server` chunk list |
+
+**Not** the cause: CMS/API prerender. `frontend/nuxt.config.ts` states the article prerender hook was removed (ART-1/ART-2); preset is `node-server`; sitemap uses static URLs + request-time `/api/sitemap/artists` (no build-time Strapi crawl). Empty staging DB / API errors are **not** what burns these 17 minutes.
+
+**Is** the cause: Nuxt file-based routing + Vite compile **every** page and pulled server route still in the tree. Inventory on disk (2026-11-11): ~**173** `pages/*.vue`, including `pages/oldpages/` **18**, `pages/__dev/` **26**, `pages/labs/` **16**, `pages/internal/` **4**, plus test/preview routes (`testing`, `testsite`, `test-qr`, `debug-qr`, …), `corvana/**` (pages + many `server/api/corvana/**` SEO export routes), `agency/**`, and **323** components. Dead/lab weight still enters the client+SSR+Nitro graph even when noindexed or unused in nav.
+
+Primary cut path = delete or hard-exclude that weight (existing `dead-003`…`dead-006`, plus optional `build-003`). Secondary = measure (`build-002`). Do not “fix” by pointing staging at prod Strapi for prerender — there is no prerender fetch loop to feed.
+
+Priority **1**, severity **High**, effort **M**, repo **musicbizqr**, findings `BUILD-SLOW-STAGING`, labels: audit, performance, tech-debt.
+
+**Acceptance criteria:**
+
+- [ ] The body names `build-002`, `build-003`, and the existing children that shrink the graph: `dead-003`, `dead-004`, `dead-005`, `dead-006` (and map `dead-002`).
+- [ ] Docs state clearly: slow build = compile of unused routes/modules, **not** build-time Strapi data populate.
+- [ ] No child reintroduces a CMS prerender hook without an explicit product decision.
+- [ ] No child deletes `pages/index.vue`, `/home-v2` redirect, `pages/install.vue`, labs **gate** (until product says labs leave), or `server/routes/directqr.ts`.
+
+**Verification:**
+
+- [ ] Section `build-001` still matches this page’s inventory title and acceptance criteria
+- [ ] Manual check: next FE-only deploy log still shows no prerender/CMS fetch loop; phase times recorded under `build-002`
+
+**Dependencies:** audit-parent
+
+**Files likely touched:**
+
+- `frontend/nuxt.config.ts` (citation; evidence only unless `build-003`)
+- `frontend/pages/**` (via dead children)
+- `tasks/audit-issues-plan.md` / `tasks/audit-issues-todo.md`
+
+**Estimated scope:** M
+
+---
+
+### `build-002`: Baseline droplet `nuxt build` phases and re-measure after each dead delete
+
+**Role:** Actionable
+
+**Description:** Problem. Without a written baseline, deletes that “should” speed staging cannot be proven. Capture phase lines from droplet/`staging-build.sh` FE logs (`Building client`, `Building server`, `generateSW`, `Nuxt Nitro server built`) and module counts. Re-run after each approved `dead-*` / `build-003` step.
+
+Where. Staging Actions SSH log for `BUILD_FRONTEND=1`; optionally local `cd frontend && npm run build` under the same Node pin for comparison (host is faster than 2GB droplet — note which machine).
+
+Priority **1**, severity **High**, effort **S**, repo **musicbizqr**, findings `BUILD-SLOW-STAGING`, labels: audit, performance.
+
+**Acceptance criteria:**
+
+- [ ] A dated baseline row exists (job URL or local) with client / SSR / PWA / Nitro minutes and module counts.
+- [ ] After each graph-shrinking merge that is supposed to help build time, a new row is added with the same columns.
+- [ ] Target recorded (human-agreed): e.g. FE-only droplet build **&lt; 10 min** or **≥ 40%** cut vs baseline — pick one number when starting remediation.
+- [ ] Baseline notes install was skipped or not (lock stamp) so wall clock is not confused with `npm install`.
+
+**Verification:**
+
+- [ ] Section `build-002` still matches this page’s inventory title and acceptance criteria
+- [ ] Manual check: table lives in this issue’s progress notes or `tasks/audit-issues-todo.md` checkpoint
+
+**Dependencies:** build-001
+
+**Files likely touched:**
+
+- `tasks/audit-issues-todo.md` (measurement rows)
+- (no product code required)
+
+**Estimated scope:** S
+
+---
+
+### `build-003`: Optional: exclude labs/corvana/__dev/PWA from staging (or prod) build when product allows
+
+**Role:** Actionable (needs product go — labs gate and corvana may stay on purpose)
+
+**Description:** Problem. Even after live-exposure deletes (`dead-004`/`dead-005`), `pages/labs/**`, `pages/corvana/**`, and `@vite-pwa/nuxt` `generateSW` still cost compile/bundle time on every staging FE rebuild. Nuxt has no “skip these folders on staging” by default — options are delete, move out of `pages/`, or ignore patterns / separate Nuxt layer (product decision).
+
+Do **not** do this blindly: labs may be intentional internal product; corvana SEO tools may be staff-only but still needed. This draft is the optional accelerate path after dead deletes + `build-002` prove remaining cost.
+
+Priority **2**, severity **Medium**, effort **M**, repo **musicbizqr**, findings `BUILD-SLOW-STAGING`, labels: audit, performance.
+
+**Acceptance criteria:**
+
+- [ ] Human names which trees may leave the production/staging build (labs / corvana / __dev remainder / PWA).
+- [ ] Chosen trees no longer appear as Vite page modules or Nitro route chunks in the FE build output (or PWA step is gone if disabled).
+- [ ] Product routes that must stay (`/`, dashboard, band pages, `directqr`) still build and boot.
+- [ ] `build-002` re-measure shows a real drop attributable to this step.
+
+**Verification:**
+
+- [ ] Section `build-003` still matches this page’s inventory title and acceptance criteria
+- [ ] Manual check: FE-only deploy log + spot-check critical routes on staging
+
+**Dependencies:** build-001, build-002; prefer after `dead-003`–`dead-005`
+
+**Files likely touched:**
+
+- `frontend/nuxt.config.ts`
+- `frontend/pages/labs/**`, `frontend/pages/corvana/**`, `frontend/pages/__dev/**` (if excluded/deleted)
+- `frontend/server/api/corvana/**` (if excluded)
+
+**Estimated scope:** M
 
 ---
 

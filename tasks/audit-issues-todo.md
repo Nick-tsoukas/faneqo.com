@@ -62,6 +62,24 @@ Browsers must not see or call Strapi. Nuxt server proxies. CORS origins from pub
 ### Checkpoint: Data / exposure
 
 - [ ] Phase 3 criteria pass
+- [ ] Human review before Phase 3b (or Phase 4 if build deferred)
+
+---
+
+## Phase 3b: Staging Nuxt build wall clock
+
+Evidence 2026-11-11 job `130704363104`: ~17m FE compile (Vite client+SSR + Nitro), install skipped. **Not** build-time API populate.
+
+- [ ] `build-001` — map accepted (compile cost + dead weight; not CMS prerender)
+- [ ] `build-002` — baseline + re-measure table; target agreed (e.g. &lt;10m or ≥40% cut)
+- [ ] `dead-003` — oldpages + old homes gone (pull forward for compile win; also Phase 6)
+- [ ] `dead-004` / `dead-005` — already Phase 3; confirm they shrink build modules when done
+- [ ] `dead-006` — unreferenced components (after evidence; also Phase 7)
+- [ ] `build-003` — optional labs/corvana/__dev/PWA exclude (product names trees first)
+
+### Checkpoint: Build wall clock
+
+- [ ] FE-only droplet build meets target **or** leftover cost is product-kept
 - [ ] Human review before Phase 4
 
 ---

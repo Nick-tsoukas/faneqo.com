@@ -4,7 +4,7 @@ Side-by-side product trees under one root git (content-only `staging` on [`Nick-
 
 **Product remotes stay the source of truth.** [`musicbizqr`](https://github.com/Nick-tsoukas/musicbizqr) and [`qrserver`](https://github.com/Nick-tsoukas/qrserver) keep receiving normal development. Migration does **not** pause FE/BE work; it only delays monorepo history merge, remote-affecting `.git` surgery, and Railway prod retarget until staging is live.
 
-**Migration (canonical):** read [`tasks/plan.md`](tasks/plan.md); track [`tasks/todo.md`](tasks/todo.md). Do not invent a second plan. **Status 2026-11-09:** staging done (Checkpoint B). Browser HTTPS + droplet env HTTPS done (**6b.1–6b.3**). **6b.4 CORS** → audit `sec-006`–`sec-009` (Nitro BFF / hide Strapi; CORS from public-URL env + extras — no hardcoded hosts). OAuth (**6b.5**) held. **Next real work:** history merge (Tasks 7–10) when human says go. After that: FE/BE CI port + workspace (11, 13; **12** done), then prod cutover (16). Optional product edits (14–15) only if needed.
+**Migration (canonical):** read [`tasks/plan.md`](tasks/plan.md); track [`tasks/todo.md`](tasks/todo.md). Do not invent a second plan. **Status 2026-11-09:** staging done (Checkpoint B). Browser HTTPS + droplet env HTTPS done (**6b.1–6b.3**). **6b.4 CORS** → audit `sec-006`–`sec-009` (Nitro BFF / hide Strapi; CORS from public-URL env + extras — no hardcoded hosts). OAuth (**6b.5**) held. **Next real work:** history merge (Tasks 7–10) via `scripts/merge-product-history.sh` when human says go (dry-run default; do not `--execute` until go).
 
 **Audit issues (parallel track, not started):** plan [`tasks/audit-issues-plan.md`](tasks/audit-issues-plan.md), progress [`tasks/audit-issues-todo.md`](tasks/audit-issues-todo.md), specs [`tasks/audit-issues.md`](tasks/audit-issues.md). Does not replace the staging plan.
 
@@ -16,6 +16,7 @@ Side-by-side product trees under one root git (content-only `staging` on [`Nick-
 | `backend/` | Strapi v4, canonical data — checkout `Nick-tsoukas/qrserver`. Defers to frontend loop: `backend/AGENTS.md`. |
 | `docker-compose.yml` | Staging only. One compose file, no profiles. `POSTGRES_DB=faneqo_staging`. `restart: unless-stopped` on all services. Local = host mise build + attached `docker compose up … --no-log-prefix`. Droplet = `scripts/staging-build.sh` + `docker compose up -d` (no stackrun). Tags FE/BE → `NODE_VERSION` → `22.11.0`. See `tasks/plan.md` Architecture G. |
 | `scripts/staging-build.sh`, `scripts/staging-up.sh`, `scripts/staging-droplet-deploy.sh` | Droplet FE/BE install+build via one-off stock Node `docker run --rm`; first-up / SHA redeploy helpers. No mise. |
+| `scripts/merge-product-history.sh` | Tasks 7–10: dry-run by default; compares workspace FE/BE to product **main** (ignores `.github/` CI + build junk); `--execute` merges history into `faneqo.com` (filter-repo init, subtree updates). Monorepo may be on `staging`. Do not `--execute` until human go. |
 | `scripts/sql/migrate-musicbizqr-hosts-to-faneqo.sql` | Audit `data-001`: Postgres brand/host replace (`musicbizqr` → `faneqo`). Dry-run notices + apply. |
 | `scripts/install-skills.sh`, `scripts/cursor-install-skills.sh`, `scripts/claude-install-skills.sh` | Project-only install/update of [agent-skills](https://github.com/addyosmani/agent-skills), [caveman](https://github.com/JuliusBrussee/caveman), [ponytail](https://github.com/DietrichGebert/ponytail), [cloudflare](https://github.com/cloudflare/skills) (`cloudflare` skill only), plus Cursor-only vendored `ag-build` (`scripts/vendor-skills/ag-build`). Cursor: `.agents/skills/` + `.cursor/skills/` symlinks + `.cursor/rules/`. Claude: `.claude/skills/` + project plugins (`agent-skills`, `caveman`, `ponytail`, `cloudflare`) in `.claude/settings.json`. Rerun refreshes. Ignore FE/BE agent dirs until after history merge. Plan: `tasks/skills-install-plan.md`. |
 | `stack.config.ts`, `example.env`, `mise.toml`, root `package.json` | stackrun orchestration + local mise. **Node pin SoT = root `.env`**. `$development` = host hot reload + SQLite (no Docker, no install). `$staging` = before install/build, then attached compose up per service. |
@@ -45,7 +46,7 @@ Human-facing how-to: [`README.md`](README.md).
 3. `npm install` at workspace root (stackrun + jiti).
 4. `npm run dev` — host hot-reload FE + BE via stackrun `$development` (mise Node; install deps in FE/BE folders first). Strapi **SQLite**; **no Docker**.
 5. `npm run staging` — before: host install/build; commands: attached `docker compose up` per service with `--no-log-prefix`. Droplet uses `scripts/staging-up.sh` instead (no stackrun/mise).
-6. Root `npm test` runs `test:stack` + `test:root` — suite from Task 3.7 (Architecture I; no FE/BE builds). GitHub Actions: `.github/workflows/root-ci.yml` (Task 12; path-filtered). FE/BE product CI still on product remotes until Task 11 after history.
+6. Root `npm test` runs `test:stack` + `test:root` — suite from Task 3.7 (Architecture I; no FE/BE builds). GitHub Actions: `.github/workflows/root-ci.yml` (Task 12; path-filtered). FE/BE product CI still on product remotes until Task 11 after history — then **root** `frontend-ci.yml` / `backend-ci.yml` (nested `frontend/.github` does **not** run on the monorepo). See `tasks/plan.md` Architecture D.
 
 Dev = host hot-reload + mise + SQLite (no Docker). Local staging = same compose file, per-service attached `up`. Droplet = `staging-build.sh` + `up -d`. `mbq-cron` stays off.
 
@@ -67,7 +68,7 @@ Recorded **before** local nested-`.git` removal. Product remotes stay source of 
 Canonical detail: [`tasks/todo.md`](tasks/todo.md) Decisions log + [`tasks/plan.md`](tasks/plan.md) Phase 0.
 
 - **Temp nested `.git`:** YES (local only; re-clone before history merge).
-- **History tool:** defer until history phase.
+- **History tool:** locked — `scripts/merge-product-history.sh` (filter-repo init, subtree update; dry-run default).
 - **Staging:** DO only (**never** Railway staging); **2GB** droplet; Checkpoint B done. Leftover migration: **history merge → prod cutover**. Tasks 11–13 = small post-merge chores only.
 - **Staging public URLs:** browser HTTPS hostnames + droplet app env HTTPS (**6b.1–6b.3**). CORS/BFF = audit `sec-006`–`sec-009`. Google OAuth (**6b.5**) optional.
 - **Unified compose:** YES — one `docker-compose.yml` (no profiles); volume-mounted built apps for **staging only** (Architecture G). Dev = host + SQLite, no compose. Staging ups all services. Staging FE/BE: **stock Node** nested tags FE/BE → `NODE_VERSION` → `22.11.0` (dual versions allowed; Compose ≥ 2.18; no wrapper script); no custom Dockerfiles unless needed.

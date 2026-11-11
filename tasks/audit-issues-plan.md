@@ -47,6 +47,7 @@ This track is **parallel** to the monorepo/staging plan (`tasks/plan.md` / `task
    2. P1 security FE↔BE trust (`sec-006` map → `sec-007` → `sec-008` → `sec-009`) — browsers must not see or call Strapi; Nitro BFF; CORS origins from public-URL env SoT + optional comma-separated extras (**no hardcoded host list**). **Do not** patch staging by editing a string array in `middlewares.js` (supersedes staging Task 6b.4).
    3. P1 billing guard (`bill-001`)
    4. P1 data + live dead (`data-001`, `dead-004`, `dead-005`)
+   4b. P1 staging build wall clock (`build-001` map → `build-002` measure; cut via `dead-003`…`dead-006`, optional `build-003`) — evidence 2026-11-11: ~17m Vite/Nitro compile, **not** CMS prerender
    5. P1 marketing children (`mkt-002`…`mkt-012`, `mkt-014`; `mkt-001` is the map)
    6. P1 vocabulary children (`vocab-002`…`vocab-004`; `vocab-001` is the map)
    7. P2 tooling first: `test-002` (FE test discover runner — stop `package.json` `&&` file lists / merge conflicts), then `sec-003`, `sec-004` if not closed by `sec-009`, `sec-010`, `sec-011`, `sec-012`, `bill-002`, `dead-002`, `dead-003`, `mkt-013`, `vocab-005`
@@ -73,6 +74,13 @@ Human approval to start (Task 17 or explicit go)
     │
     ├── Phase 3: Data + live exposure
     │       data-001 → dead-004 → dead-005
+    │
+    ├── Phase 3b: Staging Nuxt build wall clock
+    │       build-001 (map)
+    │           ├── build-002 (baseline + re-measure)
+    │           ├── dead-003 (oldpages + old homes — also compile cut)
+    │           ├── dead-002 / dead-006 (unused graph weight)
+    │           └── build-003 (optional labs/corvana/PWA exclude — product go)
     │
     ├── Phase 4: Marketing children
     │       mkt-002 … mkt-012, mkt-014  (mkt-001 = map)
@@ -139,7 +147,22 @@ Target: browser never learns Strapi URL/IP; browser only talks same-origin to Nu
 ### Checkpoint: Data / exposure
 
 - [ ] Phase 3 criteria pass
-- [ ] Human review before Phase 4
+- [ ] Human review before Phase 3b (or Phase 4 if build work deferred)
+
+### Phase 3b — Staging Nuxt build wall clock (added 2026-11-11)
+
+Evidence: Actions job `130704363104` — client ~4m / SSR ~5m / PWA ~20s / Nitro ~7m; **4425** client modules. Article prerender hook already removed. Empty staging API is not the 17m sink.
+
+- [ ] `build-001` map accepted (children + dead-* named)
+- [ ] `build-002` baseline table written; target number agreed
+- [ ] Prefer pull-forward `dead-003` (delete `pages/oldpages/` + redirect old homes) for dual live+compile win
+- [ ] Continue `dead-004` / `dead-005` / later `dead-006` as graph shrink
+- [ ] `build-003` only after product names which of labs / corvana / PWA may leave the build
+
+### Checkpoint: Build wall clock
+
+- [ ] FE-only droplet build meets agreed target **or** remaining cost is documented as product-kept trees
+- [ ] Human review before Phase 4 (marketing) unless parallel go
 
 ### Phase 4 — Marketing
 
@@ -202,6 +225,7 @@ Order inside the band (High tooling first):
 | P1 Security (BFF/CORS) | `sec-006` (map), `sec-007`, `sec-008`, `sec-009` |
 | P1 Billing guard | `bill-001` |
 | P1 Data / live dead | `data-001`, `dead-004`, `dead-005` |
+| P1 Staging build | `build-001` (map), `build-002`; cuts via `dead-003`…`dead-006`; optional `build-003` |
 | P1 Marketing | `mkt-001` (map), `mkt-002`…`mkt-012`, `mkt-014` |
 | P1 Vocabulary | `vocab-001` (map), `vocab-002`…`vocab-004` |
 | P2 | `test-002` (first), `sec-003`, `sec-004`, `sec-010`, `sec-011`, `sec-012`, `bill-002`, `dead-002`, `dead-003`, `mkt-013`, `vocab-005` |
@@ -221,9 +245,13 @@ Order inside the band (High tooling first):
 | Blind open `/api` proxy | High | `sec-008` requires allowlisted / product-shaped Nitro routes |
 | Hardcoded CORS host drift (fanecco / LAN) | Med | Env SoT only; empty env = empty allowlist |
 | FE `package.json` `&&` test lists | High | `test-002` discover runner; do not lengthen lists |
+| Blame empty Strapi / “SSG fetch” for 20m builds | High | `build-001`: no CMS prerender; cut page/module graph instead |
+| Delete labs/corvana without product go | High | `build-003` requires named trees; keep labs gate until told |
 
 ## Open questions
 
 - Start audit remediation before monorepo Task 17, or only after? Default: **wait for explicit go** (Task 17 or earlier override).
 - File GitHub issues when fixing, or fix in product remotes only? Default: **product remotes / monorepo as directed; no GitHub audit filing unless asked**.
 - Start Phase 1b (BFF/CORS) before or after Phase 1 auth? Default: **after auth checkpoint**, unless human reorders (BFF is large).
+- Pull Phase 3b (build wall clock / `dead-003`) ahead of marketing while staging deploys hurt? Default: **yes if human wants faster deploys**; security/billing still first unless overridden.
+- May labs / corvana / PWA leave the staging (or prod) Nuxt build? Default: **ask before `build-003`**; do not assume.

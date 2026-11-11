@@ -21,7 +21,7 @@ This plan is **read-only for product code in the monorepo sense**. No monorepo-d
 | When | What | Task |
 |------|------|------|
 | **Optional ops** | Google OAuth only. CORS/BFF = audit `sec-006`–`sec-009` (not 6b.4 allowlist). | **6b.5** / audit |
-| **Next real migration** | Re-clone pristine FE/BE → filter-repo/subtree into `faneqo.com` → land root files on `main`. | **7–10** (HOLD until human says go) |
+| **Next real migration** | Run `scripts/merge-product-history.sh` (filter-repo init; re-runnable subtree updates) into `faneqo.com` → land root files on `main`. | **7–10** (HOLD until human says go; script exists, **do not execute** until go) |
 | **After history (small)** | Port FE/BE `ci.yml` onto monorepo root Actions with path filters; point daily workspace at `faneqo.com`. | **11**, **13** (**12** already done) |
 | **Only if cutover needs it** | Monorepo product diffs under `frontend/` / `backend/`. | **14–15** (explicit go; often skip) |
 | **Last migration step** | Point Railway prod at the monorepo. | **16** (separate approval) |
@@ -120,29 +120,42 @@ Do **not** wait for filter-repo into `faneqo.com` to stand up staging. Deploy tr
 
 **Skip temp path** if staging can deploy with nested checkouts intact (e.g. compose `COPY` / rsync of dirs without a single root git). Then skip Phase 1 Task 3 and Phase 3 restore complexity.
 
-### B. History migration → `git filter-repo` + unrelated merge (late; recommended)
+### B. History migration → `scripts/merge-product-history.sh` (late; locked tool)
 
-**Do not** treat the temp stripped tree as the final monorepo. History merge runs **after** staging checkpoint, from **fresh clones**.
+**Do not** treat the temp stripped tree as the final monorepo. History merge runs **after** staging checkpoint, from **fresh scratch clones** via the script (never mutate product remotes).
 
-**Recommended procedure** (scratch clones only; do not force-push to product remotes):
+**Script (SoT for the procedure):** [`scripts/merge-product-history.sh`](../scripts/merge-product-history.sh)
 
-1. Fresh clones of `musicbizqr` and `qrserver` at the `main` SHAs you want merged (current tips after normal development).
-2. FE clone: `git filter-repo --to-subdirectory-filter frontend`.
-3. BE clone: `git filter-repo --to-subdirectory-filter backend`.
-4. Clone empty (or content-only) `Nick-tsoukas/faneqo.com`; add rewritten remotes; `git fetch`; merge `--allow-unrelated-histories` (FE then BE). If a content-only staging push already exists, replace or rebase carefully — prefer history merge as new `main` with documented backup tag of any content-only tip.
-5. Commit current workspace root files on top — still without monorepo-driven app source edits.
-6. Push `main` to `faneqo.com`. Leave `musicbizqr` / `qrserver` as active remotes until prod cutover; after cutover they become archives (policy in Task 1).
-7. Point daily workspace at `faneqo.com`; nested `.git` dirs gone because trees live inside the monorepo.
+| Mode | When | What |
+|------|------|------|
+| default (no flags) | anytime | **Dry-run** — resolve FE/BE tips, print planned `init` / `update` / `noop`; no clones |
+| `--execute` | human go | Scratch work under `$SCRATCH` (default `/tmp/faneqo-history-merge`) |
+| `--execute --push` | after review | Push branch `history-merge` (+ backup tag) to `faneqo.com` only |
+| re-run `--execute` | product remotes advanced | **Update** via `git subtree pull` per prefix; **noop** if tips match `tasks/history-merge-state.env` |
 
-**Alternatives:**
+**First import (`init`):**
+
+1. Clone `faneqo.com` @ `MONOREPO_REF` (default `staging`) → branch `history-merge`; tag `backup/content-only-before-history` once.
+2. Fresh clones of `musicbizqr` / `qrserver` at current `main` tips.
+3. `git filter-repo --to-subdirectory-filter frontend` / `backend` in those scratch clones.
+4. Merge rewritten tips into the monorepo scratch with `--allow-unrelated-histories`.
+5. Write `tasks/history-merge-state.env` (`FE_MERGED_SHA` / `BE_MERGED_SHA`).
+6. Human reviews scratch; `--push` when ready. Then Task 10 lands any missing root files; open/FF `main` as approved.
+7. Leave `musicbizqr` / `qrserver` as product remotes until prod cutover.
+
+**Later imports (`update`):** do **not** re-filter whole history (rewritten SHAs would duplicate). Script uses `git subtree pull --prefix=frontend|backend` from the product remotes. Re-run after new product pushes.
+
+**Tree identity gate:** before merge, workspace `frontend/` / `backend/` must match product remotes at **`main`** (`FRONTEND_REF` / `BACKEND_REF`), aside from ignored paths (`.github/` CI, `node_modules`, Nuxt/Strapi build caches, local `.env`). Monorepo branch may be **`staging`** (`MONOREPO_REF`); that does not change the product compare refs. `bash scripts/merge-product-history.sh --check-trees` runs the gate alone.
+
+**Never:** force-push `musicbizqr` / `qrserver`; run filter-repo on the content-only stripped workspace trees; confuse dry-run with execute.
+
+**Alternatives (rejected as default):**
 
 | Approach | Pros | Cons |
 |----------|------|------|
-| `git filter-repo` subdirectory rewrite | Clean paths; `git log -- frontend/` works | Rewrites SHAs; needs `git-filter-repo` |
-| `git subtree add` without rewrite | Simpler; keeps original SHAs as subtree merges | Odd merge topology |
+| `git filter-repo` subdirectory rewrite (**init**) | Clean paths; `git log -- frontend/` works | Rewrites SHAs; needs `git-filter-repo` |
+| `git subtree pull` (**update**) | Re-runnable when product remotes move | Odd merge topology vs pure filter-repo |
 | Orphan squash / content-only forever | Fast | **Reject** as final state — destroys blame |
-
-Subtree acceptable if filter-repo blocked; prefer filter-repo.
 
 ### C. Staging host → DigitalOcean droplet + docker-compose (recommended)
 
@@ -307,18 +320,38 @@ Own the tooling we own at workspace root. Prefer small bash (+ `node` JSON parse
 
 **Skipped (on purpose):** live `stackrun` with real FE/BE processes; full app builds inside the suite. Root Actions wiring = Task 12 (done). Staging Compose asserts landed with Task 3.6.
 
-### D. CI after history merge (small chore — not new tests)
+### D. CI after history merge (Task 11 — options + locked constraint)
+
+**Hard platform fact (not optional):** GitHub Actions only loads workflows from the **repository root** `.github/workflows/`. After history merge, `frontend/.github/workflows/ci.yml` and `backend/.github/workflows/ci.yml` are ordinary files under subtrees — **they will not run** on `faneqo.com` PRs/pushes. Nested `.github` only works while those trees are separate git roots (`musicbizqr` / `qrserver`).
 
 **Already done today:**
-- Local root suite: `npm test` (Task 3.7) — run before push as usual.
-- Product CI: still on `musicbizqr` / `qrserver` via each repo’s `ci.yml`.
-- Staging deploy Actions: `.github/workflows/deploy-staging.yml` + selective droplet rebuild (Task 5.1).
+- Local root suite: `npm test` (Task 3.7).
+- Product CI: still on `musicbizqr` / `qrserver` via each repo’s root `ci.yml` (unchanged until those remotes stop being daily SoT).
+- Staging deploy: `deploy-staging.yml` (gated on Root CI).
+- Root Actions (Task 12): `root-ci.yml` on stack/compose/`tests/**` paths — no FE/BE app builds.
 
-**Root Actions (Task 12 — done early):** `.github/workflows/root-ci.yml` runs `npm test` on stack/compose/`tests/**` (etc.) path changes. No FE/BE builds.
+**Options for monorepo FE/BE CI (Task 11):**
 
-**Still needed after history merge (Task 11):** GitHub only runs workflows from the **repo-root** `.github/workflows/`. Once FE/BE histories live under `faneqo.com`, copy/adapt those existing product `ci.yml` files to root with `paths:` filters. This does **not** invent new test suites.
+| Option | Shape | Pros | Cons | Verdict |
+|--------|-------|------|------|---------|
+| **A. Two root workflows + path filters** | `.github/workflows/frontend-ci.yml` + `backend-ci.yml`; `paths: frontend/**` / `backend/**`; `defaults.run.working-directory` or `working-directory:` on steps; Node pins from env / `FRONTEND_NODE_VERSION` / `BACKEND_NODE_VERSION` | Matches today’s two product workflows; clear skip when other side unchanged; easy to read in Actions UI | Two files to maintain | **Recommended default** |
+| **B. One root workflow, two jobs** | Single `product-ci.yml` with `frontend` + `backend` jobs, each with path filters / `if:` | One file; shared checkout/setup possible | Noisy “skipped” jobs; harder concurrency labels | Acceptable if you prefer one file |
+| **C. Reusable workflow_call** | Keep logic in `.github/workflows/reusable-*.yml`; thin callers with paths | DRY if FE/BE steps drift together | Extra indirection; overkill while steps stay “npm ci + npm test + npm run build” | Later if duplication hurts |
+| **D. Leave CI only under `frontend/.github` / `backend/.github`** | Hope nested workflows run | — | **Does not work** on monorepo | **Reject** |
+| **E. Keep product remotes as only CI forever** | Never port; develop only via old remotes | Zero monorepo CI work | Breaks the point of daily workspace on `faneqo.com`; PRs on monorepo untested | **Reject** after cutover; OK *until* Task 11 |
 
-**Railway (cutover Task 16):** service roots `frontend`, `backend`, `frontend/jobs/mbq-cron` + watch paths.
+**Locked decisions (2026-11-11 discussion):**
+
+1. **Subdirectory CI does not run on `faneqo.com`** — must port to root (A or B).
+2. **Default implementation = Option A** (two root workflows, path filters, same steps as current product `ci.yml`: `npm ci` → `npm test` → `npm run build` with `working-directory: frontend|backend`). Switch to B only if human prefers one file.
+3. **Until Task 11 + daily workspace on monorepo:** product remotes keep their own root CI; that is correct dual-running, not duplication debt.
+4. **Nested copies after port:** keep `frontend/.github/workflows/ci.yml` and `backend/.github/workflows/ci.yml` in-tree **until product remotes are archived / cut over** (they remain the live CI for those remotes if history still pushes there). After cutover (Task 16+), either delete nested workflows or replace with a one-line README pointer to root workflows — decide at archival (open: delete vs stub).
+5. **Do not invent new test suites in Task 11** — relocate + path-filter + Node pin alignment only.
+6. **Tree-compare ignore:** `scripts/merge-product-history.sh` already ignores `.github/` so nested CI drift does not block history merge (by design).
+
+**Open (human can flip without re-planning Phase 5):** A vs B file layout; post-cutover delete vs stub for nested `ci.yml`.
+
+**Railway (cutover Task 16):** service roots `frontend`, `backend`, `frontend/jobs/mbq-cron` + watch paths — independent of Actions layout.
 
 ### E. Monorepo-driven product edits wait until last step
 
@@ -339,7 +372,8 @@ Audit remediation plan: `tasks/audit-issues-plan.md`. Start product fixes only a
 | Fork | Choice |
 |------|--------|
 | Temp nested-`.git` removal | **YES** — local only; re-clone before history merge |
-| History tool | **LATER** — defer filter-repo vs subtree until history phase |
+| History tool | **LOCKED 2026-11-11** — `scripts/merge-product-history.sh`: filter-repo **init**, subtree pull **update**; dry-run default |
+| Monorepo FE/BE CI (Task 11) | **LOCKED constraint:** nested `.github` under `frontend/`/`backend/` does **not** run on `faneqo.com`. **Default Option A:** root `frontend-ci.yml` + `backend-ci.yml` + path filters. Product remotes keep CI until cutover. |
 | Staging host | **DO only** — never Railway staging (Checkpoint B) |
 | Droplet size | **2GB** |
 | Branch model | Keep `main` empty for now; all work on `staging`; `staging` deploys to droplet |
@@ -399,13 +433,15 @@ Provision droplet; deploy with **same** root `docker-compose.yml` + `docker comp
 
 ### Phase 3–4 — History merge (NEXT real migration; HOLD until human go)
 
-**Task 7:** re-clone pristine `musicbizqr` / `qrserver` (temp nested-`.git` was removed). **Tasks 8–10:** freeze SHAs, filter-repo/subtree in scratch, merge into `faneqo.com`, land root files, push `main`. Do not force-push product remotes.
+**Tool locked:** [`scripts/merge-product-history.sh`](../scripts/merge-product-history.sh) (dry-run by default; **do not `--execute` until human go**).
 
-Checkpoint C = pristine trees ready. Checkpoint D = monorepo has real history; prod still on old remotes.
+**Task 7:** confirm `git-filter-repo` installed; dry-run script (tips resolve); optional nested re-clone only if daily trees need nested `.git` again (script itself uses scratch clones — nested restore not required to *run* the merge). **Task 8:** freeze tips / state file via dry-run output. **Task 9:** `--execute` then `--push` after review. **Task 10:** land any missing root files on monorepo. Do not force-push product remotes.
+
+Checkpoint C = dry-run OK + human go. Checkpoint D = monorepo has real history; prod still on old remotes.
 
 ### Phase 5–6 — Post-merge chores (small; after history)
 
-**Not a second migration.** Task 12 (root `npm test` Actions) already landed early. Task 11 ports FE/BE product CI to monorepo root Actions with path filters; Task 13 points daily workspace at `faneqo.com`.
+**Not a second migration.** Task 12 (root `npm test` Actions) already landed early. Task 11 ports FE/BE product CI to monorepo **root** Actions (subdirectory CI cannot run — Architecture D; Option A default); Task 13 points daily workspace at `faneqo.com`.
 
 ### Phase 7 — Optional monorepo product edits
 
@@ -443,7 +479,7 @@ Task 17 / `tasks/audit-issues-plan.md`. Not a history/prod blocker.
 **Answered 2026-11-08** (see Phase 0 + `tasks/todo.md` Decisions log):
 
 1. ~~**Temp path**~~ → **YES**, local nested-`.git` removal; re-clone before history merge.
-2. ~~**History tool**~~ → **Deferred** until history phase (filter-repo vs subtree).
+2. ~~**History tool**~~ → **Locked 2026-11-11** — `scripts/merge-product-history.sh` (filter-repo init, subtree update; dry-run default; no `--execute` until go).
 3. ~~**Staging**~~ → **DO only** for now (no Railway staging yet).
 4. ~~**Droplet size**~~ → **2GB**.
 5. ~~**Branch model**~~ → `main` stays empty for now; all work on `staging`; `staging` deploys to droplet.
