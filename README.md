@@ -82,7 +82,7 @@ bash scripts/staging-up.sh    # staging-build.sh then docker compose up -d
 
 `scripts/staging-build.sh` runs install+build in one-off `docker run --rm` containers using the same Node image tags as compose, then drops those containers. Host `node_modules/` + `.cache/npm` persist across deploys; install skips when the lockfile hash is unchanged. Detached compose keeps Postgres/FE/BE up with `restart: unless-stopped`.
 
-**CI deploy:** push to `staging` runs [`.github/workflows/deploy-staging.yml`](.github/workflows/deploy-staging.yml) → SSH → `scripts/staging-droplet-deploy.sh`. Secrets + rollback: [`docs/staging-droplet.md`](docs/staging-droplet.md).
+**CI deploy:** push to `staging` runs [`.github/workflows/deploy-staging.yml`](.github/workflows/deploy-staging.yml) → Root CI gate → SSH → `scripts/staging-droplet-deploy.sh`. Failed root tests skip deploy. Secrets + rollback: [`docs/staging-droplet.md`](docs/staging-droplet.md).
 
 **Staging data:** empty migrate + local volume only — never Railway `chalk-volume`. Refresh steps: [`docs/staging-data.md`](docs/staging-data.md).
 

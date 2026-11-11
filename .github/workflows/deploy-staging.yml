@@ -1,5 +1,5 @@
 # Deploy content-only staging branch to the DO droplet.
-# Build runs ON the droplet (scripts/staging-droplet-deploy.sh) — not on the runner.
+# Root CI must pass first (reusable workflow). Build runs ON the droplet — not the runner.
 # Required repo secrets: STAGING_HOST, STAGING_USER, STAGING_SSH_PRIVATE_KEY
 name: Deploy staging
 
@@ -14,7 +14,12 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
+  root-test:
+    name: Root CI gate
+    uses: ./.github/workflows/root-ci.yml
+
   deploy:
+    needs: root-test
     runs-on: ubuntu-latest
     timeout-minutes: 45
     steps:

@@ -1,9 +1,11 @@
 # Root stack suite only (Architecture I / Task 3.7).
 # Runs `npm test` = test:stack + test:root. No FE/BE app builds.
 # Path filters: skip when only frontend/** or backend/** product code changes.
+# Staging deploys call this via workflow_call (gate before SSH).
 name: Root CI
 
 on:
+  workflow_call:
   pull_request:
     paths:
       - "docker-compose.yml"
@@ -21,7 +23,7 @@ on:
       - ".github/workflows/deploy-staging.yml"
   push:
     branches:
-      - staging
+      # staging: gated inside deploy-staging.yml (workflow_call) — no parallel ungated run
       - main
     paths:
       - "docker-compose.yml"

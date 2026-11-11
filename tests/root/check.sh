@@ -335,8 +335,14 @@ grep -Fq 'STAGING_SSH_PRIVATE_KEY' .github/workflows/deploy-staging.yml \
   || fail "deploy-staging.yml must use STAGING_SSH_PRIVATE_KEY secret"
 grep -Fq 'STAGING_USER' .github/workflows/deploy-staging.yml \
   || fail "deploy-staging.yml must use STAGING_USER secret"
+grep -Fq 'needs: root-test' .github/workflows/deploy-staging.yml \
+  || fail "deploy-staging.yml must gate deploy on needs: root-test"
+grep -Fq 'uses: ./.github/workflows/root-ci.yml' .github/workflows/deploy-staging.yml \
+  || fail "deploy-staging.yml must call root-ci.yml as reusable workflow"
 # Root CI (Task 12) — wires existing npm test; no FE/BE builds
 [[ -f .github/workflows/root-ci.yml ]] || fail ".github/workflows/root-ci.yml missing"
+grep -Fq 'workflow_call:' .github/workflows/root-ci.yml \
+  || fail "root-ci.yml must support workflow_call for deploy gate"
 grep -Fq 'npm test' .github/workflows/root-ci.yml \
   || fail "root-ci.yml must run npm test"
 grep -Fq 'tests/**' .github/workflows/root-ci.yml \
