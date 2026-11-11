@@ -77,6 +77,7 @@ else
 fi
 
 export BUILD_BACKEND BUILD_FRONTEND
+echo "==> selective rebuild BUILD_BACKEND=${BUILD_BACKEND} BUILD_FRONTEND=${BUILD_FRONTEND}"
 bash "${ROOT}/scripts/staging-build.sh"
 
 SERVICES=()

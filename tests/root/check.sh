@@ -251,6 +251,10 @@ grep -Fq 'FORCE_NPM_INSTALL' scripts/staging-build.sh \
   || fail "staging-build.sh must support FORCE_NPM_INSTALL override"
 grep -Fq '.cache/npm' scripts/staging-build.sh \
   || fail "staging-build.sh must default npm cache under .cache/npm"
+grep -Fq 'bash -c' scripts/staging-build.sh \
+  || fail "staging-build.sh must run install script under bash -c ([[ not in dash/sh)"
+grep -Fq 'selective rebuild BUILD_BACKEND' scripts/staging-droplet-deploy.sh \
+  || fail "staging-droplet-deploy.sh must echo selective BUILD_* decision"
 grep -Fq 'BUILD_BACKEND' scripts/staging-build.sh \
   || fail "staging-build.sh must support BUILD_BACKEND selective build"
 grep -Fq 'BUILD_FRONTEND' scripts/staging-build.sh \

@@ -115,7 +115,7 @@ if [[ "${BUILD_BACKEND}" == "1" ]]; then
     -e NODE_ENV="${NODE_ENV:-staging}" \
     -e FORCE_NPM_INSTALL="${FORCE_NPM_INSTALL:-0}" \
     "${BACKEND_IMAGE}" \
-    sh -c "${NPM_INSTALL_AND_BUILD}"
+    bash -c "${NPM_INSTALL_AND_BUILD}"
 else
   echo "==> backend build skipped"
 fi
@@ -134,7 +134,7 @@ if [[ "${BUILD_FRONTEND}" == "1" ]]; then
     -e NODE_OPTIONS="${FRONTEND_NODE_OPTIONS}" \
     -e FORCE_NPM_INSTALL="${FORCE_NPM_INSTALL:-0}" \
     "${FRONTEND_IMAGE}" \
-    sh -c "${NPM_INSTALL_AND_BUILD}"
+    bash -c "${NPM_INSTALL_AND_BUILD}"
 else
   echo "==> frontend build skipped"
 fi
