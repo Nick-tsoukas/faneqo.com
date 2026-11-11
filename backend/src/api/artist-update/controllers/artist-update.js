@@ -193,6 +193,15 @@ module.exports = createCoreController('api::artist-update.artist-update', ({ str
       return send(ctx, presentManage(result));
     },
 
+    async artistPagePlacement(ctx) {
+      const userId = await resolveUserId(strapi, ctx);
+      const result = await featured.placementForBand({
+        userId,
+        bandId: ctx.query.bandId,
+      });
+      return send(ctx, result);
+    },
+
     async rocksnapsCapability(ctx) {
       const userId = await resolveUserId(strapi, ctx);
       const result = await rocksnaps.capability({

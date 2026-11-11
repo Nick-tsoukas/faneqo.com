@@ -50,18 +50,20 @@
       </fieldset>
 
       <div class="gedit__feature">
-        <p class="gedit__label">Artist profile</p>
+        <p class="gedit__label">Artist page</p>
+        <p v-if="featuredOnProfile" class="gedit__showing">Showing on artist page</p>
+        <p v-else-if="replaceWarning" class="gedit__hint gedit__place">{{ replaceWarning }}</p>
+        <p class="gedit__hint gedit__place">Feature this gallery on your main artist page.</p>
         <button
           type="button"
-          class="gedit__feature-btn"
-          :class="{ 'is-on': featuredOnProfile }"
-          :aria-pressed="featuredOnProfile ? 'true' : 'false'"
+          class="gedit__page-btn"
+          :class="{ 'is-remove': featuredOnProfile }"
           :disabled="featuring || !canFeature"
           @click="onFeatureToggle"
         >
-          {{ featuring ? 'Saving…' : (featuredOnProfile ? 'Featured on artist profile' : 'Feature on artist profile') }}
+          {{ featuring ? 'Saving…' : (featuredOnProfile ? 'Remove from artist page' : 'Show on artist page') }}
         </button>
-        <p v-if="featureReason" class="gedit__hint">{{ featureReason }}</p>
+        <p v-if="featureReason" class="gedit__hint gedit__place">{{ featureReason }}</p>
         <p v-if="featureNote" class="gedit__saved" role="status">{{ featureNote }}</p>
         <p v-if="featureError" class="gedit__error" role="alert">{{ featureError }}</p>
       </div>
@@ -147,6 +149,17 @@
     </section>
 
     <FaneqoGalleryConfirm
+      :open="replaceOpen"
+      heading="Show this gallery on your artist page?"
+      :body="replaceWarning"
+      confirm-label="Show on artist page"
+      busy-label="Saving…"
+      :busy="featuring"
+      @cancel="replaceOpen = false"
+      @confirm="commitFeature"
+    />
+
+    <FaneqoGalleryConfirm
       :open="!!pendingRemoval"
       heading="Remove this photo?"
       body="It leaves this gallery when you save. Fans who saved the gallery will no longer see it."
@@ -192,6 +205,7 @@ const {
   saveManageGallery,
   featureGalleryOnProfile,
   unfeatureGalleryOnProfile,
+  getArtistPagePlacement,
   setRocksnapsPublication,
 } = useGalleryDrafts()
 
@@ -218,6 +232,9 @@ const saved = ref(false)
 const error = ref('')
 const featuring = ref(false)
 const featureNote = ref('')
+const placement = ref(null)
+const placementUnknown = ref(false)
+const replaceOpen = ref(false)
 const featureError = ref('')
 const pendingRemoval = ref(null)
 
@@ -266,12 +283,21 @@ const featureReason = computed(() => {
   const row = gallery.value
   if (!row || featuredOnProfile.value) return ''
   if (row.status === 'hidden') return 'This gallery is hidden.'
-  if (row.status && row.status !== 'published') return 'Publish this gallery before featuring it.'
-  if (row.visibility && row.visibility !== 'public') return 'Make this gallery public before featuring it on your artist profile.'
-  if (!orderedMedia(row).length) return 'Add a photo before featuring this gallery.'
+  if (row.status && row.status !== 'published') return 'Publish this gallery before showing it on your artist page.'
+  if (visibility.value !== 'public') return 'Only galleries visible to Everyone can be shown on your artist page.'
+  if (audienceDirty.value) return 'Save who can see these photos before showing this gallery on your artist page.'
+  if (!orderedMedia(row).length) return 'Add a photo before showing this gallery on your artist page.'
   return ''
 })
 const canFeature = computed(() => !featureReason.value || featuredOnProfile.value)
+const replaceWarning = computed(() => {
+  if (!gallery.value || featuredOnProfile.value || featureReason.value) return ''
+  if (placementUnknown.value) return 'This replaces the gallery already on your artist page, if there is one.'
+  const id = placement.value?.featuredGalleryId
+  if (!id || Number(id) === Number(gallery.value.id)) return ''
+  const title = placement.value?.featuredTitle || 'The gallery already on your artist page'
+  return `This replaces ${title} on your artist page.`
+})
 const rocksnapsEligible = computed(() => rocksnaps.value?.eligible === true)
 const rocksnapsOn = computed(() => rocksnaps.value?.enabled === true)
 const audienceDirty = computed(() => visibility.value !== (gallery.value?.visibility || 'public'))
@@ -348,6 +374,7 @@ async function load() {
       return
     }
     adopt(result.data)
+    await loadPlacement(result.data.bandId)
   } catch (err) {
     loadError.value = readableError(err) || 'Could not open that gallery.'
   } finally {
@@ -492,8 +519,29 @@ async function onRocksnapsToggle() {
   }
 }
 
+async function loadPlacement(bandId) {
+  if (!bandId) return
+  try {
+    const result = await getArtistPagePlacement(bandId)
+    placement.value = result?.data || null
+    placementUnknown.value = false
+  } catch {
+    placement.value = null
+    placementUnknown.value = true
+  }
+}
+
 async function onFeatureToggle() {
   if (!gallery.value?.id || featuring.value || !canFeature.value) return
+  if (!featuredOnProfile.value && replaceWarning.value) {
+    replaceOpen.value = true
+    return
+  }
+  await commitFeature()
+}
+
+async function commitFeature() {
+  if (!gallery.value?.id || featuring.value) return
   featuring.value = true
   featureError.value = ''
   featureNote.value = ''
@@ -502,15 +550,22 @@ async function onFeatureToggle() {
     const result = wasFeatured
       ? await unfeatureGalleryOnProfile(gallery.value.id)
       : await featureGalleryOnProfile(gallery.value.id)
-    gallery.value = {
-      ...gallery.value,
-      featuredOnProfile: result?.data?.featuredOnProfile === true,
+    const on = result?.data?.featuredOnProfile === true
+    gallery.value = { ...gallery.value, featuredOnProfile: on }
+    featureNote.value = on ? 'Showing on your artist page.' : 'Removed from your artist page.'
+    if (on) {
+      placement.value = {
+        ...(placement.value || {}),
+        featuredGalleryId: gallery.value.id,
+        featuredTitle: gallery.value.title || title.value || '',
+      }
+      placementUnknown.value = false
+    } else if (Number(placement.value?.featuredGalleryId) === Number(gallery.value.id)) {
+      placement.value = { ...(placement.value || {}), featuredGalleryId: null, featuredTitle: '' }
     }
-    featureNote.value = gallery.value.featuredOnProfile
-      ? 'Featured on your artist profile.'
-      : 'Removed from your artist profile.'
+    replaceOpen.value = false
   } catch (err) {
-    featureError.value = readableError(err) || 'Could not update the artist profile.'
+    featureError.value = readableError(err) || 'Could not update your artist page.'
   } finally {
     featuring.value = false
   }
@@ -558,7 +613,7 @@ onBeforeUnmount(() => {
 <style scoped>
 .gedit {
   min-height: 100dvh;
-  padding: calc(var(--header-height, 70px) + 0.75rem) max(1rem, env(safe-area-inset-left, 0px)) calc(3rem + env(safe-area-inset-bottom, 0px));
+  padding: calc(var(--header-height, 70px) + 0.75rem) max(1rem, env(safe-area-inset-left, 0px)) calc(6.5rem + env(safe-area-inset-bottom, 0px));
   background:
     radial-gradient(760px 320px at 8% -8%, rgba(57, 213, 255, 0.08), transparent 54%),
     #050608;
@@ -631,26 +686,59 @@ onBeforeUnmount(() => {
 .gedit__feature {
   margin-top: 1.25rem;
 }
+.gedit__showing {
+  margin: 0.2rem 0 0;
+  color: #f7f9fc;
+  font-size: 1rem;
+  font-weight: 750;
+}
+.gedit__place {
+  color: rgba(247, 249, 252, 0.86);
+  font-size: 0.9rem;
+}
+.gedit__page-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  margin-top: 0.55rem;
+  min-height: 48px;
+  padding: 0.7rem 0.9rem;
+  border-radius: 0.75rem;
+  border: 0;
+  background: #f7f9fc;
+  color: #08090a;
+  font: inherit;
+  font-size: 0.95rem;
+  font-weight: 750;
+  cursor: pointer;
+}
+.gedit__page-btn.is-remove {
+  border: 1px solid rgba(247, 249, 252, 0.55);
+  background: transparent;
+  color: #f7f9fc;
+}
+.gedit__page-btn:disabled { opacity: 0.5; cursor: default; }
+.gedit__page-btn:focus-visible { outline: 2px solid #39d5ff; outline-offset: 3px; }
 .gedit__feature-btn {
   margin-top: 0.35rem;
-  min-height: 44px;
+  min-height: 48px;
   padding: 0.55rem 0.9rem;
   border-radius: 0.7rem;
-  border: 1px solid rgba(255, 255, 255, 0.14);
+  border: 1px solid rgba(255, 255, 255, 0.28);
   background: transparent;
-  color: rgba(247, 249, 252, 0.82);
+  color: #f7f9fc;
   font: inherit;
-  font-size: 0.92rem;
+  font-size: 0.95rem;
+  font-weight: 700;
   cursor: pointer;
 }
 .gedit__feature-btn.is-on {
-  border-color: rgba(255, 255, 255, 0.42);
-  color: #f7f9fc;
+  border-color: #f7f9fc;
+  background: rgba(247, 249, 252, 0.1);
 }
-.gedit__feature-btn:disabled {
-  opacity: 0.45;
-  cursor: default;
-}
+.gedit__feature-btn:disabled { opacity: 0.5; cursor: default; }
+.gedit__feature-btn:focus-visible { outline: 2px solid #39d5ff; outline-offset: 3px; }
 .gedit__choice {
   display: flex;
   align-items: flex-start;
@@ -765,6 +853,9 @@ onBeforeUnmount(() => {
   justify-content: center;
   gap: 0.6rem;
   margin-top: 0.6rem;
+}
+@media (min-width: 1024px) {
+  .gedit { padding-bottom: 3rem; }
 }
 @media (max-width: 390px) {
   .gedit :deep(.fq-media-prev.is-composer) {

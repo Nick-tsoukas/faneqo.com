@@ -26,6 +26,7 @@ Module._load = function (request, ...rest) { return request === 'stripe' ? FakeS
 const band = {
   id: 7, name: 'Moon Dough', slug: 'moondough', stripeAccountId: 'acct_test_band',
   paymentsEnabled: true, stripeOnboardingComplete: true,
+  users_permissions_user: { id: 3, blocked: false }, // checkout refuses bands without an active owner
   paymentButtons: [{ key: 'tip_band', enabled: true, title: 'Tip the Band', pricingMode: 'min', minAmount: 1 }],
   merchConcierge: { enabled: true, staffReadyConfirmed: true, pickupInstructions: 'Merch table', merchItems: [{ title: 'Tee', priceCents: 2500, availableQty: 5 }] },
 };
@@ -42,6 +43,7 @@ const ctx = (body, params = {}) => {
   const c = { params, request: { body }, body: null, status: 200 }
   c.badRequest = (m) => { c.status = 400; c.body = m }
   c.notFound = (m) => { c.status = 404; c.body = m }
+  c.forbidden = (m) => { c.status = 403; c.body = m }
   return c
 };
 const freshController = (rel) => { const p = path.join(root, rel); delete require.cache[require.resolve(p)]; return require(p) };

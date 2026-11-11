@@ -15,6 +15,23 @@
             >
               {{ connectionStatus === 'connected' ? '● Connected' : '● Disconnected' }}
             </span>
+            <!-- Admin token (production requires it). Kept for this browser tab only (sessionStorage). -->
+            <input
+              v-model="adminToken"
+              type="password"
+              autocomplete="off"
+              placeholder="Admin token"
+              aria-label="Corvana admin token"
+              class="px-3 py-2 border border-gray-300 rounded-lg text-sm w-40"
+              data-testid="corvana-admin-token"
+              @change="saveAdminToken"
+            />
+            <button
+              @click="connectGoogle"
+              class="px-4 py-2 bg-white border border-gray-300 text-gray-800 rounded-lg text-sm hover:bg-gray-100 transition"
+            >
+              Connect Google
+            </button>
             <button
               @click="testConnection"
               class="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm hover:bg-blue-700 transition"
@@ -346,6 +363,26 @@
 <script setup>
 import { ref, reactive, onMounted } from 'vue'
 
+// Corvana APIs require the admin token in production (x-corvana-admin-token header,
+// never the URL). It lives only in this tab's sessionStorage, never in code.
+const TOKEN_KEY = 'corvana-admin-token'
+const adminToken = ref('')
+function saveAdminToken() {
+  try { sessionStorage.setItem(TOKEN_KEY, adminToken.value.trim()) } catch {}
+}
+function corvanaFetch(url, options = {}) {
+  const headers = { ...(options.headers || {}) }
+  if (adminToken.value.trim()) headers['x-corvana-admin-token'] = adminToken.value.trim()
+  return fetch(url, { ...options, headers })
+}
+async function connectGoogle() {
+  error.value = ''
+  const response = await corvanaFetch('/api/corvana/google/connect')
+  const json = await response.json().catch(() => ({}))
+  if (response.ok && json.url) window.location.href = json.url
+  else error.value = json.message || json.error || 'Could not start the Google connection.'
+}
+
 // Connection status
 const connectionStatus = ref('unknown')
 const error = ref('')
@@ -413,7 +450,7 @@ const promptTypes = [
 // Test Search Console connection
 async function testConnection() {
   try {
-    const response = await fetch('/api/corvana/search-console/test')
+    const response = await corvanaFetch('/api/corvana/search-console/test')
     if (response.ok) {
       connectionStatus.value = 'connected'
       error.value = ''
@@ -446,7 +483,7 @@ async function fetchData(type) {
                     type === 'query-ownership' ? '/api/corvana/seo/report/query-ownership' :
                     type === 'internal-links' ? '/api/corvana/seo/report/internal-links' : ''
     
-    const response = await fetch(`${endpoint}?days=28`)
+    const response = await corvanaFetch(`${endpoint}?days=28`)
     const result = await response.json()
     
     if (!response.ok) {
@@ -471,7 +508,7 @@ async function fetchPageDetail() {
   
   try {
     const encodedUrl = encodeURIComponent(pageUrl.value)
-    const response = await fetch(`/api/corvana/seo/export/page-detail?url=${encodedUrl}&days=28`)
+    const response = await corvanaFetch(`/api/corvana/seo/export/page-detail?url=${encodedUrl}&days=28`)
     const result = await response.json()
     
     if (!response.ok) {
@@ -490,7 +527,7 @@ async function fetchPageDetail() {
 // Fetch upgrades
 async function fetchUpgrades() {
   try {
-    const response = await fetch('/api/corvana/seo/upgrades')
+    const response = await corvanaFetch('/api/corvana/seo/upgrades')
     const result = await response.json()
     
     if (!response.ok) {
@@ -507,7 +544,7 @@ async function fetchUpgrades() {
 // Fetch upgrade report
 async function fetchUpgradeReport() {
   try {
-    const response = await fetch('/api/corvana/seo/upgrades/report')
+    const response = await corvanaFetch('/api/corvana/seo/upgrades/report')
     const result = await response.json()
     
     if (!response.ok) {
@@ -527,7 +564,7 @@ async function markUpgrade() {
   error.value = ''
   
   try {
-    const response = await fetch('/api/corvana/seo/upgrades/mark', {
+    const response = await corvanaFetch('/api/corvana/seo/upgrades/mark', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
@@ -564,7 +601,7 @@ async function generatePrompt(type) {
   error.value = ''
   
   try {
-    const response = await fetch(`/api/corvana/seo/export/chatgpt-prompt?type=${type}&days=28`)
+    const response = await corvanaFetch(`/api/corvana/seo/export/chatgpt-prompt?type=${type}&days=28`)
     const result = await response.json()
     
     if (!response.ok) {
@@ -607,6 +644,10 @@ async function copyPromptToClipboard() {
 }
 
 // Test connection on mount
+onMounted(() => {
+  try { adminToken.value = sessionStorage.getItem(TOKEN_KEY) || '' } catch {}
+})
+
 onMounted(() => {
   testConnection()
 })

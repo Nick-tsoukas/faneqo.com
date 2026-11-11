@@ -156,6 +156,103 @@ function createFeaturedGalleryService(strapi, deps = {}) {
     };
   }
 
+  async function galleryTitle(updateId) {
+    const row = await loadGallery(updateId);
+    return row?.title || '';
+  }
+
+  /**
+   * Set the artist-page gallery only when the band does not already have one.
+   * The relation lives in a Strapi link table (bands_featured_gallery_links),
+   * so this reads, writes only when vacant, and re-reads to report what stuck.
+   * Two publishes in the same instant could both see "vacant"; the re-read
+   * then reports whichever gallery was kept.
+   */
+  async function claimIfVacant(bandId, galleryId) {
+    const wanted = Number(galleryId);
+    const current = await loadBandFeature(bandId);
+    const id = pure.relationId(current?.featuredGallery);
+    if (id && id !== wanted) {
+      return { featured: false, keptTitle: await galleryTitle(id) };
+    }
+    if (id === wanted) return { featured: true, keptTitle: '' };
+    await strapi.entityService.update(BAND_UID, bandId, {
+      data: { featuredGallery: wanted },
+    });
+    const after = await loadBandFeature(bandId);
+    const saved = pure.relationId(after?.featuredGallery);
+    if (saved === wanted) return { featured: true, keptTitle: '' };
+    return { featured: false, keptTitle: saved ? await galleryTitle(saved) : '' };
+  }
+
+  /**
+   * Publish-time artist page placement.
+   * `false` is an explicit skip. Omitted only fills an empty artist page.
+   * `true` may replace the gallery already showing.
+   * Failure here must not fail the publish; the caller keeps the gallery.
+   */
+  async function applyPublishChoice({ userId, updateId, showOnArtistPage }) {
+    const choice = pure.parseShowOnArtistPage(showOnArtistPage);
+    const empty = { featuredOnProfile: false, featureError: null, keptFeaturedTitle: null };
+    if (choice === false) return empty;
+    if (!userId) return { ...empty, featureError: 'Authentication required' };
+    const row = await loadGallery(updateId);
+    if (!row) return { ...empty, featureError: 'Gallery not found' };
+    const bandId = bandIdOf(row);
+    if (!bandId) return { ...empty, featureError: 'Gallery not found' };
+    const access = await authorize(userId, bandId);
+    if (!access) return { ...empty, featureError: 'Not authorized for this band' };
+    const block = pure.featureBlockReason(row);
+    if (block) {
+      return { ...empty, featureError: choice === true ? block.message : null };
+    }
+    const band = await strapi.entityService.findOne(BAND_UID, bandId, {
+      fields: ['id', 'pageStyle', 'slug'],
+    });
+    if (!pure.artistPageDisplaysGallery(band?.pageStyle)) {
+      return {
+        ...empty,
+        featureError: choice === true ? 'This artist page layout can’t show a gallery.' : null,
+      };
+    }
+    if (choice === true) {
+      const result = await featureOnProfile({ userId, updateId });
+      if (result?.error) return { ...empty, featureError: result.message };
+      return { featuredOnProfile: true, featureError: null, keptFeaturedTitle: null };
+    }
+    const claimed = await claimIfVacant(bandId, row.id);
+    return {
+      featuredOnProfile: claimed.featured === true,
+      featureError: null,
+      keptFeaturedTitle: claimed.featured ? null : (claimed.keptTitle || null),
+    };
+  }
+
+  async function placementForBand({ userId, bandId }) {
+    if (!userId) return { error: 'unauthorized', status: 401, message: 'Authentication required' };
+    const id = parseInt(bandId, 10);
+    if (!id) return { error: 'invalid_band', status: 400, message: 'Choose a band.' };
+    const access = await authorize(userId, id);
+    if (!access) return { error: 'forbidden', status: 403, message: 'Not authorized for this band' };
+    const band = await strapi.entityService.findOne(BAND_UID, id, {
+      fields: ['id', 'pageStyle', 'slug'],
+      populate: { featuredGallery: { fields: ['id', 'title'] } },
+    });
+    if (!band) return { error: 'not_found', status: 404, message: 'Artist not found' };
+    const featured = band.featuredGallery && typeof band.featuredGallery === 'object'
+      ? band.featuredGallery
+      : null;
+    const featuredId = pure.relationId(band.featuredGallery);
+    return {
+      data: {
+        featuredGalleryId: featuredId,
+        featuredTitle: featured?.title || '',
+        pageStyle: band.pageStyle || 'smartlink',
+        displaysOnArtistPage: pure.artistPageDisplaysGallery(band.pageStyle),
+      },
+    };
+  }
+
   async function clearFeaturedPointer(updateId) {
     const id = parseInt(updateId, 10);
     if (!id) return { cleared: 0 };
@@ -184,6 +281,8 @@ function createFeaturedGalleryService(strapi, deps = {}) {
     isFeatured,
     publicForBand,
     listPublicForBand,
+    applyPublishChoice,
+    placementForBand,
     clearFeaturedPointer,
   };
 }

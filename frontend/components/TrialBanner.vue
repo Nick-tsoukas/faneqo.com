@@ -9,9 +9,18 @@
       <h3 class="banner-title">
         Trial ends in {{ daysLeft }} {{ daysLeft === 1 ? 'day' : 'days' }}
       </h3>
-      <p class="banner-text">
-        Add a payment method now to keep your access uninterrupted after your trial.
+      <p v-if="!consent.needsConsent.value" class="banner-text" data-testid="trial-banner-terms">
+        {{ trialBannerText(priceLabel) }}
       </p>
+      <!-- Billing A: a saved card renews at trial end, so the server's terms and an unticked box come first. -->
+      <BillingConsent
+        v-else
+        v-model="consent.agreed.value"
+        :terms="consent.terms.value"
+        :notice="consent.notice.value"
+        :disabled="disabled"
+      />
+      <p v-if="termsUnavailable" class="banner-text" role="alert">Billing isn’t available right now. Please try again shortly.</p>
     </div>
     <div class="banner-progress">
       <div class="progress-bar">
@@ -21,9 +30,10 @@
     </div>
     <button
       @click="handleAddPayment"
-      :disabled="disabled"
+      :disabled="disabled || !consent.ready.value"
       class="banner-button banner-button-warning"
-      :class="{ 'opacity-50 cursor-not-allowed': disabled }"
+      :class="{ 'opacity-50 cursor-not-allowed': disabled || !consent.ready.value }"
+      data-testid="trial-banner-add-payment"
     >
       <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
@@ -34,26 +44,35 @@
 </template>
 
 <script setup lang="ts">
-import { defineProps, defineEmits, onMounted } from 'vue'
+import { computed, defineProps, defineEmits, onMounted } from 'vue'
+import { trialBannerText } from '~/utils/billing/billingTerms'
+import BillingConsent from '~/components/billing/BillingConsent.vue'
+import { useBillingConsent } from '~/composables/useBillingConsent'
 
 const props = defineProps<{
   daysLeft: number
   disabled?: boolean
+  /** The subscription's real price ("$12/month"), or null to word it without an amount. */
+  priceLabel?: string | null
 }>()
 
 // ← **This** was missing!
 const emit = defineEmits<{
-  (e: 'add-payment'): void
+  (e: 'add-payment', payload: { consent: object | null }): void
 }>()
 
+// Billing A: the server's portal terms (consent is required here only when no card is saved).
+const consent = useBillingConsent('portal')
+const termsUnavailable = computed(() => !consent.loading.value && !consent.terms.value)
+defineExpose({ handleRefusal: (json: unknown) => consent.handleRefusal(json) })
+
 onMounted(() => {
-  console.debug('[TrialBanner] mounted with daysLeft =', props.daysLeft)
+  consent.load()
 })
 
 function handleAddPayment() {
-  if (props.disabled) return
-  console.debug('[TrialBanner] Add Payment button clicked')
-  emit('add-payment')
+  if (props.disabled || !consent.ready.value) return
+  emit('add-payment', { consent: consent.payload() })
 }
 </script>
 

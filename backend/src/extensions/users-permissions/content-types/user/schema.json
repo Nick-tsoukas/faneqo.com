@@ -145,6 +145,9 @@
     "cancelAt": {
       "type": "date"
     },
+    "firstPaidAt": {
+      "type": "datetime"
+    },
     "pushOptIn": {
       "type": "boolean",
       "default": false

@@ -69,6 +69,12 @@ const evt = (type) => ({ id: `evt_${type}`, object: 'event', type, data: { objec
 
 async function main() {
   const controller = require('../src/api/subscription/controllers/subscription.js');
+  const { setStripeForTests } = require('../src/utils/billing/stripeClient');
+  // Lifetime Pro must be skipped before any Stripe call: a client that throws proves it.
+  setStripeForTests({
+    webhooks: stripeLib.webhooks,
+    subscriptions: { list: async () => { throw new Error('Stripe must not be called for Lifetime Pro'); } },
+  });
 
   console.log('\nBilling webhook vs Lifetime Pro');
   const lifetimeUsers = [
@@ -89,6 +95,14 @@ async function main() {
   }
 
   await test('a normal artist is still updated by the same events', async () => {
+    // Billing events re-read Stripe; the fake answers with the state each event implies.
+    const stripeState = {
+      'checkout.session.completed': 'active',
+      'invoice.payment_succeeded': 'active',
+      'invoice.payment_failed': 'past_due',
+      'customer.subscription.updated': 'past_due',
+      'customer.subscription.deleted': 'canceled',
+    };
     const expected = {
       'checkout.session.completed': 'active',
       'invoice.payment_succeeded': 'active',
@@ -97,6 +111,10 @@ async function main() {
       'customer.subscription.deleted': 'canceled',
     };
     for (const [type, status] of Object.entries(expected)) {
+      setStripeForTests({
+        webhooks: stripeLib.webhooks,
+        subscriptions: { list: async () => ({ data: [{ id: 'sub_1', customer: 'cus_1', status: stripeState[type], latest_invoice: null }] }) },
+      });
       await withUser({ id: 3, customerId: 'cus_1', subscriptionId: 'sub_1', subscriptionStatus: 'trialing', plan: 'Pro' }, async (writes) => {
         await controller.webhook(signedCtx(evt(type)));
         assert.equal(writes.length, 1, type);

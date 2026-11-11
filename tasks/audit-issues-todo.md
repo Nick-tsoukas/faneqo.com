@@ -105,6 +105,9 @@ Browsers must not see or call Strapi. Nuxt server proxies. CORS origins from pub
 
 ## Phase 6: P2
 
+High tooling first, then the rest of the band:
+
+- [ ] `test-002` — FE tests in one dir; `npm test` discovers (no `package.json` `&&` file lists)
 - [ ] `sec-003` — Stripe webhook failure returns fixed string
 - [ ] `sec-004` — fanecco / LAN off allowlist (or already closed by `sec-009`)
 - [ ] `sec-010` — no hardcoded Railway / api.musicbizqr.com in client pages
@@ -139,7 +142,7 @@ Browsers must not see or call Strapi. Nuxt server proxies. CORS origins from pub
 ## Phase 8: Tests
 
 - [ ] `test-001-api` — tests lock YouTube caller check + user-admin secret rule
-- [ ] `test-001-app` — tests lock `free` = Lifetime Pro
+- [ ] `test-001-app` — tests lock `free` = Lifetime Pro (after `test-002`)
 
 ### Checkpoint: Complete
 

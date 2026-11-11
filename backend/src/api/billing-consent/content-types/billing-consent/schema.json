@@ -1,0 +1,94 @@
+{
+  "kind": "collectionType",
+  "collectionName": "billing_consents",
+  "info": {
+    "singularName": "billing-consent",
+    "pluralName": "billing-consents",
+    "displayName": "Billing Consent",
+    "description": "Append-only record of an artist's explicit consent to recurring Faneqo Pro billing (Billing A). Written by the server only; no public API routes."
+  },
+  "options": {
+    "draftAndPublish": false
+  },
+  "pluginOptions": {},
+  "attributes": {
+    "user": {
+      "type": "relation",
+      "relation": "manyToOne",
+      "target": "plugin::users-permissions.user"
+    },
+    "dedupeKey": {
+      "type": "string",
+      "required": true,
+      "unique": true
+    },
+    "action": {
+      "type": "enumeration",
+      "enum": [
+        "end_trial",
+        "new_subscription",
+        "pay_invoice",
+        "portal_add_card",
+        "portal_pay_due"
+      ],
+      "required": true
+    },
+    "consentVersion": {
+      "type": "string",
+      "required": true
+    },
+    "termsKey": {
+      "type": "string",
+      "required": true
+    },
+    "disclosedText": {
+      "type": "text",
+      "required": true
+    },
+    "priceLabel": {
+      "type": "string"
+    },
+    "amountCents": {
+      "type": "integer"
+    },
+    "currency": {
+      "type": "string"
+    },
+    "interval": {
+      "type": "string"
+    },
+    "intervalCount": {
+      "type": "integer"
+    },
+    "previousPriceLabel": {
+      "type": "string"
+    },
+    "immediateCharge": {
+      "type": "boolean",
+      "default": false
+    },
+    "stripeReferenceType": {
+      "type": "enumeration",
+      "enum": [
+        "checkout_session",
+        "invoice",
+        "billing_portal_session"
+      ],
+      "required": true
+    },
+    "stripeReference": {
+      "type": "string",
+      "required": true
+    },
+    "stripeSubscriptionId": {
+      "type": "string"
+    },
+    "bandId": {
+      "type": "integer"
+    },
+    "consentedAt": {
+      "type": "datetime",
+      "required": true
+    }
+  }
+}

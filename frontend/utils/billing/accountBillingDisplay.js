@@ -45,6 +45,8 @@ export function formatAccountRenewalCopy(billing, locale = 'en-US') {
   const priced = formatPricePerInterval(subscription?.price, locale)
   if (!priced) return null
   const status = billing?.status || subscription?.status
+  // An ended subscription doesn't renew; never say it does.
+  if (status === 'canceled' || status === 'incomplete_expired') return null
   if (status === 'trialing') return `After trial: ${priced}`
   return `Renews at ${priced}`
 }

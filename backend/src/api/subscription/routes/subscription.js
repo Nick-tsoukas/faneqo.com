@@ -19,6 +19,34 @@ module.exports = {
       },
     },
 
+    // Start Pro: open the right Stripe-hosted page, then confirm on return.
+    // Signed-in only; the handlers also refuse a missing user.
+    {
+      method: 'POST',
+      path: '/stripe/start-pro',
+      handler: 'api::subscription.subscription.startPro',
+      config: { policies: ['plugin::users-permissions.isAuthenticated'] },
+    },
+    {
+      method: 'GET',
+      path: '/stripe/start-pro/confirm',
+      handler: 'api::subscription.subscription.startProConfirm',
+      config: { policies: ['plugin::users-permissions.isAuthenticated'] },
+    },
+    // Billing A+B: the server's own terms for the consent step. Read-only.
+    {
+      method: 'GET',
+      path: '/stripe/start-pro/terms',
+      handler: 'api::subscription.subscription.startProTerms',
+      config: { policies: ['plugin::users-permissions.isAuthenticated'] },
+    },
+    {
+      method: 'GET',
+      path: '/stripe/billing-portal/terms',
+      handler: 'api::subscription.subscription.billingPortalTerms',
+      config: { policies: ['plugin::users-permissions.isAuthenticated'] },
+    },
+
     {
       method: 'POST',
       path:   '/stripe/register',

@@ -7,7 +7,7 @@
 
 const updates = require('../artistUpdates/artistUpdatePure');
 
-const PUBLIC_PHOTO_KEYS = ['id', 'url', 'width', 'height', 'alt'];
+const PUBLIC_PHOTO_KEYS = ['id', 'url', 'thumbnailUrl', 'width', 'height', 'alt'];
 
 function galleryCanonicalPath(bandSlug, gallerySlug) {
   const band = String(bandSlug || '').trim();
@@ -26,27 +26,47 @@ function displayablePhotos(update) {
   }).filter((item) => item && item.protected !== true && item.url);
 }
 
+const ARTIST_PAGE_GALLERY_LAYOUTS = new Set(['default', 'smartlink', 'compact', 'bold']);
+
+/**
+ * true  — artist asked to show this gallery, even if one is already showing
+ * false — artist turned the option off; never fill an empty artist page
+ * undefined — unspecified; show it only when the artist page has no gallery
+ */
+function parseShowOnArtistPage(value) {
+  if (value === true) return true;
+  if (value === false) return false;
+  return undefined;
+}
+
+function artistPageDisplaysGallery(pageStyle) {
+  const style = String(pageStyle || 'smartlink').trim();
+  return ARTIST_PAGE_GALLERY_LAYOUTS.has(style);
+}
+
 function featureBlockReason(update) {
   if (!update) return { error: 'not_found', status: 404, message: 'Gallery not found' };
   if (update.status === 'hidden') {
     return { error: 'ineligible', status: 400, message: 'This gallery is hidden.' };
   }
   if (update.status !== 'published') {
-    return { error: 'ineligible', status: 400, message: 'Publish this gallery before featuring it.' };
+    return { error: 'ineligible', status: 400, message: 'Publish this gallery before showing it on your artist page.' };
   }
   if (update.visibility !== 'public') {
-    return { error: 'ineligible', status: 400, message: 'Make this gallery public before featuring it on your artist profile.' };
+    return { error: 'ineligible', status: 400, message: 'Only galleries visible to Everyone can be shown on your artist page.' };
   }
   if (!displayablePhotos(update).length) {
-    return { error: 'ineligible', status: 400, message: 'Add a photo before featuring this gallery.' };
+    return { error: 'ineligible', status: 400, message: 'Add a photo before showing this gallery on your artist page.' };
   }
   return null;
 }
 
 function toPublicPhoto(item) {
+  const full = item.largeUrl || item.url;
   return {
     id: item.id,
-    url: item.largeUrl || item.url,
+    url: full,
+    thumbnailUrl: item.thumbnailUrl || item.thumbUrl || full || null,
     width: item.width || null,
     height: item.height || null,
     alt: item.alt || '',
@@ -109,6 +129,9 @@ module.exports = {
   PUBLIC_PHOTO_KEYS,
   galleryCanonicalPath,
   displayablePhotos,
+  ARTIST_PAGE_GALLERY_LAYOUTS,
+  parseShowOnArtistPage,
+  artistPageDisplaysGallery,
   featureBlockReason,
   toPublicGalleryIndexCard,
   toPublicFeaturedGallery,

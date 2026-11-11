@@ -9,6 +9,7 @@
   "GET /artist-updates/:id -> artist-update.detail",
   "GET /artist-updates/:id/manage -> artist-update.getManage",
   "GET /artist-updates/:id/media/:mediaId -> artist-update.streamMedia",
+  "GET /artist-updates/artist-page-placement -> artist-update.artistPagePlacement",
   "GET /artist-updates/by-slug -> artist-update.bySlug",
   "GET /artist-updates/delivery -> artist-update.delivery",
   "GET /artist-updates/manage -> artist-update.listMine",

@@ -51,7 +51,9 @@ assert.equal(
 
 const studio = read('pages/galleries/new.vue')
 assert.match(studio, /buildGalleryComposerReturn/)
-assert.match(studio, /Use in original message/)
+/* The publish reveal shows the return link; the page hands it the composer return path. */
+assert.ok(studio.includes(`:return-path="returnWithGallery || ''"`), 'page hands the reveal the composer return path')
+assert.ok(read('components/galleries/GalleryPublishReveal.vue').includes('<NuxtLink v-if="returnPath" :to="returnPath">Use in original message</NuxtLink>'), 'reveal shows the return link')
 assert.match(studio, /returnGallery: route\.query\.returnGallery/)
 assert.doesNotMatch(
   studio,

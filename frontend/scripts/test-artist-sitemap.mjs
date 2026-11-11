@@ -50,13 +50,13 @@ test('malformed or duplicate slugs never produce a URL', () => {
 
 test('the real pages/ directory reserves the app routes', () => {
   const reserved = reservedTopLevelPaths(fs.readdirSync(path.join(root, 'pages')))
-  for (const name of ['dashboard', 'article', 'createband', 'editband', 'login', 'signup']) assert.ok(reserved.has(name), name)
+  for (const name of ['dashboard', 'createband', 'editband', 'login', 'signup']) assert.ok(reserved.has(name), name)
 })
 
 test('sitemap reads artists at request time; eligibility ignores payments and content', () => {
   const config = read('nuxt.config.ts')
   assert.match(config, /sources: \['\/api\/sitemap\/artists'\]/)
-  assert.match(config, /sitemapReservedPaths: \[\.\.\.reservedTopLevelPaths\(readdirSync\('\.\/pages'\)\)\]/)
+  assert.match(config, /sitemapReservedPaths: \[\.\.\.reservedTopLevelPaths\(readdirSync\('\.\/pages'\)\), \.\.\.RETIRED_TOP_LEVEL_PATHS\]/)
   const route = read('server/api/sitemap/artists.get.ts')
   assert.match(route, /\/api\/bands\/sitemap`/)
   assert.match(route, /defineCachedEventHandler/)

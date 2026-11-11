@@ -33,30 +33,11 @@
             :class="{ 'is-on': rocksnapsOn }"
           >{{ rocksnapsLabel }}</span>
         </p>
-        <p class="fq-gitem__feature">
-          <template v-if="featured">
-            <span class="fq-gitem__draft" :class="featureBlock.eligible ? 'is-featured' : 'is-attention'">
-              {{ featureBlock.eligible ? 'Featured' : 'Needs attention' }}
-            </span>
-            <button
-              type="button"
-              class="fq-gitem__remove"
-              :disabled="featureBusy"
-              @click.stop="emit('unfeature', item)"
-            >
-              Remove
-            </button>
-          </template>
-          <button
-            v-else-if="featureBlock.eligible"
-            type="button"
-            class="fq-gitem__feature-btn"
-            :disabled="featureBusy"
-            @click.stop="emit('feature', item)"
-          >
-            Feature on artist page
-          </button>
-          <span v-else class="fq-gitem__feature-reason">{{ featureBlock.reason }}</span>
+        <p v-if="featured && !featureBlock.eligible" class="fq-gitem__feature">
+          <span class="fq-gitem__draft is-attention">Needs attention</span>
+        </p>
+        <p v-else-if="!featured && !featureBlock.eligible && featureBlock.reason" class="fq-gitem__feature">
+          <span class="fq-gitem__feature-reason">{{ featureBlock.reason }}</span>
         </p>
       </div>
       <div class="fq-gitem__tools">
@@ -72,6 +53,28 @@
           <component :is="icons.more" :size="18" :stroke-width="1.8" aria-hidden="true" />
         </button>
       </div>
+    </div>
+    <div v-if="featured || featureBlock.eligible" class="fq-gitem__page">
+      <p v-if="featured && featureBlock.eligible" class="fq-gitem__showing">Showing on artist page</p>
+      <p v-else-if="featured" class="fq-gitem__feature-reason">{{ featureBlock.detail }}</p>
+      <button
+        v-if="featured"
+        type="button"
+        class="fq-gitem__page-action"
+        :disabled="featureBusy"
+        @click.stop="emit('unfeature', item)"
+      >
+        {{ featureBusy ? 'Saving…' : 'Remove from artist page' }}
+      </button>
+      <button
+        v-else
+        type="button"
+        class="fq-gitem__page-action"
+        :disabled="featureBusy"
+        @click.stop="emit('feature', item)"
+      >
+        {{ featureBusy ? 'Saving…' : 'Show on artist page' }}
+      </button>
     </div>
     <button
       v-if="hidden"
@@ -435,44 +438,54 @@ onBeforeUnmount(() => {
   gap: 0.15rem 0.65rem;
   margin: 0.28rem 0 0;
 }
-.fq-gitem__feature-btn,
-.fq-gitem__remove {
-  min-height: 44px;
-  padding: 0;
-  border: 0;
-  background: transparent;
+.fq-gitem__page {
+  display: grid;
+  justify-items: start;
+  gap: 0.05rem;
+  margin-top: 0.35rem;
+}
+.fq-gitem__showing {
+  margin: 0;
+  color: rgba(245, 245, 246, 0.92);
   font-size: 0.84rem;
-  text-align: left;
+  font-weight: 620;
+  letter-spacing: -0.01em;
+  line-height: 1.35;
+}
+.fq-gitem__page-action {
+  display: inline-flex;
+  align-items: center;
+  justify-content: flex-start;
+  min-height: 44px;
+  margin: 0;
+  padding: 0 0.1rem;
+  border: 0;
+  border-radius: 0.4rem;
+  background: transparent;
+  color: #f5f5f6;
+  font: inherit;
+  font-size: 0.9rem;
+  font-weight: 650;
+  letter-spacing: -0.015em;
   cursor: pointer;
 }
-.fq-gitem__feature-btn {
-  color: rgba(245, 245, 246, 0.78);
-  font-weight: 600;
-}
-.fq-gitem__feature-btn:hover,
-.fq-gitem__remove:hover {
-  color: #f5f5f6;
-}
-.fq-gitem__remove {
-  color: rgba(245, 245, 246, 0.5);
-  font-weight: 550;
-}
-.fq-gitem__feature-btn:focus-visible,
-.fq-gitem__remove:focus-visible {
+.fq-gitem__page-action:hover:not(:disabled) { color: #ffffff; }
+.fq-gitem__page-action:focus-visible {
   outline: 2px solid #f5f5f6;
-  outline-offset: 2px;
+  outline-offset: 3px;
 }
-.fq-gitem__feature-btn:disabled,
-.fq-gitem__remove:disabled {
-  opacity: 0.45;
+.fq-gitem__page-action:disabled {
+  opacity: 0.5;
   cursor: default;
 }
 .fq-gitem__feature-reason {
   min-height: 44px;
   display: inline-flex;
   align-items: center;
-  color: rgba(245, 245, 246, 0.46);
-  font-size: 0.84rem;
+  margin: 0;
+  color: rgba(245, 245, 246, 0.86);
+  font-size: 0.9rem;
+  line-height: 1.35;
 }
 .fq-gitem__tools {
   position: relative;
@@ -518,9 +531,9 @@ onBeforeUnmount(() => {
   outline-offset: 2px;
 }
 .fq-gitem__status {
-  margin: 0.3rem 0.2rem 0;
-  color: rgba(245, 245, 246, 0.62);
-  font-size: 0.82rem;
+  margin: 0.15rem 0.1rem 0;
+  color: #fca5a5;
+  font-size: 0.84rem;
   line-height: 1.4;
 }
 </style>

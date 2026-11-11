@@ -10,6 +10,7 @@ import AuthModeSwitch from "~/components/auth/AuthModeSwitch.vue";
 import AuthField from "~/components/auth/AuthField.vue";
 import AuthSocialButton from "~/components/auth/AuthSocialButton.vue";
 import AuthSubmitMark from "~/components/auth/AuthSubmitMark.vue";
+import { GOOGLE_NEW_ACCOUNT_TERMS } from "~/utils/billing/billingTerms";
 import { computed, ref } from "vue";
 
 definePageMeta({
@@ -164,7 +165,9 @@ const loginUser = async () => {
 
       <p class="auth-or" role="separator">or</p>
 
-      <AuthSocialButton :disabled="loading" @click="handleGoogleLogin" />
+      <AuthSocialButton :disabled="loading" aria-describedby="login-google-terms" @click="handleGoogleLogin" />
+      <!-- Google here creates an account and trial for a new email, so new artists see the terms before the click. -->
+      <p id="login-google-terms" class="login-google-terms" data-testid="login-google-terms">{{ GOOGLE_NEW_ACCOUNT_TERMS }}</p>
 
       <p class="auth-switch">
         New to Faneqo?
@@ -209,3 +212,13 @@ const loginUser = async () => {
     </div>
   </AuthShell>
 </template>
+
+<style scoped>
+.login-google-terms {
+  margin: 0.65rem 0 0;
+  color: rgba(245, 245, 246, 0.56);
+  font-size: 0.75rem;
+  line-height: 1.5;
+  text-align: center;
+}
+</style>

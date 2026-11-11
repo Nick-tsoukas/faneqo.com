@@ -34,8 +34,8 @@ export function shouldShowPastDueBanner({
 /**
  * What the banner says. Most overdue artists never added a card: their free
  * trial ended and Stripe couldn't bill anyone. Telling them a payment failed
- * is wrong, so that case gets its own words. No prices here; the billing
- * portal shows the real terms.
+ * is wrong, so that case gets its own words. The amount, when known, comes
+ * from the subscription's real price via billingTerms.pastDueChargeNote (C3).
  */
 export function pastDueBannerCopy({ hasPaymentMethod = null } = {}) {
   if (hasPaymentMethod === false) {

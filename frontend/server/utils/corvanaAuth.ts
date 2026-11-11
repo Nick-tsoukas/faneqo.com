@@ -1,83 +1,48 @@
 /**
- * Corvana Admin Authentication
- * 
- * Production safety: Protects Corvana SEO endpoints in production.
- * 
- * Behavior:
- * - Development: Always allow
- * - Production: Require CORVANA_ADMIN_TOKEN
- * 
- * Pass token via:
- * - Header: x-corvana-admin-token
- * - Query param: token
+ * Corvana admin authentication (fail-closed; see corvanaAuthDecision.js).
+ *
+ * Every /api/corvana/** route is guarded by server/middleware/corvana-auth.ts,
+ * so no endpoint can skip the check. These helpers remain for the handlers that
+ * already call them (a second, identical check).
+ *
+ * Production: requires CORVANA_ADMIN_TOKEN to be set, and the same value sent
+ * in the `x-corvana-admin-token` header. Missing configuration denies access.
  */
 
-import { defineEventHandler, getHeader, getQuery, setResponseStatus, H3Event } from 'h3'
+import { defineEventHandler, getHeader, setResponseStatus, H3Event } from 'h3'
+import { CORVANA_TOKEN_HEADER, corvanaAuthDecision, corvanaRefusalBody } from './corvanaAuthDecision.js'
 
-/**
- * Check if request is authorized for Corvana admin access
- */
-export function isCorvanaAuthorized(event: H3Event): boolean {
-  // Always allow in development
-  if (process.env.NODE_ENV !== 'production') {
-    return true
-  }
-  
-  const runtimeConfig = useRuntimeConfig()
-  const adminToken = runtimeConfig.corvanaAdminToken || process.env.CORVANA_ADMIN_TOKEN
-  
-  // If no admin token configured, allow (for initial setup)
-  if (!adminToken) {
-    console.warn('[Corvana] No CORVANA_ADMIN_TOKEN set in production - allowing access')
-    return true
-  }
-  
-  // Get token from header or query
-  const headerToken = getHeader(event, 'x-corvana-admin-token')
-  const queryToken = getQuery(event).token as string | undefined
-  const providedToken = headerToken || queryToken
-  
-  if (!providedToken) {
-    return false
-  }
-  
-  return providedToken === adminToken
+/** The decision for this request (status 401/403 when refused). */
+export function corvanaAuthFor(event: H3Event) {
+  return corvanaAuthDecision({
+    nodeEnv: process.env.NODE_ENV,
+    configuredToken: process.env.CORVANA_ADMIN_TOKEN,
+    providedToken: getHeader(event, CORVANA_TOKEN_HEADER),
+  })
 }
 
-/**
- * Middleware/event handler wrapper for Corvana auth
- */
+export function isCorvanaAuthorized(event: H3Event): boolean {
+  return corvanaAuthFor(event).ok
+}
+
+/** Wrapper for handlers: answers 401/403 itself when refused. */
 export function requireCorvanaAuth(handler: (event: H3Event) => Promise<any>) {
   return defineEventHandler(async (event: H3Event) => {
-    if (!isCorvanaAuthorized(event)) {
-      setResponseStatus(event, 401)
-      return {
-        error: 'Unauthorized',
-        message: 'Valid admin token required',
-        help: 'Provide token via x-corvana-admin-token header or ?token= query param',
-        note: 'Set CORVANA_ADMIN_TOKEN in environment variables'
-      }
+    const decision = corvanaAuthFor(event)
+    if (!decision.ok) {
+      setResponseStatus(event, decision.status)
+      return corvanaRefusalBody(decision)
     }
-    
     return handler(event)
   })
 }
 
 /**
- * Simple auth check for use within handlers
- * Returns 401 response object if not authorized
+ * In-handler check, kept for the existing handlers (they set 401 on refusal;
+ * the middleware has already answered 401/403 before they run).
  */
-export function checkCorvanaAuth(event: H3Event): { authorized: boolean; error?: any } {
-  if (!isCorvanaAuthorized(event)) {
-    return {
-      authorized: false,
-      error: {
-        error: 'Unauthorized',
-        message: 'Valid admin token required',
-        help: 'Provide token via x-corvana-admin-token header or ?token= query param'
-      }
-    }
-  }
-  
+export function checkCorvanaAuth(event: H3Event): { authorized: boolean; status?: number; error?: any } {
+  const decision = corvanaAuthFor(event)
+  if (!decision.ok) return { authorized: false, status: decision.status, error: corvanaRefusalBody(decision) }
   return { authorized: true }
 }

@@ -38,7 +38,8 @@ const access = require('../src/utils/payments/paymentAccess');
 const { resolveCheckoutCents } = require('../src/utils/payments/checkoutAmount');
 const { createCheckoutGuard, clientIp } = require('../src/utils/payments/checkoutGuard');
 
-function kvStrapi(rows) {
+// owners: { [bandId]: { id, blocked } | null | 'throw' }; bands not listed have an active owner.
+function kvStrapi(rows, owners = {}) {
   return {
     log: { warn() {} },
     entityService: {
@@ -46,6 +47,14 @@ function kvStrapi(rows) {
         assert.strictEqual(uid, 'api::system-kv.system-kv');
         const row = rows[opts.filters.key];
         return row === undefined ? [] : [{ key: opts.filters.key, value: row }];
+      },
+      async findOne(uid, id, opts) {
+        assert.strictEqual(uid, 'api::band.band');
+        assert.ok(opts?.populate?.users_permissions_user, 'owner is populated');
+        const owner = Object.prototype.hasOwnProperty.call(owners, id) ? owners[id] : { id: 1, blocked: false };
+        if (owner === 'throw') throw new Error('db down');
+        // A Stripe-ready band (eligibility re-reads the flags rather than trusting the caller).
+        return { id, stripeAccountId: 'acct_live', paymentsEnabled: true, stripeOnboardingComplete: true, users_permissions_user: owner };
       },
     },
   };
@@ -252,6 +261,32 @@ const ctxFor = (ip, ua) => ({ request: { headers: { 'x-forwarded-for': ip, 'user
     }
   });
 
+  console.log('\nBlocked owners (November 2026 containment)');
+  await test('isCheckoutReady: a blocked owner is not ready even with every flag on', async () => {
+    access.clearPaymentAccessCache();
+    assert.strictEqual(await access.isCheckoutReady(kvStrapi({}, { [live.id]: { id: 9, blocked: true } }), live), false);
+  });
+
+  await test('isCheckoutReady: a band with no owner is not ready', async () => {
+    access.clearPaymentAccessCache();
+    assert.strictEqual(await access.isCheckoutReady(kvStrapi({}, { [live.id]: null }), live), false);
+  });
+
+  await test('isOwnerAllowed fails closed when the lookup throws', async () => {
+    assert.strictEqual(await access.isOwnerAllowed(kvStrapi({}, { 5: 'throw' }), 5), false);
+    assert.strictEqual(await access.isOwnerAllowed(kvStrapi({}), 5), true, 'an active owner is allowed');
+  });
+
+  await test('checkout refuses through paymentEligibility before creating a Stripe session', () => {
+    const src = codeOnly(read('src/api/band/controllers/checkout.js'));
+    const gate = src.indexOf('await paymentEligibility(strapi, band.id)');
+    const refuse = src.indexOf('if (!eligibility.eligible)');
+    const session = src.indexOf('stripe.checkout.sessions.create(');
+    const moment = src.indexOf('"api::support-moment.support-moment", {');
+    assert.ok(gate > 0 && refuse > gate, 'checkout asks paymentEligibility and refuses on it');
+    assert.ok(refuse < moment && refuse < session, 'before any record or Stripe session is created');
+  });
+
   console.log('\nWiring');
   await test('the public band page reports paymentsEnabled from isCheckoutReady', () => {
     const src = codeOnly(read('src/api/band/controllers/band.js'));
@@ -290,7 +325,8 @@ const ctxFor = (ip, ua) => ({ request: { headers: { 'x-forwarded-for': ip, 'user
       return i;
     };
     const session = at('stripe.checkout.sessions.create(');
-    for (const needle of ['isPaymentsSuspended(strapi, band.id)', 'isPaymentsApproved(strapi, band.id)', 'resolveCheckoutCents(btn, amount)', 'guard.check(band.id, ctx)']) {
+    // Suspension and the approval gate now live inside paymentEligibility (tested in test-payment-eligibility.js).
+    for (const needle of ['paymentEligibility(strapi, band.id)', 'resolveCheckoutCents(btn, amount)', 'guard.check(band.id, ctx)']) {
       assert.ok(at(needle) < session, `${needle} must run before the session is created`);
     }
   });

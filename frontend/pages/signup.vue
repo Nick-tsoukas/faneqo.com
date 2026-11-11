@@ -41,7 +41,9 @@
         password-toggle
       />
 
-      <button type="submit" class="auth-cta" :disabled="loading" :aria-busy="loading">
+      <p id="signup-billing-terms" class="signup-terms" data-testid="signup-billing-terms">{{ SIGNUP_TERMS }}</p>
+
+      <button type="submit" class="auth-cta" :disabled="loading" :aria-busy="loading" aria-describedby="signup-billing-terms">
         <AuthSubmitMark :busy="loading" />
         <span>{{ loading ? "Creating account…" : "Create account" }}</span>
       </button>
@@ -67,6 +69,7 @@ import AuthShell from "~/components/auth/AuthShell.vue";
 import AuthField from "~/components/auth/AuthField.vue";
 import AuthSocialButton from "~/components/auth/AuthSocialButton.vue";
 import AuthSubmitMark from "~/components/auth/AuthSubmitMark.vue";
+import { SIGNUP_TERMS } from "~/utils/billing/billingTerms";
 
 definePageMeta({
   layout: "auth",
@@ -201,3 +204,13 @@ const handleSignup = async () => {
   }
 };
 </script>
+
+<style scoped>
+/* Billing terms sit with the form, before either signup button. Quiet, readable, never hidden. */
+.signup-terms {
+  margin: -0.15rem 0 0;
+  color: rgba(245, 245, 246, 0.62);
+  font-size: 0.8125rem;
+  line-height: 1.5;
+}
+</style>

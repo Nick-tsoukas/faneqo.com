@@ -95,6 +95,26 @@
         </div>
       </fieldset>
 
+      <section class="auc__page" aria-labelledby="auc-page-label">
+        <p id="auc-page-label" class="auc__label">Artist page</p>
+        <button
+          type="button"
+          class="auc__page-btn"
+          :class="{ 'is-on': artistPageState.pressed }"
+          :aria-pressed="artistPageState.pressed ? 'true' : 'false'"
+          aria-describedby="auc-page-help"
+          :disabled="artistPageState.disabled || publishing"
+          @click="onArtistPageToggle"
+        >
+          <span class="auc__page-copy">
+            <span class="auc__page-title">Show on artist page</span>
+            <span class="auc__page-support">{{ artistPageState.supporting }}</span>
+          </span>
+          <span class="auc__page-switch" aria-hidden="true" />
+        </button>
+        <p id="auc-page-help" class="auc__page-help">{{ artistPageState.help }}</p>
+      </section>
+
       <!-- 3. Details. Name and words first, so the photos land in a place. -->
       <section class="auc__step" aria-labelledby="auc-details-head">
         <h2 id="auc-details-head" class="auc__step-head">Gallery details</h2>
@@ -261,6 +281,11 @@ import {
 import { artistUpdateUiLog } from '~/utils/media/mediaUiLog'
 import { deriveShowPhotosTitle, formatShowNightDate } from '~/utils/shows/formatShowNightDate'
 import {
+  artistPageCreateState,
+  readArtistPageCreatePreference,
+  writeArtistPageCreatePreference,
+} from '~/utils/galleries/artistPageCreate'
+import {
   clearRocksnapsCreatePreference,
   readRocksnapsCreatePreference,
   rocksnapsCreateState,
@@ -297,6 +322,7 @@ const {
   publishDraft,
   discardDraft,
   setRocksnapsPublication,
+  getArtistPagePlacement,
   getRocksnapsCapability,
 } = useGalleryDrafts()
 
@@ -336,6 +362,20 @@ const rocksnapsEligible = ref(false)
 const rocksnapsPreference = ref(true)
 const rocksnapsHold = ref(null)
 const rocksnapsRetrying = ref(false)
+const artistPagePlacement = ref(null)
+const artistPagePreference = ref(false)
+const artistPageReady = ref(false)
+
+const artistPageState = computed(() => artistPageCreateState({
+  loaded: artistPageReady.value,
+  unknown: artistPagePlacement.value?.unknown === true,
+  displaysOnArtistPage: artistPagePlacement.value?.displaysOnArtistPage !== false,
+  hasFeatured: !!artistPagePlacement.value?.featuredGalleryId,
+  featuredTitle: artistPagePlacement.value?.featuredTitle || '',
+  preference: artistPagePreference.value,
+  visibility: appliedVisibility.value,
+  selectedVisibility: visibility.value,
+}))
 
 const rocksnapsState = computed(() => rocksnapsCreateState({
   eligible: rocksnapsEligible.value,
@@ -481,6 +521,7 @@ const canPublish = computed(() =>
   && queue.items.length > 0
   && queue.items.every((row) => row.state !== 'failed')
   && (!showPhotosMode.value || !!props.showRecapId)
+  && artistPageReady.value
 )
 
 const meaningfulWork = computed(() =>
@@ -514,6 +555,39 @@ function preferenceStorage() {
 function restoreRocksnapsPreference() {
   if (!rocksnapsEligible.value || !sessionId.value) return
   rocksnapsPreference.value = readRocksnapsCreatePreference(preferenceStorage(), sessionId.value)
+}
+
+async function loadArtistPagePlacement() {
+  try {
+    const result = await getArtistPagePlacement(props.bandId)
+    artistPagePlacement.value = result?.data || {
+      featuredGalleryId: null,
+      featuredTitle: '',
+      displaysOnArtistPage: true,
+    }
+  } catch {
+    artistPagePlacement.value = {
+      featuredGalleryId: null,
+      featuredTitle: '',
+      displaysOnArtistPage: true,
+      unknown: true,
+    }
+  }
+}
+
+function restoreArtistPagePreference() {
+  if (!sessionId.value || !artistPagePlacement.value) return
+  artistPagePreference.value = readArtistPageCreatePreference(preferenceStorage(), sessionId.value, {
+    hasFeatured: !!artistPagePlacement.value.featuredGalleryId,
+    unknown: artistPagePlacement.value.unknown === true,
+  })
+  artistPageReady.value = true
+}
+
+function onArtistPageToggle() {
+  if (artistPageState.value.disabled || publishing.value) return
+  artistPagePreference.value = !artistPageState.value.pressed
+  writeArtistPageCreatePreference(preferenceStorage(), sessionId.value, artistPagePreference.value)
 }
 
 async function loadRocksnapsCapability() {
@@ -556,6 +630,7 @@ function adoptDraft(row) {
   queue.adopt(ordered)
   uploadsStarted.value = ordered.length > 0
   restoreRocksnapsPreference()
+  restoreArtistPagePreference()
 }
 
 function orderedMedia(row) {
@@ -585,6 +660,7 @@ async function newDraft() {
   visibility.value = row.visibility || 'public'
   if (showPhotosMode.value && !title.value) title.value = derivedTitle.value
   restoreRocksnapsPreference()
+  restoreArtistPagePreference()
   return row
 }
 
@@ -850,8 +926,9 @@ function onBeforeUnload(evt) {
 onMounted(async () => {
   if (showPhotosMode.value && !title.value) title.value = derivedTitle.value
   await probeDelivery()
-  await Promise.all([openDraft(), loadRocksnapsCapability()])
+  await Promise.all([openDraft(), loadRocksnapsCapability(), loadArtistPagePlacement()])
   restoreRocksnapsPreference()
+  restoreArtistPagePreference()
   if (typeof window !== 'undefined') window.addEventListener('beforeunload', onBeforeUnload)
 })
 
@@ -927,6 +1004,7 @@ async function onPublish() {
     if (!saved) return
     const result = await publishDraft(sessionId.value, {
       publishIdempotencyKey: publishIdempotencyKey.value,
+      showOnArtistPage: artistPageState.value.shouldFeature,
     })
     const row = result?.data
     publishedLock.value = true
@@ -1285,6 +1363,75 @@ async function retryRocksnaps() {
   font-size: 0.72rem;
   font-weight: 800;
   line-height: 1;
+}
+.auc__page { margin-top: 1.15rem; }
+.auc__page-btn {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.85rem;
+  width: 100%;
+  min-height: 4.5rem;
+  margin-top: 0.35rem;
+  padding: 0.8rem 0.9rem;
+  border-radius: 0.85rem;
+  border: 1px solid rgba(247, 249, 252, 0.28);
+  background: rgba(247, 249, 252, 0.04);
+  color: #f7f9fc;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+.auc__page-btn.is-on {
+  border-color: #f7f9fc;
+  background: rgba(247, 249, 252, 0.1);
+}
+.auc__page-btn:disabled { opacity: 0.55; cursor: default; }
+.auc__page-btn:focus-visible { outline: 2px solid #39d5ff; outline-offset: 3px; }
+.auc__page-copy { display: grid; gap: 0.2rem; min-width: 0; }
+.auc__page-title {
+  font-size: 1rem;
+  font-weight: 750;
+  letter-spacing: -0.02em;
+  color: #f7f9fc;
+}
+.auc__page-support {
+  color: rgba(247, 249, 252, 0.78);
+  font-size: 0.84rem;
+  line-height: 1.35;
+}
+.auc__page-switch {
+  flex: none;
+  width: 2.75rem;
+  height: 1.6rem;
+  border-radius: 999px;
+  border: 1px solid rgba(247, 249, 252, 0.45);
+  background: transparent;
+  position: relative;
+}
+.auc__page-switch::after {
+  content: '';
+  position: absolute;
+  top: 0.15rem;
+  left: 0.15rem;
+  width: 1.2rem;
+  height: 1.2rem;
+  border-radius: 999px;
+  background: rgba(247, 249, 252, 0.55);
+}
+.auc__page-btn.is-on .auc__page-switch {
+  background: #f7f9fc;
+  border-color: #f7f9fc;
+}
+.auc__page-btn.is-on .auc__page-switch::after {
+  left: 1.28rem;
+  background: #08090a;
+}
+.auc__page-help {
+  margin: 0.45rem 0 0;
+  color: #f7f9fc;
+  font-size: 0.86rem;
+  line-height: 1.45;
 }
 .auc__rocksnaps { margin-top: 0.4rem; }
 .auc__rocksnaps-btn {

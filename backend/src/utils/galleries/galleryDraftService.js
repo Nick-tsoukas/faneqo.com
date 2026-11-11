@@ -16,6 +16,7 @@ const {
   loadReferencedProtectedMediaIds,
 } = require('../artistUpdates/protectedMedia');
 const { createArtistUpdateService } = require('../artistUpdates/artistUpdateService');
+const { createFeaturedGalleryService } = require('./featuredGalleryService');
 const pure = require('./galleryDraftPure');
 
 const DRAFT_UID = 'api::gallery-draft.gallery-draft';
@@ -622,7 +623,39 @@ function createGalleryDraftService(strapi, env = process.env, deps = {}) {
     return present(saved);
   }
 
-  async function publishDraft({ userId, sessionId, publishIdempotencyKey }) {
+  /**
+   * Featuring is part of publish, not a second trip the artist has to remember.
+   * A placement failure leaves the published gallery intact.
+   */
+  async function withArtistPagePlacement(result, { userId, showOnArtistPage }) {
+    if (!result?.data?.id || result.error) return result;
+    let placement = { featuredOnProfile: false, featureError: null, keptFeaturedTitle: null };
+    try {
+      placement = await createFeaturedGalleryService(strapi).applyPublishChoice({
+        userId,
+        updateId: result.data.id,
+        showOnArtistPage,
+      });
+    } catch (err) {
+      strapi.log?.warn?.(`[featured-gallery] publish placement failed: ${err.message}`);
+      placement = {
+        featuredOnProfile: false,
+        featureError: 'Could not update your artist page.',
+        keptFeaturedTitle: null,
+      };
+    }
+    return {
+      ...result,
+      data: {
+        ...result.data,
+        featuredOnProfile: placement.featuredOnProfile === true,
+        featureError: placement.featureError || null,
+        keptFeaturedTitle: placement.keptFeaturedTitle || null,
+      },
+    };
+  }
+
+  async function publishDraft({ userId, sessionId, publishIdempotencyKey, showOnArtistPage }) {
     const loaded = await requireOwnedDraft({ userId, sessionId });
     if (loaded.error) return loaded.error;
     const { draft, bandId } = loaded;
@@ -640,7 +673,8 @@ function createGalleryDraftService(strapi, env = process.env, deps = {}) {
         userId,
         updateId: relId(draft, 'publishedUpdate'),
       });
-      return replay.error ? present(draft) : replay;
+      if (replay.error) return present(draft);
+      return withArtistPagePlacement(replay, { userId, showOnArtistPage });
     }
     if (draft.status !== pure.DRAFT_STATUS_ACTIVE) {
       return { error: 'draft_not_active', status: 409, message: 'This draft has already been finished.' };
@@ -678,7 +712,7 @@ function createGalleryDraftService(strapi, env = process.env, deps = {}) {
       updateId: result.data?.id,
       photoCount: order.length,
     });
-    return result;
+    return withArtistPagePlacement(result, { userId, showOnArtistPage });
   }
 
   /**

@@ -454,7 +454,7 @@ test('publish is idempotent, so a double-click cannot mint a second gallery', as
   const composer = read('components/updates/ArtistUpdateComposer.vue')
   assert.match(composer, /const saved = await saveNow\(\)/)
   assert.match(composer, /if \(!saved\) return/)
-  assert.match(composer, /publishDraft\(sessionId\.value, \{\s*publishIdempotencyKey: publishIdempotencyKey\.value,\s*\}\)/)
+  assert.match(composer, /publishDraft\(sessionId\.value, \{\s*publishIdempotencyKey: publishIdempotencyKey\.value,\s*showOnArtistPage: artistPageState\.value\.shouldFeature,\s*\}\)/)
   /* The guard flips before the first await; a second click sees canPublish false. */
   assert.match(composer, /if \(!canPublish\.value\) return[\s\S]{0,140}?publishing\.value = true/)
   assert.match(composer, /publishedLock\.value = true/)
@@ -465,7 +465,10 @@ test('the canonical handoff uses the slugs the publish response returned', () =>
   const page = read('pages/galleries/new.vue')
   assert.match(page, /row\?\.band\?\.slug \|\| row\?\.bandSlug/)
   assert.match(page, /\/\$\{bandSlug\.value\}\/gallery\/\$\{published\.value\.slug\}/)
-  assert.match(page, />View gallery</)
+  /* The publish reveal owns the "View gallery" link; the page hands it the canonical path. */
+  assert.match(page, /<GalleryPublishReveal[\s\S]*?:gallery-path="galleryPath \|\| ''"/)
+  const reveal = read('components/galleries/GalleryPublishReveal.vue')
+  assert.match(reveal, /:to="galleryPath"[^>]*>\s*View gallery/)
   /* The message-composer return still attaches the new gallery exactly once. */
   assert.match(page, /buildGalleryComposerReturn/)
   assert.equal((page.match(/returningToComposer\.value = true/g) || []).length, 1)

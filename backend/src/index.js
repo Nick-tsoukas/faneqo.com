@@ -64,6 +64,7 @@ async function ensurePaymentsPermissions(strapi) {
     strapi,
     [
       'api::band.payments.onboard',
+      'api::band.payments.eligibility',
       'api::band.payments.status',
       'api::band.payments.summary',
       'api::band.payments.report',
@@ -72,6 +73,15 @@ async function ensurePaymentsPermissions(strapi) {
       'api::band.payments.exportCsv',
     ],
     'payments'
+  );
+}
+
+// Start Pro checkout + confirm; the handlers also require the signed-in user
+async function ensureBillingPermissions(strapi) {
+  await ensureAuthenticatedPermissions(
+    strapi,
+    ['api::subscription.subscription.startPro', 'api::subscription.subscription.startProConfirm'],
+    'billing'
   );
 }
 
@@ -359,6 +369,12 @@ module.exports = {
       await ensurePaymentsPermissions(strapi);
     } catch (err) {
       strapi.log.warn(`[payments] permission sync skipped: ${err.message}`);
+    }
+
+    try {
+      await ensureBillingPermissions(strapi);
+    } catch (err) {
+      strapi.log.warn(`[billing] permission sync skipped: ${err.message}`);
     }
 
     try {

@@ -145,6 +145,16 @@
       </div>
 
       <div
+        v-else-if="billingLoading"
+        class="mt-12 border-t pt-8"
+        style="border-color: var(--fq-border);"
+        data-testid="account-billing-loading"
+      >
+        <h2 class="text-2xl font-semibold mb-2">Subscription Status</h2>
+        <p class="text-gray-400 text-sm">Loading billing…</p>
+      </div>
+
+      <div
         v-else-if="billingUnavailable"
         class="mt-12 border-t pt-8"
         style="border-color: var(--fq-border);"
@@ -156,12 +166,39 @@
       </div>
 
       <div v-if="!isAmbassador" class="mt-8">
+        <!-- Read before the click: what the billing page can charge, and how to cancel (C3). -->
+        <!-- Billing A: where the billing page can charge (trial without a card, past due), the
+             server's terms and an unticked box come first; elsewhere the C3 terms stay. -->
+        <div v-if="portalConsent.needsConsent.value" class="mb-4 max-w-xl" data-testid="account-billing-consent">
+          <BillingConsent
+            v-model="portalConsent.agreed.value"
+            :terms="portalConsent.terms.value"
+            :notice="portalConsent.notice.value"
+          />
+        </div>
+        <div v-else-if="billingTerms.length" class="mb-4 max-w-xl space-y-1" data-testid="account-billing-terms">
+          <p v-for="line in billingTerms" :key="line" class="text-sm text-gray-400 leading-relaxed">{{ line }}</p>
+        </div>
         <button
           @click="goToBillingPortal()"
+          :disabled="!portalConsent.ready.value"
+          :class="{ 'opacity-50 cursor-not-allowed': !portalConsent.ready.value }"
           class="bg-pink-600 hover:bg-pink-700 text-white font-medium py-3 px-6 rounded-xl transition-all"
+          data-testid="account-billing-button"
         >
           {{ isPastDue ? 'Pay Invoice' : 'Manage Billing Info' }}
         </button>
+        <!-- Cancelling never needs consent (Stripe's cancellation flow). -->
+        <button
+          v-if="portalConsent.needsConsent.value && portalConsent.terms.value?.canCancel"
+          type="button"
+          class="block mt-3 text-sm text-gray-400 underline underline-offset-2 hover:text-white"
+          data-testid="account-cancel-membership"
+          @click="goToBillingPortal({ intent: 'cancel' })"
+        >
+          Cancel membership instead
+        </button>
+        <p v-if="cancelMessage" class="mt-3 text-sm text-gray-300" role="status" data-testid="account-cancel-done">{{ cancelMessage }}</p>
       </div>
     </div>
   </div>
@@ -171,6 +208,10 @@
 import { ref, computed, onMounted } from 'vue';
 import { format } from 'date-fns';
 import { formatAccountRenewalCopy } from '~/utils/billing/accountBillingDisplay';
+import { accountBillingTerms, priceLabelFrom } from '~/utils/billing/billingTerms';
+import { loadAccountBilling } from '~/utils/billing/accountBillingLoad';
+import BillingConsent from '~/components/billing/BillingConsent.vue';
+import { useBillingConsent } from '~/composables/useBillingConsent';
 import {
   ambassadorPlanLabel,
   ambassadorStatusLabel,
@@ -183,7 +224,6 @@ definePageMeta({
   middleware: 'auth',
 });
 
-const config = useRuntimeConfig();
 const user   = useStrapiUser();
 const token  = useStrapiToken();
 const client = useStrapiClient();
@@ -192,6 +232,7 @@ const email       = ref('');
 const password    = ref('');
 const billingData = ref<any>(null);
 const billingUnavailable = ref(false);
+const billingLoading = ref(true);
 
 const ownedBands = ref<Array<{ bandId: number | string; name: string; slug?: string; role: string }>>([]);
 const teamBands = ref<Array<{ bandId: number | string; name: string; slug?: string; role: string }>>([]);
@@ -212,6 +253,15 @@ const ambassadorPlan = ambassadorPlanLabel();
 const ambassadorStatus = ambassadorStatusLabel();
 const renewalCopy = computed(() =>
   isAmbassador.value ? null : formatAccountRenewalCopy(billingData.value)
+);
+// Before the billing button: what it can charge, and how to cancel (C3).
+const billingTerms = computed(() =>
+  accountBillingTerms({
+    status: normalizedStatus.value,
+    priceLabel: priceLabelFrom(billingData.value?.subscription?.price),
+    hasPaymentMethod: billingData.value?.hasPaymentMethod ?? null,
+    billingExempt: isAmbassador.value,
+  })
 );
 const isTrialing = computed(() => normalizedStatus.value === 'trialing');
 const isPastDue = computed(() =>
@@ -235,9 +285,12 @@ const showTrialEnds = computed(() => {
   return !Number.isNaN(d.getTime()) && d.getTime() > Date.now();
 });
 
+// Billing A: the server's portal terms (consent only where the portal can charge).
+const portalConsent = useBillingConsent('portal');
+
 onMounted(async () => {
   if (user.value) email.value = user.value.email;
-  await Promise.all([fetchBillingInfo(), fetchBandAccess()]);
+  await Promise.all([fetchBillingInfo(), fetchBandAccess(), isAmbassador.value ? null : portalConsent.load()]);
 });
 
 async function fetchBandAccess() {
@@ -256,26 +309,22 @@ async function fetchBandAccess() {
   }
 }
 
+// Same authenticated call as the dashboard. (useFetch inside onMounted never
+// sent this request in production; see utils/billing/accountBillingLoad.js.)
 async function fetchBillingInfo() {
   billingUnavailable.value = false;
-  try {
-    const { data, error } = await useFetch('/api/stripe/billing', {
-      baseURL: config.public.strapiUrl,
-      headers: { Authorization: `Bearer ${token.value}` },
-    });
-    if (error.value) throw error.value;
-    billingData.value = data.value;
-    if (isAmbassadorBilling(data.value) || isBillingExemptLifetimePro(user.value)) {
-      billingUnavailable.value = false;
-      return;
-    }
-    if (user.value && normalizedStatus.value) {
-      user.value.subscriptionStatus = normalizedStatus.value;
-    }
-  } catch (e) {
-    console.error('Billing fetch error', e);
-    billingData.value = null;
-    billingUnavailable.value = !isBillingExemptLifetimePro(user.value);
+  billingLoading.value = true;
+  const result = await loadAccountBilling(
+    () => client('/stripe/billing', { headers: { Authorization: `Bearer ${token.value}` } }),
+    { billingExemptUser: isBillingExemptLifetimePro(user.value) }
+  );
+  billingData.value = result.billingData;
+  billingUnavailable.value = result.billingUnavailable;
+  billingLoading.value = false;
+  if (result.billingUnavailable) console.error('Billing fetch error');
+  if (!result.billingData || isAmbassadorBilling(result.billingData) || isBillingExemptLifetimePro(user.value)) return;
+  if (user.value && normalizedStatus.value) {
+    user.value.subscriptionStatus = normalizedStatus.value;
   }
 }
 
@@ -299,19 +348,32 @@ async function updateAccount() {
   }
 }
 
-async function goToBillingPortal() {
+const cancelMessage = ref('');
+
+async function goToBillingPortal({ intent }: { intent?: 'cancel' } = {}) {
+  if (intent !== 'cancel' && !portalConsent.ready.value) return;
+  // Cancelling happens on the server (no portal, so no card form); one confirmation, no consent.
+  if (intent === 'cancel' && !window.confirm('Cancel Faneqo Pro? It stays on until the end of your current trial or billing period and won’t renew after that. Any balance that’s already due may still be collected.')) return;
   try {
+    const consent = intent === 'cancel' ? null : portalConsent.payload();
     const res: any = await client('stripe/create-billing-portal-session', {
       method: 'POST',
       headers: { Authorization: `Bearer ${token.value}` },
+      body: intent === 'cancel' ? { intent } : consent ? { consent } : {},
     });
-    if (res?.url) {
+    if (res?.canceled) {
+      cancelMessage.value = 'Your membership won’t renew. Pro stays on until the end of your current trial or billing period. Any balance that’s already due may still be collected.';
+      await fetchBillingInfo();
+      await portalConsent.load();
+    } else if (res?.url) {
       window.location.href = res.url;
     } else {
       alert('Unable to open billing portal');
     }
-  } catch (e) {
+  } catch (e: any) {
     console.error('Portal error', e);
+    // Consent missing or stale: show the server's current terms again, unticked.
+    if (portalConsent.handleRefusal(e)) return;
     alert('Error opening billing portal');
   }
 }

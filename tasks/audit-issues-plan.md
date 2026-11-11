@@ -49,9 +49,9 @@ This track is **parallel** to the monorepo/staging plan (`tasks/plan.md` / `task
    4. P1 data + live dead (`data-001`, `dead-004`, `dead-005`)
    5. P1 marketing children (`mkt-002`…`mkt-012`, `mkt-014`; `mkt-001` is the map)
    6. P1 vocabulary children (`vocab-002`…`vocab-004`; `vocab-001` is the map)
-   7. P2 (`sec-003`, `sec-004` if not closed by `sec-009`, `sec-010`, `sec-011`, `sec-012`, `bill-002`, `dead-002`, `dead-003`, `mkt-013`, `vocab-005`)
+   7. P2 tooling first: `test-002` (FE test discover runner — stop `package.json` `&&` file lists / merge conflicts), then `sec-003`, `sec-004` if not closed by `sec-009`, `sec-010`, `sec-011`, `sec-012`, `bill-002`, `dead-002`, `dead-003`, `mkt-013`, `vocab-005`
    8. P3 (`arch-001-api`, `arch-001-app`, `dead-006`) — split only if one function clearly does two jobs
-   9. P4 tests (`test-001-api`, `test-001-app`) after the rules they lock exist
+   9. P4 tests (`test-001-api`, `test-001-app`) after the rules they lock exist — **`test-002` before `test-001-app`**
 4. **Path citations are starting points.** Re-verify against current `frontend/` / `backend/` at implement time.
 5. **Staging / monorepo plan stays the migration SoT.** Audit progress lives under `tasks/audit-issues-*.md`. CORS/BFF work is **this** track, not Task 6b.4.
 
@@ -80,11 +80,13 @@ Human approval to start (Task 17 or explicit go)
     ├── Phase 5: Vocabulary children
     │       vocab-002 … vocab-004  (vocab-001 = map)
     │
-    ├── Phase 6: P2 cleanup + guards
+    ├── Phase 6: P2 — test runner first, then cleanup + guards
+    │       test-002 → sec-003 / sec-004 / sec-010… / bill-002 / dead-002… / vocab-005
     │
     ├── Phase 7: Architecture / dead code (only if justified)
     │
     └── Phase 8: Tests locking the rules above
+            (test-001-app after test-002)
 ```
 
 ## Phases (index — check progress in todo)
@@ -161,6 +163,9 @@ Target: browser never learns Strapi URL/IP; browser only talks same-origin to Nu
 
 ### Phase 6 — P2
 
+Order inside the band (High tooling first):
+
+- [ ] `test-002` FE tests in one dir; `npm test` discovers (no `package.json` `&&` file lists)
 - [ ] `sec-003`, `sec-004` (if not already closed by `sec-009`), `sec-010`, `sec-011`, `sec-012`, `bill-002`, `dead-002`, `dead-003`, `mkt-013`, `vocab-005`
 
 ### Checkpoint: P2
@@ -180,7 +185,7 @@ Target: browser never learns Strapi URL/IP; browser only talks same-origin to Nu
 
 ### Phase 8 — Tests
 
-- [ ] `test-001-api`, `test-001-app`
+- [ ] `test-001-api`, `test-001-app` (`test-001-app` after `test-002`)
 
 ### Checkpoint: Complete
 
@@ -199,9 +204,9 @@ Target: browser never learns Strapi URL/IP; browser only talks same-origin to Nu
 | P1 Data / live dead | `data-001`, `dead-004`, `dead-005` |
 | P1 Marketing | `mkt-001` (map), `mkt-002`…`mkt-012`, `mkt-014` |
 | P1 Vocabulary | `vocab-001` (map), `vocab-002`…`vocab-004` |
-| P2 | `sec-003`, `sec-004`, `sec-010`, `sec-011`, `sec-012`, `bill-002`, `dead-002`, `dead-003`, `mkt-013`, `vocab-005` |
+| P2 | `test-002` (first), `sec-003`, `sec-004`, `sec-010`, `sec-011`, `sec-012`, `bill-002`, `dead-002`, `dead-003`, `mkt-013`, `vocab-005` |
 | P3 | `arch-001-api`, `arch-001-app`, `dead-006` |
-| P4 | `test-001-api`, `test-001-app` |
+| P4 | `test-001-api`, `test-001-app` (after `test-002`) |
 
 ## Risks and mitigations
 
@@ -215,6 +220,7 @@ Target: browser never learns Strapi URL/IP; browser only talks same-origin to Nu
 | “Fix” staging CORS by hardcoding FE in middlewares | High | Forbidden — set public-URL env (`sec-009`); 6b.4 deferred |
 | Blind open `/api` proxy | High | `sec-008` requires allowlisted / product-shaped Nitro routes |
 | Hardcoded CORS host drift (fanecco / LAN) | Med | Env SoT only; empty env = empty allowlist |
+| FE `package.json` `&&` test lists | High | `test-002` discover runner; do not lengthen lists |
 
 ## Open questions
 

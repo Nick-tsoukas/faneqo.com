@@ -146,6 +146,15 @@
         </slot>
       </section>
 
+      <div v-if="publicFeaturedGallery" class="w-full px-4 md:px-6 mt-4 max-w-2xl mx-auto">
+        <ArtistFeaturedGallery
+          :gallery="publicFeaturedGallery"
+          :artist-name="band?.name || ''"
+          :artist-slug="band?.slug || ''"
+          :artist-image="band?.bandImg?.url || ''"
+        />
+      </div>
+
       <!-- Streaming Links - Grid -->
       <div v-if="visibleStreamingLinks.length">
         <h3 class="text-white/50 text-xs font-semibold uppercase tracking-wider mb-3">Listen Now</h3>
@@ -262,7 +271,8 @@
 </template>
 
 <script setup>
-import { computed, ref, onMounted } from 'vue'
+import { computed, defineAsyncComponent, ref, onMounted } from 'vue'
+import { resolvePublicFeaturedGallery } from '@/utils/galleries/publicFeaturedGallery'
 import AudioPlayer from "@/components/AudioPlayer.vue"
 
 // Live Surface Components
@@ -476,6 +486,9 @@ function formatDate(dateStr) {
   const d = new Date(dateStr + 'T00:00:00')
   return d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
 }
+
+const ArtistFeaturedGallery = defineAsyncComponent(() => import('@/components/band/ArtistFeaturedGallery.vue'))
+const publicFeaturedGallery = computed(() => resolvePublicFeaturedGallery(props.band?.featuredGallery))
 </script>
 
 <style scoped>

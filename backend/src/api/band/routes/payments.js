@@ -14,6 +14,18 @@ module.exports = {
       },
     },
     {
+      // The artist's Payments panel state (owner only; never exposes fraud rules)
+      method: "GET",
+      path: "/bands/:id/payments/eligibility",
+      handler: "payments.eligibility",
+      config: {
+        policies: [
+          "plugin::users-permissions.isAuthenticated",
+          "api::band.owns-band",
+        ],
+      },
+    },
+    {
       method: "GET",
       path: "/bands/:id/payments/status",
       handler: "payments.status",

@@ -1,9 +1,19 @@
 // path: src/api/subscription/controllers/subscription.js
 'use strict';
 
-const { default: Stripe } = require('stripe');
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || '');
+// Resolved lazily so focused tests can run the real controller with a fake client.
+const { lazyStripe: stripe } = require('../../../utils/billing/stripeClient');
 const crypto = require('crypto');
+const {
+  END_TRIAL_INTENT,
+  START_INTENT,
+  pickSubscription,
+  decideStartPro,
+  returnUrls,
+  computeUserBillingUpdate,
+  applyEndTrial,
+  findOpenSession,
+} = require('../../../utils/billing/startPro');
 const { allowSignup } = require('../../../utils/signupGuard');
 const UNPARSED = Symbol.for('unparsedBody');
 const confirmationToken = crypto.randomBytes(20).toString('hex');
@@ -21,6 +31,9 @@ const {
   isBillingExemptLifetimePro,
   ambassadorSubscriptionStatusPayload,
 } = require('../../../utils/billing/artistEntitlement');
+const { describeStartPro, checkConsent, publicTerms } = require('../../../utils/billing/billingConsent');
+const { recordConsent } = require('../../../utils/billing/consentRecord');
+const { openBillingPortal, portalTerms, consentFailure } = require('../../../utils/billing/portalSession');
 
 
 module.exports = {
@@ -107,39 +120,43 @@ async subscriptionStatus(ctx) {
 
   // POST /api/stripe/create-billing-portal-session
   async createBillingPortalSession(ctx) {
-    strapi.log.debug('[createBillingPortalSession] entry', { user: ctx.state.user });
+    // Consent is required where the portal can create charges (Billing A).
+    return openBillingPortal({ ctx, strapi, stripe, returnUrl: process.env.BILLING_RETURN_URL });
+  },
+
+  // GET /api/stripe/billing-portal/terms: what opening the portal can charge, and whether consent is needed.
+  async billingPortalTerms(ctx) {
+    return portalTerms({ ctx, strapi, stripe });
+  },
+
+  // GET /api/stripe/start-pro/terms  ?bandId=
+  // The server's own description of what Start Pro will charge, for the consent step.
+  // Read-only: never creates a customer, subscription or session.
+  async startProTerms(ctx) {
     const jwtUser = ctx.state.user;
     if (!jwtUser?.id) return ctx.unauthorized('You must be logged in.');
-
-    let user;
+    const user = await strapi.entityService.findOne(UP_UID, jwtUser.id, {
+      fields: ['id', 'customerId', 'subscriptionId', 'subscriptionStatus', 'plan', 'firstPaidAt'],
+    });
+    if (!user) return ctx.unauthorized('You must be logged in.');
+    if (isBillingExemptLifetimePro(user)) return conflict(ctx, 'billing_exempt', 'Lifetime Pro includes payments; there is nothing to pay.');
+    const priceId = process.env.STRIPE_DEFAULT_PRICE_ID;
+    if (!priceId) return ctx.internalServerError('Billing is not available right now.');
     try {
-      user = await strapi.entityService.findOne(
-        'plugin::users-permissions.user',
-        jwtUser.id,
-        { fields: ['customerId'] }
-      );
-      strapi.log.debug('[createBillingPortalSession] loaded user', user);
-    } catch (e) {
-      strapi.log.error('[createBillingPortalSession] fetch error', e);
-      return ctx.internalServerError('Error loading user data');
-    }
-
-    if (!user?.customerId) {
-      strapi.log.warn('[createBillingPortalSession] no customerId', { userId: jwtUser.id });
-      return ctx.badRequest('Stripe customer not found');
-    }
-
-    try {
-      strapi.log.debug('[createBillingPortalSession] creating session for', user.customerId);
-      const session = await stripe.billingPortal.sessions.create({
-        customer:   user.customerId,
-        return_url: process.env.BILLING_RETURN_URL,
-      });
-      strapi.log.debug('[createBillingPortalSession] session created', session);
-      ctx.send({ url: session.url });
+      let subscription = null;
+      if (user.customerId) {
+        const listed = await stripe.subscriptions.list({ customer: user.customerId, status: 'all', limit: 20 });
+        subscription = pickSubscription(listed?.data || []);
+      }
+      const decision = decideStartPro({ user, subscription });
+      if (decision.action === 'refuse') {
+        return conflict(ctx, decision.code, decision.code === 'already_active' ? 'Your Pro membership is already active.' : 'Nothing to pay.');
+      }
+      const defaultPrice = decision.action === 'new_subscription' ? await loadDefaultPrice(priceId) : null;
+      return ctx.send(publicTerms(describeStartPro({ decision, subscription, defaultPrice })));
     } catch (err) {
-      strapi.log.error('[createBillingPortalSession] Stripe error', err);
-      ctx.throw(500,'Error creating billing portal session');
+      strapi.log.error('[start-pro] terms error', { userId: user.id, code: err?.code || err?.type || 'error' });
+      return ctx.internalServerError('Billing is not available right now. Please try again.');
     }
   },
 
@@ -168,14 +185,22 @@ async subscriptionStatus(ctx) {
       return ctx.badRequest(`Webhook Error: ${e.message}`);
     }
 
+    // Every billing event re-reads the customer's subscriptions from Stripe and
+    // stores what Stripe says now, so a late or out-of-order event can never
+    // overwrite newer state, and an event about an old subscription can never
+    // demote the artist's live one.
     const handler = {
-      'checkout.session.completed':    onCheckoutCompleted,
-      'invoice.payment_succeeded':     onInvoicePaid,
-      'invoice.payment_failed':        onInvoiceFailed,
-      'payment_intent.payment_failed': onInvoiceFailed,
-      'charge.failed':                 onInvoiceFailed,
-      'customer.subscription.updated': onSubscriptionUpdated,
-      'customer.subscription.deleted': onSubscriptionCanceled,
+      'checkout.session.completed':                  onCheckoutCompleted,
+      'invoice.payment_succeeded':                   onInvoiceEvent,
+      'invoice.payment_failed':                      onInvoiceEvent,
+      'invoice.payment_action_required':             onInvoiceEvent,
+      'payment_intent.payment_failed':               onCustomerEvent,
+      'charge.failed':                               onCustomerEvent,
+      'customer.subscription.updated':               onCustomerEvent,
+      'customer.subscription.deleted':               onCustomerEvent,
+      'customer.subscription.pending_update_applied': onCustomerEvent,
+      'customer.subscription.pending_update_expired': onCustomerEvent,
+      'customer.subscription.trial_will_end':        onTrialWillEnd,
     }[event.type] || onUnhandledEvent;
 
     try {
@@ -186,6 +211,175 @@ async subscriptionStatus(ctx) {
     }
 
     ctx.send({ received: true });
+  },
+
+  // POST /api/stripe/start-pro  { bandId? }
+  // Opens the right Stripe-hosted page to pay for Faneqo Pro (see utils/billing/startPro.js).
+  async startPro(ctx) {
+    const jwtUser = ctx.state.user;
+    if (!jwtUser?.id) return ctx.unauthorized('You must be logged in.');
+
+    const user = await strapi.entityService.findOne(UP_UID, jwtUser.id, {
+      fields: ['id', 'email', 'username', 'customerId', 'subscriptionId', 'subscriptionStatus', 'plan', 'firstPaidAt', 'gracePeriodStart', 'trialEndsAt', 'cancelAt'],
+    });
+    if (!user) return ctx.unauthorized('You must be logged in.');
+    if (isBillingExemptLifetimePro(user)) return conflict(ctx, 'billing_exempt', 'Lifetime Pro includes payments; there is nothing to pay.');
+
+    // The return page is the artist's own editor; never another account's band.
+    const rawBandId = ctx.request.body?.bandId;
+    let bandId = null;
+    if (rawBandId != null && rawBandId !== '') {
+      bandId = Number(rawBandId);
+      if (!Number.isInteger(bandId) || bandId <= 0) return ctx.badRequest('Invalid band.');
+      const band = await strapi.entityService.findOne('api::band.band', bandId, {
+        fields: ['id'],
+        populate: { users_permissions_user: { fields: ['id'] } },
+        publicationState: 'preview',
+      });
+      if (!band || String(band.users_permissions_user?.id) !== String(user.id)) return ctx.forbidden('Not your band.');
+    }
+
+    const priceId = process.env.STRIPE_DEFAULT_PRICE_ID;
+    if (!priceId) {
+      strapi.log.error('[start-pro] STRIPE_DEFAULT_PRICE_ID is not configured');
+      return ctx.internalServerError('Billing is not available right now.');
+    }
+
+    try {
+      // A customer is required; artists from before billing (no customer) get one now.
+      let customerId = user.customerId;
+      if (!customerId) {
+        const found = await stripe.customers.list({ email: user.email, limit: 1 });
+        const customer = found.data?.[0] || (await stripe.customers.create(
+          { email: user.email, name: user.username, metadata: { appUserId: String(user.id) } },
+          { idempotencyKey: `start-pro-customer-${user.id}` }
+        ));
+        customerId = customer.id;
+        await strapi.entityService.update(UP_UID, user.id, { data: { customerId } });
+      }
+
+      const listed = await stripe.subscriptions.list({ customer: customerId, status: 'all', limit: 20, expand: ['data.latest_invoice'] });
+      const subscription = pickSubscription(listed?.data || []);
+      const decision = decideStartPro({ user, subscription });
+      if (decision.action === 'refuse') {
+        return conflict(ctx, decision.code, decision.code === 'already_active' ? 'Your Pro membership is already active.' : 'Nothing to pay.');
+      }
+
+      // Billing A: explicit consent to the server's own terms, never the client's price.
+      const defaultPrice = decision.action === 'new_subscription' ? await loadDefaultPrice(priceId) : null;
+      const terms = describeStartPro({ decision, subscription, defaultPrice });
+      const verdict = checkConsent(ctx.request.body?.consent, terms);
+      if (!verdict.ok) return consentFailure(ctx, verdict.code, terms);
+      const consentFor = (referenceType, reference) =>
+        recordConsent({ strapi, user, terms, referenceType, reference, subscriptionId: subscription?.id || null, bandId });
+      // Billing B: Stripe Checkout shows the same server-built terms above its button.
+      const customText = { submit: { message: terms.checkoutMessage } };
+
+      const urls = returnUrls({ appUrl: process.env.PUBLIC_APP_URL, bandId });
+      const bucket = Math.floor(Date.now() / (10 * 60 * 1000));
+
+      if (decision.action === 'pay_invoice') {
+        const invoice = subscription.latest_invoice && typeof subscription.latest_invoice === 'object' ? subscription.latest_invoice : null;
+        if (invoice?.status === 'open' && invoice.hosted_invoice_url) {
+          await consentFor('invoice', invoice.id);
+          return ctx.send({ url: invoice.hosted_invoice_url, kind: 'invoice' });
+        }
+        // No payable invoice on file: the billing portal can update the card.
+        const portal = await stripe.billingPortal.sessions.create({ customer: customerId, return_url: urls.cancel_url.replace('?billing=canceled', '?billing=return') });
+        await consentFor('billing_portal_session', portal.id);
+        return ctx.send({ url: portal.url, kind: 'portal' });
+      }
+
+      if (decision.action === 'end_trial') {
+        const open = await findOpenSession({ stripe, customer: customerId, mode: 'setup', intent: END_TRIAL_INTENT, termsKey: terms.termsKey });
+        if (open) {
+          await consentFor('checkout_session', open.id);
+          return ctx.send({ url: open.url, kind: 'end_trial' });
+        }
+        const session = await stripe.checkout.sessions.create(
+          {
+            mode: 'setup',
+            customer: customerId,
+            currency: 'usd',
+            payment_method_types: ['card'],
+            ...urls,
+            custom_text: customText,
+            metadata: { faneqo_intent: END_TRIAL_INTENT, userId: String(user.id), subscriptionId: subscription.id, consent_version: terms.version, terms_key: terms.termsKey },
+          },
+          { idempotencyKey: `start-pro-setup-v2-${user.id}-${bandId || 0}-${terms.termsKey}-${bucket}` }
+        );
+        await consentFor('checkout_session', session.id);
+        strapi.log.info('[start-pro] setup session opened', { userId: user.id });
+        return ctx.send({ url: session.url, kind: 'end_trial' });
+      }
+
+      // new_subscription: trial over, canceled, or never subscribed
+      const open = await findOpenSession({ stripe, customer: customerId, mode: 'subscription', intent: START_INTENT, termsKey: terms.termsKey });
+      if (open) {
+        await consentFor('checkout_session', open.id);
+        return ctx.send({ url: open.url, kind: 'subscription' });
+      }
+      const session = await stripe.checkout.sessions.create(
+        {
+          mode: 'subscription',
+          customer: customerId,
+          line_items: [{ price: priceId, quantity: 1 }],
+          ...urls,
+          custom_text: customText,
+          metadata: { faneqo_intent: START_INTENT, userId: String(user.id), consent_version: terms.version, terms_key: terms.termsKey },
+          subscription_data: { metadata: { userId: String(user.id), consent_version: terms.version, terms_key: terms.termsKey } },
+        },
+        { idempotencyKey: `start-pro-sub-v2-${user.id}-${bandId || 0}-${terms.termsKey}-${bucket}` }
+      );
+      await consentFor('checkout_session', session.id);
+      strapi.log.info('[start-pro] subscription checkout opened', { userId: user.id });
+      return ctx.send({ url: session.url, kind: 'subscription' });
+    } catch (err) {
+      strapi.log.error('[start-pro] Stripe error', { userId: user.id, code: err?.code || err?.type || 'error' });
+      return ctx.internalServerError('Billing is not available right now. Please try again.');
+    }
+  },
+
+  // GET /api/stripe/start-pro/confirm?session_id=cs_...
+  // Called by the editor on return from Stripe. Verifies with Stripe, never the URL.
+  async startProConfirm(ctx) {
+    const jwtUser = ctx.state.user;
+    if (!jwtUser?.id) return ctx.unauthorized('You must be logged in.');
+    const sessionId = String(ctx.query?.session_id || '');
+    if (!/^cs_[A-Za-z0-9_]{8,200}$/.test(sessionId)) return ctx.badRequest('Invalid session.');
+
+    const user = await strapi.entityService.findOne(UP_UID, jwtUser.id, {
+      fields: ['id', 'customerId', 'subscriptionStatus', 'plan', 'firstPaidAt'],
+    });
+    if (!user) return ctx.unauthorized('You must be logged in.');
+    if (isBillingExemptLifetimePro(user)) return conflict(ctx, 'billing_exempt', 'Lifetime Pro includes payments.');
+
+    try {
+      const session = await stripe.checkout.sessions.retrieve(sessionId, { expand: ['setup_intent'] });
+      const sessionCustomer = typeof session.customer === 'string' ? session.customer : session.customer?.id;
+      if (!user.customerId || sessionCustomer !== user.customerId) return ctx.forbidden('Not your checkout.');
+
+      let result = { outcome: session.status === 'expired' ? 'expired' : 'open' };
+      if (session.status === 'complete') {
+        if (session.mode === 'setup' && session.metadata?.faneqo_intent === END_TRIAL_INTENT) {
+          result = await applyEndTrial({ stripe, session, log: strapi.log });
+        } else if (session.mode === 'subscription') {
+          result = { outcome: session.payment_status === 'paid' ? 'paid' : 'pending' };
+        }
+      }
+      const synced = await syncCustomer(user.customerId);
+      const fresh = synced?.user || user;
+      ctx.set('Cache-Control', 'no-store');
+      return ctx.send({
+        outcome: result.outcome,
+        invoiceUrl: result.invoiceUrl || null,
+        subscriptionStatus: fresh.subscriptionStatus || null,
+        paid: Boolean(fresh.firstPaidAt) && fresh.subscriptionStatus === 'active',
+      });
+    } catch (err) {
+      strapi.log.error('[start-pro] confirm failed', { userId: user.id, code: err?.code || err?.type || 'error' });
+      return ctx.internalServerError('We could not confirm with Stripe yet. Please check again shortly.');
+    }
   },
 
 // POST /api/stripe/register
@@ -367,197 +561,84 @@ async register(ctx) {
 // Complimentary Lifetime Pro (plan or status "free") is never rewritten by a
 // Stripe event: a leftover customer/subscription from before the grant must
 // not mark the account active, past due or canceled.
+/** The configured default Pro price from Stripe (for new subscriptions), or null if unreadable. */
+async function loadDefaultPrice(priceId) {
+  try {
+    return await stripe.prices.retrieve(priceId);
+  } catch {
+    return null;
+  }
+}
+
+function conflict(ctx, code, message) {
+  ctx.status = 409;
+  ctx.body = { error: { status: 409, name: 'ConflictError', message, details: { code } } };
+}
+
 function skipLifetimePro(user) {
   if (!isBillingExemptLifetimePro(user)) return false;
   strapi.log.info('[Webhook] Skipping billing-exempt lifetime Pro', { userId: user.id });
   return true;
 }
 
-async function onCheckoutCompleted(session) {
-  strapi.log.debug('[Webhook] checkout.session.completed', session.id);
-  if (!session.subscription) return;
-  const [user] = await strapi.entityService.findMany('plugin::users-permissions.user', {
-    filters: { customerId: session.customer }
-  });
-  if (!user) return strapi.log.warn('[Webhook] No user for customer', session.customer);
-  if (skipLifetimePro(user)) return;
+const UP_UID = 'plugin::users-permissions.user';
 
-  const isTrial = Boolean(session.trial_end);
-  await strapi.entityService.update('plugin::users-permissions.user', user.id, {
-    data: {
-      subscriptionStatus: isTrial ? 'trialing' : 'active',
-      subscriptionId:     session.subscription,
-      trialEndsAt:        isTrial ? new Date(session.trial_end * 1000) : null,
-      gracePeriodStart:   null,
-      cancelAt:           null
-    }
-  });
-  strapi.log.info('[Webhook] User marked', { userId: user.id, status: isTrial ? 'trialing' : 'active' });
-}
-
-async function onInvoicePaid(invoice) {
-  strapi.log.debug('[Webhook] invoice.payment_succeeded', invoice.id);
-
-  const amountPaid = Number(invoice.amount_paid ?? 0);
-  const amountTotal = Number(invoice.total ?? 0);
-  const paidFlag = invoice.paid === true;
-  const effectivePaid = amountPaid || amountTotal;
-
-  // Skip truly $0 invoices (trial start, coupons, etc.)
-  if (!paidFlag || effectivePaid <= 0) return;
-
-  const [user] = await strapi.entityService.findMany('plugin::users-permissions.user', {
-    filters: { customerId: invoice.customer }
-  });
-  if (!user) return;
-  if (skipLifetimePro(user)) return;
-
-  await strapi.entityService.update('plugin::users-permissions.user', user.id, {
-    data: {
-      subscriptionStatus:  'active',
-      subscriptionId:      invoice.subscription,
-      trialEndsAt:         null,
-      gracePeriodStart:    null,
-      cancelAt:            null
-    }
-  });
-  strapi.log.info('[Webhook] User marked active', { userId: user.id });
-}
-
-async function onInvoiceFailed(data) {
-  strapi.log.debug('[Webhook] invoice.payment_failed', data.id);
-  const [user] = await strapi.entityService.findMany('plugin::users-permissions.user', {
-    filters: { customerId: data.customer }
-  });
-  if (!user) return;
-  if (skipLifetimePro(user)) return;
-
-  const updates = { subscriptionStatus: 'pastDue' };
-  if (!user.gracePeriodStart) updates.gracePeriodStart = new Date();
-
-  await strapi.entityService.update('plugin::users-permissions.user', user.id, { data: updates });
-  strapi.log.info('[Webhook] User marked pastDue', { userId: user.id });
-}
-
-async function onSubscriptionUpdated(subscription) {
-  strapi.log.debug('[Webhook] customer.subscription.updated', {
-    id:                   subscription.id,
-    status:               subscription.status,
-    customer:             subscription.customer,
-    cancel_at_period_end: subscription.cancel_at_period_end,
-    cancel_at:            subscription.cancel_at
-  });
-
-  // Try to find user by subscriptionId first
-  let [user] = await strapi.entityService.findMany('plugin::users-permissions.user', {
-    filters: { subscriptionId: subscription.id },
-    limit: 1,
-    fields: ['id', 'subscriptionStatus', 'subscriptionId', 'plan', 'trialEndsAt', 'gracePeriodStart', 'cancelAt']
-  });
-
-  // Fallback: find by customerId if subscriptionId lookup fails
-  if (!user && subscription.customer) {
-    strapi.log.debug('[Webhook] No user found by subscriptionId, trying customerId', subscription.customer);
-    [user] = await strapi.entityService.findMany('plugin::users-permissions.user', {
-      filters: { customerId: subscription.customer },
-      limit: 1,
-      fields: ['id', 'subscriptionStatus', 'subscriptionId', 'plan', 'trialEndsAt', 'gracePeriodStart', 'cancelAt']
-    });
-  }
-
+/**
+ * Bring one customer's user row in step with Stripe. Lifetime Pro is never
+ * rewritten. `invoice` (from an invoice event) can prove the first payment.
+ */
+async function syncCustomer(customerId, { invoice = null } = {}) {
+  if (!customerId) return null;
+  const [user] = await strapi.entityService.findMany(UP_UID, { filters: { customerId } });
   if (!user) {
-    strapi.log.warn('[Webhook] No user for subscription', { subscriptionId: subscription.id, customerId: subscription.customer });
-    return;
+    strapi.log.warn('[Webhook] No user for customer');
+    return null;
   }
+  if (skipLifetimePro(user)) return { user, subscription: null };
 
-  if (isBillingExemptLifetimePro(user)) {
-    strapi.log.debug('[Webhook] Skipping billing-exempt lifetime Pro', { userId: user.id });
-    return;
+  const listed = await stripe.subscriptions.list({ customer: customerId, status: 'all', limit: 20, expand: ['data.latest_invoice'] });
+  const subscription = pickSubscription(listed?.data || []);
+  const live = (listed?.data || []).filter((s) => ['active', 'past_due', 'unpaid', 'trialing'].includes(s.status));
+  if (live.length > 1) {
+    // Never cancel anything automatically: flag it for an operator.
+    strapi.log.error('[billing] customer has more than one live subscription; review', { userId: user.id, count: live.length });
   }
-
-  // Safely derive plan nickname from either price.nickname or legacy plan.nickname
-  const planNickname =
-    subscription.items?.data?.[0]?.price?.nickname ||
-    subscription.items?.data?.[0]?.plan?.nickname ||
-    null;
-
-  // Convert Stripe epoch seconds -> Date for DB fields that are dates
-  const trialEndsAtDate = subscription.trial_end ? new Date(subscription.trial_end * 1000) : null;
-
-  // Build update payload (non-destructive, minimal)
-  const data = {
-    // Keep snake_case status as-is; you have existing code that reads snake and camel elsewhere
-    subscriptionStatus: normalizeSubscriptionStatusForUserRow(subscription.status),
-    plan:               planNickname,
-    trialEndsAt:        trialEndsAtDate,
-  };
-
-  // Ensure subscriptionId is set (for users found by customerId fallback)
-  if (!user.subscriptionId && subscription.id) {
-    data.subscriptionId = subscription.id;
-  }
-
-  // If set to cancel at period end, persist cancelAt date
-  if (subscription.cancel_at_period_end && subscription.cancel_at) {
-    data.cancelAt = new Date(subscription.cancel_at * 1000);
-  }
-
-  // If subscription is active again, clear grace/cancel flags
-  if (subscription.status === 'active') {
-    data.gracePeriodStart = null;
-    data.cancelAt = null;
-  }
-
-  // Idempotent write (avoid noise): only update if something actually changed
-  const changed =
-    user.subscriptionStatus !== data.subscriptionStatus ||
-    user.plan !== data.plan ||
-    String(user.trialEndsAt || '') !== String(data.trialEndsAt || '') ||
-    String(user.gracePeriodStart || '') !== String(data.gracePeriodStart || '') ||
-    String(user.cancelAt || '') !== String(data.cancelAt || '');
-
-  if (changed) {
-    await strapi.entityService.update('plugin::users-permissions.user', user.id, { data });
-    strapi.log.info('[Webhook] User subscription updated', {
+  const data = computeUserBillingUpdate({ user, subscription, invoice });
+  if (Object.keys(data).length) {
+    await strapi.entityService.update(UP_UID, user.id, { data });
+    strapi.log.info('[Webhook] Billing synced from Stripe', {
       userId: user.id,
-      newStatus: subscription.status,
-      plan: planNickname,
-      trialEndsAt: trialEndsAtDate?.toISOString() || null
-    });
-  } else {
-    strapi.log.debug('[Webhook] No changes to persist for user', { userId: user.id });
-  }
-}
-
-
-async function onSubscriptionCanceled(subscription) {
-  strapi.log.debug('[Webhook] customer.subscription.deleted', { subscriptionId: subscription.id, customerId: subscription.customer });
-  
-  // Try to find user by subscriptionId first
-  let [user] = await strapi.entityService.findMany('plugin::users-permissions.user', {
-    filters: { subscriptionId: subscription.id }
-  });
-
-  // Fallback: find by customerId if subscriptionId lookup fails
-  if (!user && subscription.customer) {
-    [user] = await strapi.entityService.findMany('plugin::users-permissions.user', {
-      filters: { customerId: subscription.customer }
+      status: data.subscriptionStatus || user.subscriptionStatus,
+      firstPaid: Boolean(data.firstPaidAt),
     });
   }
-
-  if (!user) {
-    strapi.log.warn('[Webhook] No user for canceled subscription', { subscriptionId: subscription.id, customerId: subscription.customer });
-    return;
-  }
-  if (skipLifetimePro(user)) return;
-
-  await strapi.entityService.update('plugin::users-permissions.user', user.id, {
-    data: { subscriptionStatus: 'canceled', gracePeriodStart: null, cancelAt: null }
-  });
-  strapi.log.info('[Webhook] User marked canceled', { userId: user.id });
+  return { user: { ...user, ...data }, subscription };
 }
 
+async function onCheckoutCompleted(session) {
+  strapi.log.debug('[Webhook] checkout.session.completed', { mode: session.mode || null });
+  if (session.mode === 'setup' && session.metadata?.faneqo_intent === END_TRIAL_INTENT) {
+    const [owner] = await strapi.entityService.findMany(UP_UID, { filters: { customerId: session.customer } });
+    if (owner && !skipLifetimePro(owner)) {
+      const result = await applyEndTrial({ stripe, session, log: strapi.log });
+      strapi.log.info('[start-pro] trial end from webhook', { userId: owner.id, outcome: result.outcome });
+    }
+  }
+  if (!session.customer) return;
+  await syncCustomer(typeof session.customer === 'string' ? session.customer : session.customer.id);
+}
 
+async function onInvoiceEvent(invoice) {
+  await syncCustomer(invoice.customer, { invoice });
+}
+
+async function onCustomerEvent(object) {
+  await syncCustomer(object.customer);
+}
+
+async function onTrialWillEnd(subscription) {
+  strapi.log.info('[Webhook] trial ends soon', { subscription: subscription.id });
+}
 
 async function onUnhandledEvent(data, event) {
   strapi.log.info('[Webhook] Unhandled event', event.type);

@@ -86,7 +86,7 @@ export default defineEventHandler(async (event) => {
   // Check auth
   const auth = checkCorvanaAuth(event)
   if (!auth.authorized) {
-    setResponseStatus(event, 401)
+    setResponseStatus(event, auth.status || 401)
     return auth.error
   }
   

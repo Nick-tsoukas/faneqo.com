@@ -29,7 +29,7 @@
         No gallery is currently shown on your artist page.
       </p>
       <p v-if="artistPage.kind === 'none' && items.length" class="fq-garch__page-hint">
-        Choose a gallery below to feature it.
+        Choose a gallery below to show it on your artist page.
       </p>
 
       <div v-else-if="artistPage.gallery" class="fq-garch__page-row">
@@ -42,7 +42,7 @@
         <div class="fq-garch__page-copy">
           <p class="fq-garch__page-title">{{ featuredCopy.title }}</p>
           <p class="fq-garch__page-meta">{{ featuredCopy.count }}</p>
-          <p v-if="artistPage.kind === 'featured'" class="fq-garch__page-state">Featured on artist page</p>
+          <p v-if="artistPage.kind === 'featured'" class="fq-garch__page-state">Showing on artist page</p>
           <template v-else>
             <p class="fq-garch__page-state">Featured selection needs attention</p>
             <p class="fq-garch__page-hint">This gallery is no longer eligible to appear publicly. {{ artistPage.block.detail }}</p>
@@ -54,7 +54,7 @@
           :disabled="featuringId != null"
           @click="onUnfeature(artistPage.gallery)"
         >
-          {{ artistPage.kind === 'attention' ? 'Remove from artist page' : 'Remove' }}
+          Remove from artist page
         </button>
       </div>
     </section>
@@ -154,6 +154,17 @@
     </div>
 
     <FaneqoGalleryConfirm
+      :open="!!replaceTarget"
+      heading="Show this gallery on your artist page?"
+      :body="replaceBody"
+      confirm-label="Show on artist page"
+      busy-label="Saving…"
+      :busy="featuringId != null"
+      @cancel="replaceTarget = null"
+      @confirm="confirmReplace"
+    />
+
+    <FaneqoGalleryConfirm
       :open="!!hideTarget"
       heading="Hide this gallery?"
       body="Hiding removes the gallery from Faneqo and Faneqo shared-gallery pages. Photos already downloaded, reposted, or directly cached elsewhere may remain available. You can restore it later."
@@ -210,6 +221,7 @@ const router = useRouter()
 const { hide, restore } = useArtistUpdates()
 const { featureGalleryOnProfile, unfeatureGalleryOnProfile } = useGalleryDrafts()
 const hideTarget = ref(null)
+const replaceTarget = ref(null)
 const working = ref(false)
 const featuringId = ref(null)
 const liveMessage = ref('')
@@ -262,9 +274,16 @@ onMounted(() => {
   })
 })
 
-function announce(item, message) {
-  if (item?.id != null) shareStatus[item.id] = message
+function announce(item, message, { visible = true } = {}) {
+  if (item?.id != null) {
+    if (visible) shareStatus[item.id] = message
+    else delete shareStatus[item.id]
+  }
   liveMessage.value = message
+}
+
+function clearStatuses() {
+  for (const key of Object.keys(shareStatus)) delete shareStatus[key]
 }
 
 function onOpen(item, payload) {
@@ -342,20 +361,51 @@ function featureFailure(err) {
   return err?.data?.error?.message || err?.data?.message || 'Could not update your artist page.'
 }
 
-async function onFeature(item) {
-  if (!item?.id || featuringId.value) return
+function replacesTitle(item) {
+  const current = artistPage.value?.gallery
+  if (!item || !current || Number(current.id) === Number(item.id)) return ''
+  return artistPageFeatureCopy(current).title || 'the gallery on your artist page'
+}
+
+const replaceBody = computed(() => {
+  const title = replacesTitle(replaceTarget.value) || 'the gallery already on your artist page'
+  return `This replaces ${title} on your artist page.`
+})
+
+async function commitFeature(item) {
   featuringId.value = item.id
   try {
     const result = await featureGalleryOnProfile(item.id)
     const on = result?.data?.featuredOnProfile === true
     emit('featured', { id: result?.data?.id || item.id, featuredOnProfile: on })
     const title = galleryTitle(item)
-    announce(item, on ? `${title} is now featured on your artist page.` : 'Could not feature this gallery.')
+    if (on) clearStatuses()
+    announce(
+      item,
+      on ? `${title} is now showing on your artist page.` : 'Could not show this gallery on your artist page.',
+      { visible: !on },
+    )
+    if (on) replaceTarget.value = null
   } catch (err) {
     announce(item, featureFailure(err))
   } finally {
     featuringId.value = null
   }
+}
+
+async function onFeature(item) {
+  if (!item?.id || featuringId.value) return
+  if (replacesTitle(item)) {
+    replaceTarget.value = item
+    return
+  }
+  await commitFeature(item)
+}
+
+async function confirmReplace() {
+  const item = replaceTarget.value
+  if (!item || featuringId.value) return
+  await commitFeature(item)
 }
 
 async function onUnfeature(item) {
@@ -367,7 +417,8 @@ async function onUnfeature(item) {
       id: result?.data?.id || item.id,
       featuredOnProfile: result?.data?.featuredOnProfile === true,
     })
-    announce(item, 'Gallery removed from your artist page.')
+    clearStatuses()
+    announce(item, 'Gallery removed from your artist page.', { visible: false })
   } catch (err) {
     announce(item, featureFailure(err))
   } finally {
@@ -485,19 +536,19 @@ async function onUnfeature(item) {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: 0.75rem;
-  width: min(100%, 36rem);
-  margin-top: 0.35rem;
+  gap: 0.85rem 1.15rem;
+  width: auto;
+  max-width: 100%;
+  margin-top: 0.55rem;
 }
 .fq-garch__page-row .fq-garch__page-copy {
   min-width: 0;
-  flex: 1 1 12rem;
 }
 .fq-garch__page-thumb {
-  width: 3rem;
-  height: 3rem;
+  width: 3.25rem;
+  height: 3.25rem;
   flex: 0 0 auto;
-  border-radius: 0.45rem;
+  border-radius: 0.3rem;
   object-fit: cover;
 }
 .fq-garch__page-title {
@@ -514,19 +565,19 @@ async function onUnfeature(item) {
   font-weight: 620;
 }
 .fq-garch__page-remove {
-  margin-left: auto;
   min-height: 44px;
-  padding: 0 0.2rem;
+  padding: 0 0.1rem;
   border: 0;
   background: transparent;
-  color: rgba(245, 245, 246, 0.62);
-  font-size: 0.84rem;
-  font-weight: 600;
+  color: #f5f5f6;
+  font-size: 0.9rem;
+  font-weight: 650;
+  letter-spacing: -0.015em;
   cursor: pointer;
   white-space: nowrap;
 }
 .fq-garch__page-remove:hover {
-  color: #f5f5f6;
+  color: #ffffff;
 }
 .fq-garch__page-remove:focus-visible {
   outline: 2px solid #f5f5f6;

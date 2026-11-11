@@ -135,6 +135,7 @@ module.exports = createCoreController('api::gallery-draft.gallery-draft', ({ str
         userId,
         sessionId: ctx.params.sessionId,
         publishIdempotencyKey: body.publishIdempotencyKey,
+        showOnArtistPage: body.showOnArtistPage,
       });
       return send(ctx, result);
     },

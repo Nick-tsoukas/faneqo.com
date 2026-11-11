@@ -1065,6 +1065,40 @@ function stagedFile(strapi, { id, sessionId, userId = USER, classification = 'pu
     assert.strictEqual(slugs[1], 'nashville-2');
   });
 
+  await test('the first public gallery shows on an empty artist page unless the artist opts out', async () => {
+    const strapi = createMockStrapi();
+    const service = draftService(strapi);
+    const band = () => strapi.db['api::band.band'].find((row) => row.id === BAND);
+
+    const first = await service.createDraft({ userId: USER, bandId: BAND, kind: 'general' });
+    await service.uploadDraftMedia({ userId: USER, sessionId: first.data.sessionId, file: jpegFile() });
+    const off = await service.publishDraft({
+      userId: USER,
+      sessionId: first.data.sessionId,
+      showOnArtistPage: false,
+    });
+    assert.ok(!off.error, off.message);
+    assert.strictEqual(off.data.featuredOnProfile, false);
+    assert.strictEqual(band().featuredGallery == null, true);
+
+    const second = await service.createDraft({ userId: USER, bandId: BAND, kind: 'show' });
+    await service.uploadDraftMedia({ userId: USER, sessionId: second.data.sessionId, file: jpegFile() });
+    const shown = await service.publishDraft({
+      userId: USER,
+      sessionId: second.data.sessionId,
+      showOnArtistPage: true,
+    });
+    assert.strictEqual(shown.data.featuredOnProfile, true);
+    assert.strictEqual(Number(band().featuredGallery), Number(shown.data.id));
+
+    const third = await service.createDraft({ userId: USER, bandId: BAND, kind: 'general' });
+    await service.uploadDraftMedia({ userId: USER, sessionId: third.data.sessionId, file: jpegFile() });
+    const kept = await service.publishDraft({ userId: USER, sessionId: third.data.sessionId });
+    assert.strictEqual(kept.data.featuredOnProfile, false);
+    assert.strictEqual(kept.data.keptFeaturedTitle.length > 0, true);
+    assert.strictEqual(Number(band().featuredGallery), Number(shown.data.id));
+  });
+
   console.log(`\n=== Results: ${passed} passed, ${failed} failed ===\n`);
   if (failed) process.exitCode = 1;
 })();

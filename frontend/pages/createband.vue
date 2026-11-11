@@ -437,8 +437,23 @@
           </div>
 
           <div class="form-section-content">
+            <PaymentsActivationPanel
+              v-if="createActivation"
+              ref="activationPanel"
+              class="mb-4"
+              :view="createActivation"
+              :state="createEligibility?.state || ''"
+              :artist-name="bandName"
+              :artist-image="bandImgUrl"
+              :busy="activationBusy"
+              :error="activationError"
+              :notice="activationNotice"
+              :consent-terms="startProConsent.terms.value"
+              :consent-notice="startProConsent.notice.value"
+              @action="onActivationAction"
+            />
             <div
-              v-if="setupPayoutsAfterCreate"
+              v-else-if="setupPayoutsAfterCreate"
               class="create-payout-next mb-4"
               role="status"
               data-testid="create-payout-note"
@@ -465,19 +480,21 @@
               >
                 <div class="flex items-start justify-between gap-4">
                   <div class="flex-1">
-                    <div class="text-white font-medium">{{ btn.title }}</div>
+                    <div class="font-medium" :class="paymentsLocked ? 'text-white/70' : 'text-white'">{{ btn.title }}</div>
                     <div v-if="btn.description" class="text-white/50 text-sm mt-1">
                       {{ btn.description }}
                     </div>
                   </div>
-                  <label class="relative inline-flex items-center cursor-pointer">
+                  <svg v-if="paymentsLocked" class="w-4 h-4 mt-1 text-white/50 shrink-0" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4.5" y="10.5" width="15" height="10" rx="2.5" /><path d="M8 10.5V7.5a4 4 0 0 1 8 0v3" /></svg>
+                  <label class="relative inline-flex items-center cursor-pointer" :class="{ 'opacity-50': paymentsLocked && !btn.enabled }">
                     <input
                       :id="`paybtn-${btn.key}`"
                       type="checkbox"
                       v-model="btn.enabled"
                       class="sr-only peer"
-                      :aria-label="`Show ${btn.title} on your artist page`"
+                      :aria-label="toggleLabel(btn)"
                       @change="onPaymentToggle(btn)"
+                      @click="guardLockedToggle($event, btn)"
                     />
                     <div class="w-11 h-6 bg-white/20 rounded-full peer peer-checked:bg-purple-600 peer-focus-visible:ring-2 peer-focus-visible:ring-purple-300 transition-colors"></div>
                     <div class="absolute left-[2px] top-[2px] w-5 h-5 bg-white rounded-full shadow-sm transition-transform peer-checked:translate-x-5"></div>
@@ -551,7 +568,12 @@ import { useArtistSetupNav } from "@/composables/useArtistSetupNav";
 import { refreshWorkspaceAccess } from "@/composables/useWorkspaceBand";
 import { usePayoutSetup } from "@/composables/usePayoutSetup";
 import PayoutSetupPrompt from "@/components/payments/PayoutSetupPrompt.vue";
+import PaymentsActivationPanel from "@/components/payments/PaymentsActivationPanel.vue";
+import { useBillingConsent } from "@/composables/useBillingConsent";
+import { usePaymentActivation } from "@/composables/usePaymentActivation";
+import { activationView, chargeCanShow, createPageEligibility } from "@/utils/payments/paymentActivation";
 import { hasAnyFilled, visibleArtistSetupSections } from "@/utils/bands/artistSetupSections";
+import { createBandErrorMessage } from "@/utils/bands/createBandError";
 import {
   featuredMusicIsReady,
   featuredPlayerLooksReady,
@@ -593,8 +615,103 @@ const payoutPromptOpen = ref(false);
 const payoutPromptAnswered = ref(false);
 const setupPayoutsAfterCreate = ref(false);
 
+// ── Payments panel. Shown only once the paid requirement is enforced; the band
+// doesn't exist yet, so the view comes from the account (the server decides at checkout).
+const { startProUrl, fetchBillingSubscription } = usePaymentActivation();
+// The account's Stripe subscription, so charges are quoted at the price it pays (undefined = unknown).
+const billingSubscription = ref(undefined);
+const activationPanel = ref(null);
+const activationBusy = ref(null);
+const activationError = ref("");
+const activationNotice = ref(null);
+const keptTrial = ref(false);
+// Set by Start Pro: submitForm creates the band once, then opens checkout for it.
+const startProAfterCreate = ref(false);
+const createEligibility = computed(() =>
+  createPageEligibility(user.value, { enforced: String(config.public.paymentsRequirePaid || "") === "enforce" })
+);
+const createActivation = computed(() =>
+  activationView(createEligibility.value, { keptTrial: keptTrial.value, subscription: billingSubscription.value })
+);
+// Billing A: the server's terms for Start Pro and the consent given in the panel.
+const startProConsent = useBillingConsent("start_pro");
+const pendingConsent = ref(null);
+
+// Read the price only when the panel can show a paying button (paid enforcement on).
+watch(
+  createEligibility,
+  async (answer) => {
+    if (process.client && answer && chargeCanShow(answer) && billingSubscription.value === undefined) {
+      const [sub] = await Promise.all([fetchBillingSubscription(), startProConsent.load()]);
+      billingSubscription.value = sub;
+    }
+  },
+  { immediate: true }
+);
+const paymentsLocked = computed(() => Boolean(createActivation.value?.rowsLocked));
+const toggleLabel = (btn) =>
+  paymentsLocked.value ? `${btn.title} unlocks with Faneqo Pro` : `Show ${btn.title} on your artist page`;
+
+function onActivationAction(action, extra = {}) {
+  activationError.value = "";
+  if (action === "start_pro" || action === "update_payment") {
+    pendingConsent.value = extra?.consent || null;
+    activationBusy.value = "start_pro";
+    startProAfterCreate.value = true;
+    setupPayoutsAfterCreate.value = false;
+    submitForm();
+    return;
+  }
+  if (action === "setup_payouts") {
+    activationBusy.value = "setup_payouts";
+    setupPayoutsAfterCreate.value = true;
+    submitForm();
+    return;
+  }
+  if (action === "keep_trial") {
+    keptTrial.value = true;
+    activationNotice.value = { tone: "neutral", text: "Your free trial continues. Payment options unlock whenever you start Pro." };
+  }
+}
+
+// A validation stop or failed create ends any busy state (and the queued checkout).
+watch(loading, (on) => {
+  if (!on) {
+    activationBusy.value = null;
+    startProAfterCreate.value = false;
+  }
+});
+
+// While payments need Pro, an option can't be switched ON: the click is cancelled
+// (the choice is never rewritten) and focus moves to Start Pro.
+function guardLockedToggle(event, btn) {
+  if (!paymentsLocked.value || btn.enabled) return;
+  event.preventDefault();
+  keptTrial.value = false;
+  activationPanel.value?.focusPrimary();
+}
+
 function onPaymentToggle(btn) {
+  if (createActivation.value) {
+    if (!btn.enabled) return; // switching an option off is always allowed
+    // Before payouts are live the choice is kept; point at the action that makes it count.
+    activationPanel.value?.focusPrimary();
+    return;
+  }
   if (btn.enabled && !payoutPromptAnswered.value) payoutPromptOpen.value = true;
+}
+
+/** The band exists now: open checkout for it; back or cancel lands on its editor. */
+async function openStartProForNewBand(bandId) {
+  createdBandEditor.value = `/editband/${bandId}?billing=canceled`;
+  window.history.replaceState(window.history.state, "", createdBandEditor.value);
+  loadingMessage.value = "Artist page created! Opening secure checkout…";
+  try {
+    window.location.assign(await startProUrl(bandId, pendingConsent.value));
+  } catch {
+    // Nothing was charged; the editor shows the server's terms again for consent.
+    window.location.assign(`/editband/${bandId}?billing=error`);
+  }
 }
 function choosePayoutSetup() {
   payoutPromptOpen.value = false;
@@ -1274,6 +1391,10 @@ async function submitForm() {
     // Payout setup was chosen: Stripe now, back to this band's editor after
     // (a full page load, so workspace access is fetched fresh there).
     const newBandId = json.data?.id;
+    if (startProAfterCreate.value && newBandId) {
+      await openStartProForNewBand(newBandId);
+      return;
+    }
     if (setupPayoutsAfterCreate.value && newBandId) {
       await openPayoutSetupForNewBand(newBandId);
       return;
@@ -1300,7 +1421,7 @@ async function submitForm() {
     }
   } catch (err) {
     console.error("❌ createBand error:", err);
-    alert(err?.error?.message || "Creation failed");
+    alert(createBandErrorMessage(err));
     loading.value = false;
   }
 }

@@ -45,6 +45,12 @@ module.exports = {
       config: { auth: false, policies: [], middlewares: [] },
     },
     {
+      method: 'GET',
+      path: '/artist-updates/artist-page-placement',
+      handler: 'artist-update.artistPagePlacement',
+      config: { auth: false, policies: [], middlewares: [] },
+    },
+    {
       method: 'POST',
       path: '/artist-updates/media',
       handler: 'artist-update.uploadMedia',

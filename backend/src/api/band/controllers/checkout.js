@@ -4,7 +4,12 @@ const crypto = require("crypto");
 const Stripe = require("stripe");
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
 const { platformFeePaymentIntentData } = require("../../../utils/billing/platformFee");
-const { isPaymentsSuspended, isPaymentsApproved, storedFlagsAllowCheckout } = require("../../../utils/payments/paymentAccess");
+const { storedFlagsAllowCheckout } = require("../../../utils/payments/paymentAccess");
+const { paymentEligibility } = require("../../../utils/payments/paymentEligibility");
+
+// A Stripe-hosted session stays payable until it expires, even if the band is
+// suspended meanwhile: keep that window at Stripe's minimum (30 minutes).
+const SESSION_TTL_SECONDS = 30 * 60;
 const { resolveCheckoutCents } = require("../../../utils/payments/checkoutAmount");
 const { createCheckoutGuard } = require("../../../utils/payments/checkoutGuard");
 
@@ -45,8 +50,11 @@ module.exports = {
       return ctx.badRequest("Payments not enabled for this band");
     }
 
-    // Admin suspension (and the optional approval gate) win over the stored flags.
-    if ((await isPaymentsSuspended(strapi, band.id)) || !(await isPaymentsApproved(strapi, band.id))) {
+    // One decision for every gate: blocked owner, suspension, review hold, paid
+    // entitlement (shadow until enforced), Stripe readiness, approval gate.
+    // The stored flags above are only a fast "no", never a "yes".
+    const eligibility = await paymentEligibility(strapi, band.id);
+    if (!eligibility.eligible) {
       return ctx.forbidden("Payments are paused for this artist");
     }
 
@@ -120,6 +128,7 @@ module.exports = {
         ],
         success_url: `${publicAppUrl}/${band.slug}/support/receipt?r=${receiptToken}`,
         cancel_url: `${publicAppUrl}/${band.slug}?canceled=1`,
+        expires_at: Math.floor(Date.now() / 1000) + SESSION_TTL_SECONDS,
         metadata: {
           supportMomentId: String(support.id),
           bandId: String(band.id),

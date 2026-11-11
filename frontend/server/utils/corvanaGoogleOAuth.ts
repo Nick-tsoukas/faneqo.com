@@ -67,7 +67,8 @@ export function createOAuth2Client(
 /**
  * Generate OAuth2 consent URL for Search Console access
  */
-export function generateAuthUrl(oauth2Client: ReturnType<typeof createOAuth2Client>) {
+/** `state` binds the consent to the admin request that started it (checked in the callback). */
+export function generateAuthUrl(oauth2Client: ReturnType<typeof createOAuth2Client>, state: string) {
   const scopes = [
     'https://www.googleapis.com/auth/webmasters.readonly'
   ]
@@ -76,7 +77,8 @@ export function generateAuthUrl(oauth2Client: ReturnType<typeof createOAuth2Clie
     access_type: 'offline',  // Required to get refresh token
     prompt: 'consent',       // Force consent screen to ensure refresh token is returned
     scope: scopes,
-    include_granted_scopes: true
+    include_granted_scopes: true,
+    state
   })
 }
 

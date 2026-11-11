@@ -108,11 +108,20 @@ function memoryStrapi(seed = {}) {
   });
 
   await test('ineligible feature reasons match the real gallery rules', () => {
-    assert.strictEqual(pure.featureBlockReason(gallery({ status: 'draft' })).message, 'Publish this gallery before featuring it.');
+    assert.strictEqual(pure.featureBlockReason(gallery({ status: 'draft' })).message, 'Publish this gallery before showing it on your artist page.');
     assert.strictEqual(
       pure.featureBlockReason(gallery({ visibility: 'fan_list' })).message,
-      'Make this gallery public before featuring it on your artist profile.',
+      'Only galleries visible to Everyone can be shown on your artist page.',
     );
+    assert.strictEqual(pure.parseShowOnArtistPage(true), true);
+    assert.strictEqual(pure.parseShowOnArtistPage(false), false);
+    assert.strictEqual(pure.parseShowOnArtistPage(undefined), undefined);
+    assert.strictEqual(pure.parseShowOnArtistPage('false'), undefined);
+    assert.strictEqual(pure.artistPageDisplaysGallery('compact'), true);
+    assert.strictEqual(pure.artistPageDisplaysGallery('bold'), true);
+    assert.strictEqual(pure.artistPageDisplaysGallery('smartlink'), true);
+    assert.strictEqual(pure.artistPageDisplaysGallery(undefined), true);
+    assert.strictEqual(pure.artistPageDisplaysGallery('poster'), false);
   });
 
   await test('owner featuring B replaces A and is idempotent', async () => {
@@ -222,6 +231,71 @@ function memoryStrapi(seed = {}) {
     assert.strictEqual(pure.toPublicGalleryIndexCard(gallery({ status: 'hidden' }), { bandSlug: 'ada' }), null);
     assert.strictEqual(pure.toPublicGalleryIndexCard(gallery({ status: 'draft' }), { bandSlug: 'ada' }), null);
     assert.strictEqual(pure.toPublicGalleryIndexCard(gallery({ media: [] }), { bandSlug: 'ada' }), null);
+  });
+
+  await test('publish placement fills an empty artist page and never replaces without a yes', async () => {
+    const strapi = memoryStrapi({
+      galleries: {
+        1: gallery({ id: 1, slug: 'a', title: 'Night' }),
+        2: gallery({ id: 2, slug: 'b', title: 'Encore' }),
+        3: gallery({ id: 3, slug: 'c', visibility: 'show_attendees', title: 'Door' }),
+      },
+      bands: { 4: { id: 4, slug: 'ada', pageStyle: 'smartlink', featuredGallery: null } },
+    });
+    const service = createFeaturedGalleryService(strapi, { authorize: async () => ({ ok: true }) });
+    const first = await service.applyPublishChoice({ userId: 3, updateId: 1, showOnArtistPage: undefined });
+    assert.strictEqual(first.featuredOnProfile, true);
+    assert.strictEqual(strapi.state.bands[4].featuredGallery, 1);
+    const skipped = await service.applyPublishChoice({ userId: 3, updateId: 2, showOnArtistPage: false });
+    assert.strictEqual(skipped.featuredOnProfile, false);
+    assert.strictEqual(strapi.state.bands[4].featuredGallery, 1);
+    const kept = await service.applyPublishChoice({ userId: 3, updateId: 2 });
+    assert.strictEqual(kept.featuredOnProfile, false);
+    assert.strictEqual(kept.keptFeaturedTitle, 'Night');
+    assert.strictEqual(strapi.state.bands[4].featuredGallery, 1);
+    const replaced = await service.applyPublishChoice({ userId: 3, updateId: 2, showOnArtistPage: true });
+    assert.strictEqual(replaced.featuredOnProfile, true);
+    assert.strictEqual(strapi.state.bands[4].featuredGallery, 2);
+    strapi.state.bands[4].featuredGallery = null;
+    const gated = await service.applyPublishChoice({ userId: 3, updateId: 3, showOnArtistPage: true });
+    assert.strictEqual(gated.featuredOnProfile, false);
+    assert.strictEqual(gated.featureError, 'Only galleries visible to Everyone can be shown on your artist page.');
+    assert.strictEqual(strapi.state.bands[4].featuredGallery, null);
+  });
+
+  await test('an explicit off leaves an empty artist page empty', async () => {
+    const strapi = memoryStrapi({
+      galleries: { 1: gallery({ id: 1 }) },
+      bands: { 4: { id: 4, slug: 'ada', featuredGallery: null } },
+    });
+    const service = createFeaturedGalleryService(strapi, { authorize: async () => ({ ok: true }) });
+    const result = await service.applyPublishChoice({ userId: 3, updateId: 1, showOnArtistPage: false });
+    assert.strictEqual(result.featuredOnProfile, false);
+    assert.strictEqual(strapi.state.bands[4].featuredGallery, null);
+  });
+
+  await test('placement reports the current gallery only to someone who can edit the band', async () => {
+    const strapi = memoryStrapi({
+      galleries: { 1: gallery({ id: 1, title: 'Night' }) },
+      bands: { 4: { id: 4, slug: 'ada', pageStyle: 'bold', featuredGallery: 1 } },
+    });
+    const service = createFeaturedGalleryService(strapi, {
+      authorize: async (_userId, bandId) => (bandId === 4 ? { ok: true } : null),
+    });
+    const placed = await service.placementForBand({ userId: 3, bandId: 4 });
+    assert.strictEqual(placed.data.featuredGalleryId, 1);
+    assert.strictEqual(placed.data.featuredTitle, 'Night');
+    assert.strictEqual(placed.data.displaysOnArtistPage, true);
+    const denied = await service.placementForBand({ userId: 3, bandId: 8 });
+    assert.strictEqual(denied.status, 403);
+    assert.strictEqual(denied.data, undefined, 'a refused caller learns nothing about the band');
+    const anonymous = await service.placementForBand({ userId: null, bandId: 4 });
+    assert.strictEqual(anonymous.status, 401);
+    assert.strictEqual(anonymous.data, undefined);
+    const noBand = await service.placementForBand({ userId: 3, bandId: 'abc' });
+    assert.strictEqual(noBand.status, 400);
+    assert.deepStrictEqual(Object.keys(placed.data).sort(), ['displaysOnArtistPage', 'featuredGalleryId', 'featuredTitle', 'pageStyle'],
+      'placement answers only these four fields');
   });
 
   await test('the public gallery list returns newest eligible galleries only', async () => {

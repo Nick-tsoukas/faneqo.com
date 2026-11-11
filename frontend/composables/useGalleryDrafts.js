@@ -230,12 +230,14 @@ export function useGalleryDrafts() {
    * Idempotent publish. The same key returns the same published row, so a
    * double-click or a network retry can never mint a second gallery.
    */
-  function publishDraft(sessionId, { publishIdempotencyKey } = {}) {
+  function publishDraft(sessionId, { publishIdempotencyKey, showOnArtistPage } = {}) {
     requireAuth()
+    const body = { publishIdempotencyKey }
+    if (showOnArtistPage === true || showOnArtistPage === false) body.showOnArtistPage = showOnArtistPage
     return $fetch(`${baseUrl}/api/gallery-drafts/${requireSession(sessionId)}/publish`, {
       method: 'POST',
       headers: jsonHeaders(),
-      body: { publishIdempotencyKey },
+      body,
     }).then((result) => {
       if (!result?.data) return result
       return { ...result, data: { ...result.data, media: normalizeFaneqoMediaList(result.data.media) } }
@@ -318,6 +320,14 @@ export function useGalleryDrafts() {
     })
   }
 
+  function getArtistPagePlacement(bandId) {
+    requireAuth()
+    return $fetch(`${baseUrl}/api/artist-updates/artist-page-placement`, {
+      headers: headers(),
+      query: { bandId },
+    })
+  }
+
   function getRocksnapsCapability(bandId) {
     requireAuth()
     return $fetch(`${baseUrl}/api/artist-updates/rocksnaps-capability`, {
@@ -341,6 +351,7 @@ export function useGalleryDrafts() {
     featureGalleryOnProfile,
     unfeatureGalleryOnProfile,
     setRocksnapsPublication,
+    getArtistPagePlacement,
     getRocksnapsCapability,
   }
 }

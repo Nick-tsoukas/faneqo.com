@@ -1,6 +1,6 @@
 import { readdirSync } from 'node:fs'
-import { getRedirectedUrls } from './server/utils/seoRedirects'
 import { reservedTopLevelPaths } from './utils/seo/artistSitemap.js'
+import { RETIRED_TOP_LEVEL_PATHS } from './utils/seo/retiredArticles.js'
 
 // https://nuxt.com/docs/api/configuration/nuxt-config
 export default defineNuxtConfig({
@@ -58,9 +58,10 @@ export default defineNuxtConfig({
     // Private video worker. Empty until the founder provisions it. Never public.
     studioVideoWorkerUrl: process.env.STUDIO_VIDEO_WORKER_URL || '',
     studioVideoWorkerToken: process.env.STUDIO_VIDEO_WORKER_TOKEN || '',
-    // App routes that would shadow an artist slug (/dashboard, /article, …),
-    // captured at build time for the artist sitemap.
-    sitemapReservedPaths: [...reservedTopLevelPaths(readdirSync('./pages'))],
+    // App routes that would shadow an artist slug (/dashboard, …) plus the
+    // retired article paths (/article, /discover, /seo answer 410), captured at
+    // build time for the artist sitemap.
+    sitemapReservedPaths: [...reservedTopLevelPaths(readdirSync('./pages')), ...RETIRED_TOP_LEVEL_PATHS],
     public: {
       strapiUrl: process.env.STRAPI_URL || 'http://localhost:1337',
         baseUrl: process.env.BASE_URL || 'https://faneqo.com',
@@ -70,6 +71,10 @@ export default defineNuxtConfig({
       // Lets a private localhost renderer serve the studio frame. Off unless
       // STUDIO_RENDER_INTERNAL=1, and the page still refuses public hostnames.
       studioRenderInternal: process.env.STUDIO_RENDER_INTERNAL === '1',
+      // Mirrors the backend's FANEQO_PAYMENTS_REQUIRE_PAID. Only Create Artist
+      // reads it (no band yet to ask the server); the editor uses the server's
+      // own `enforced` answer. 'enforce' shows the Start Pro panel on create.
+      paymentsRequirePaid: process.env.NUXT_PUBLIC_PAYMENTS_REQUIRE_PAID || '',
       // strapiUrl: ' https://finite-fit-queries-kansas.trycloudflare.com',
     
       stripe: {
@@ -321,100 +326,14 @@ export default defineNuxtConfig({
     // new artists appear without a deploy. See server/api/sitemap/artists.get.ts.
     sources: ['/api/sitemap/artists'],
 
-    async urls() {
-      const base = process.env.STRAPI_URL || 'http://localhost:1337'
-      const staticUrls = [
-        { loc: '/', changefreq: 'daily', priority: 1.0 },
-        { loc: '/article', changefreq: 'weekly', priority: 0.9 },
-        { loc: '/contact', changefreq: 'monthly', priority: 0.4 },
-        { loc: '/privacypolicy', changefreq: 'yearly', priority: 0.2 },
-        { loc: '/termsofservice', changefreq: 'yearly', priority: 0.2 },
-      ]
-
-      const normalizeSlug = (value) => {
-        if (!value) return ''
-        return String(value)
-          .toLowerCase()
-          .trim()
-          .replace(/\s+/g, '-')
-          .replace(/-+/g, '-')
-          .replace(/[.,!?:;/"']+$/g, '')
-          .replace(/^-+|-+$/g, '')
-      }
-
-      const isValidSlug = (value) => {
-        const normalized = normalizeSlug(value)
-        return Boolean(
-          normalized &&
-          normalized !== 'null' &&
-          normalized !== 'undefined' &&
-          normalized !== 'uncategorized'
-        )
-      }
-
-      // Redirect sources can contain legacy formatting (for example, a double
-      // hyphen). Compare their normalized forms so they never enter the
-      // canonical sitemap as broken routes.
-      const normalizeRoutePath = (path) =>
-        String(path || '')
-          .split('/')
-          .map((segment) => normalizeSlug(segment))
-          .join('/')
-
-      const redirectedUrls = new Set(
-        getRedirectedUrls().map((url) => normalizeRoutePath(url))
-      )
-
-      try {
-        const response = await fetch(`${base}/api/seo-pages?pagination[pageSize]=1000`)
-        if (!response.ok) {
-          throw new Error(`Strapi sitemap request failed with ${response.status}`)
-        }
-
-        const payload = await response.json()
-        const pages = Array.isArray(payload?.data) ? payload.data : []
-        const urlMap = new Map(staticUrls.map((entry) => [entry.loc, entry]))
-        const categories = new Set()
-
-        for (const record of pages) {
-          const attributes = record?.attributes || {}
-          const category = normalizeSlug(attributes.category)
-          const slug = normalizeSlug(attributes.slug)
-
-          if (!isValidSlug(category) || !isValidSlug(slug)) continue
-
-          categories.add(category)
-          const loc = `/article/${category}/${slug}`
-          if (redirectedUrls.has(loc)) continue
-
-          urlMap.set(loc, {
-            loc,
-            lastmod: attributes.updatedAt,
-            changefreq: 'weekly',
-            priority: 0.9,
-          })
-        }
-
-        for (const category of [...categories].sort()) {
-          const loc = `/article/${category}`
-          urlMap.set(loc, {
-            loc,
-            changefreq: 'weekly',
-            priority: 0.8,
-          })
-        }
-
-        return [...urlMap.values()].sort((a, b) => {
-          if (a.loc === '/') return -1
-          if (b.loc === '/') return 1
-          return a.loc.localeCompare(b.loc)
-        })
-      } catch (error) {
-        // Keep the sitemap valid during a temporary CMS outage.
-        console.error('[Sitemap] Falling back to static canonical URLs:', error)
-        return staticUrls
-      }
-    },
+    // Static pages only. The legacy articles were retired (ART-2, 2026-11-11):
+    // they answer 410, and the sitemap makes no CMS request.
+    urls: [
+      { loc: '/', changefreq: 'daily', priority: 1.0 },
+      { loc: '/contact', changefreq: 'monthly', priority: 0.4 },
+      { loc: '/privacypolicy', changefreq: 'yearly', priority: 0.2 },
+      { loc: '/termsofservice', changefreq: 'yearly', priority: 0.2 },
+    ],
   },
 
   stripe: {
@@ -462,25 +381,6 @@ export default defineNuxtConfig({
             "frame-src 'self' https:; child-src 'self' https:;",
         }
       },
-     '/article/smart-links/smart-links': {
-        redirect: { to: '/article/smart-links', statusCode: 301 }
-      },
-
-      '/article/qr-code-strategy/qr-code-strategy': {
-        redirect: { to: '/article/qr-code-strategy', statusCode: 301 }
-      },
-
-      '/article/music-marketing/music-marketing': {
-        redirect: { to: '/article/music-marketing', statusCode: 301 }
-      },
-
-      '/article/fan-funnels/fan-funnels': {
-        redirect: { to: '/article/fan-funnels', statusCode: 301 }
-      },
-
-      '/article/touring-events/touring-events': {
-        redirect: { to: '/article/touring-events', statusCode: 301 }
-      },
     }
   },
 
@@ -490,90 +390,8 @@ export default defineNuxtConfig({
 
   compatibilityDate: '2025-04-11',
 
-  hooks: {
-    'nitro:config': async (nitroConfig) => {
-      if (process.env.NODE_ENV !== 'production') return
-  
-      const seoApiUrl = `${process.env.STRAPI_URL}/api/seo-pages?populate=category&pagination[pageSize]=1000`
-  
-      // Helper: normalize slug for SEO-safe URLs
-      const normalizeSlug = (str) => {
-        if (!str) return ''
-        return String(str)
-          .toLowerCase()
-          .trim()
-          .replace(/\s+/g, '-')
-          .replace(/-+/g, '-')
-          .replace(/[.,!?:;/"']+$/g, '')
-          .replace(/^-+|-+$/g, '')
-      }
-
-      // Helper: validate slug is valid (non-empty, not "null")
-      const isValidSlug = (str) => {
-        if (!str) return false
-        const normalized = normalizeSlug(str)
-        if (!normalized) return false
-        if (normalized === 'null' || normalized === 'undefined') return false
-        return true
-      }
-
-      // Use the same redirect source map as the runtime 301 middleware.
-      // Normalize both sides because legacy CMS slugs may contain formatting
-      // that normalizeSlug intentionally corrects.
-      const normalizeRoutePath = (path) =>
-        String(path || '')
-          .split('/')
-          .map((segment) => normalizeSlug(segment))
-          .join('/')
-
-      const redirectedUrls = new Set(
-        getRedirectedUrls().map((url) => normalizeRoutePath(url))
-      )
-
-      try {
-        const res = await fetch(seoApiUrl)
-        const json = await res.json()
-  
-        const prerenderRoutes = []
-        let skipped = 0
-  
-        for (const page of json.data) {
-          const rawCategory = page.attributes.category
-          const rawSlug = page.attributes.slug
-          
-          const category = normalizeSlug(rawCategory)
-          const slug = normalizeSlug(rawSlug)
-  
-          if (!isValidSlug(category) || !isValidSlug(slug)) {
-            console.warn(`⚠️ Skipping SEO page (invalid category or slug): ID ${page.id}, category="${rawCategory}", slug="${rawSlug}"`)
-            skipped++
-            continue
-          }
-  
-          const route = `/article/${category}/${slug}`
-          if (redirectedUrls.has(route)) {
-            console.warn(`⚠️ Skipping redirected SEO page during prerender: ${route}`)
-            skipped++
-            continue
-          }
-
-          prerenderRoutes.push(route)
-        }
-
-        prerenderRoutes.push('/article')
-  
-        console.log(`✅ Pre-rendering ${prerenderRoutes.length} routes (${json.data.length - skipped} of ${json.data.length} articles)`)
-  
-        nitroConfig.prerender = nitroConfig.prerender || {}
-        nitroConfig.prerender.routes = [
-          ...(nitroConfig.prerender.routes || []),
-          ...prerenderRoutes,
-        ]
-      } catch (e) {
-        console.error('❌ Failed to prerender SEO pages:', e)
-      }
-    }
-  }
+  // No build hook fetches CMS content: the article prerender hook was removed
+  // in ART-1 and the article pages were retired (410) in ART-2, 2026-11-11.
   
   
   

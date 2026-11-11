@@ -8,12 +8,22 @@
     <div class="banner-content">
       <h3 class="banner-title">{{ copy.title }}</h3>
       <p class="banner-text">{{ copy.text }}</p>
+      <p v-if="!consent.needsConsent.value" class="banner-text" data-testid="past-due-charge-note">{{ chargeNote }}</p>
+      <!-- Billing A: paying can charge right away, so the server's terms and an unticked box come first. -->
+      <BillingConsent
+        v-else
+        v-model="consent.agreed.value"
+        :terms="consent.terms.value"
+        :notice="consent.notice.value"
+        :disabled="opening"
+      />
       <p v-if="portalError" class="banner-text" role="alert">{{ portalError }}</p>
     </div>
     <button
       @click="goToBillingPortal"
-      :disabled="opening"
+      :disabled="opening || !consent.ready.value"
       class="banner-button banner-button-danger"
+      data-testid="past-due-pay"
     >
       <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 10h18M7 15h1m4 0h1m-7 4h12a3 3 0 003-3V8a3 3 0 00-3-3H6a3 3 0 00-3 3v8a3 3 0 003 3z" />
@@ -24,8 +34,11 @@
 </template>
 
 <script setup>
-import { computed, ref } from 'vue'
+import { computed, ref, watch } from 'vue'
+import BillingConsent from '~/components/billing/BillingConsent.vue'
+import { useBillingConsent } from '~/composables/useBillingConsent'
 import { shouldShowPastDueBanner, pastDueBannerCopy } from '~/utils/billing/pastDueBanner'
+import { pastDueChargeNote } from '~/utils/billing/billingTerms'
 
 const token = useStrapiToken()
 const client = useStrapiClient()
@@ -36,7 +49,11 @@ const props = defineProps({
   daysLeft: { type: Number, default: null },          // number or null
   hasPaymentMethod: { type: Boolean, default: null }, // boolean or null
   billingExempt: { type: Boolean, default: false },   // founder-granted lifetime Pro
+  priceLabel: { type: String, default: null },        // the subscription's real price, e.g. "$12/month"
 })
+
+// Said before the click: the billing page can pay what's due right away.
+const chargeNote = computed(() => pastDueChargeNote(props.priceLabel))
 
 const showBanner = computed(() =>
   shouldShowPastDueBanner({
@@ -49,18 +66,24 @@ const showBanner = computed(() =>
 
 const copy = computed(() => pastDueBannerCopy({ hasPaymentMethod: props.hasPaymentMethod }))
 
+// Billing A: the server's portal terms, loaded when the banner shows.
+const consent = useBillingConsent('portal')
+watch(showBanner, (on) => { if (on && process.client && !consent.terms.value) consent.load() }, { immediate: true })
+
 const opening = ref(false)
 const portalError = ref('')
 const PORTAL_ERROR = "Billing didn't open. Try again, or go to Account → Billing."
 
 async function goToBillingPortal() {
-  if (opening.value) return
+  if (opening.value || !consent.ready.value) return
   opening.value = true
   portalError.value = ''
   try {
+    const payload = consent.payload()
     const res = await client('stripe/create-billing-portal-session', {
       method: 'POST',
       headers: { Authorization: `Bearer ${token.value}` },
+      body: payload ? { consent: payload } : {},
     })
     if (res && res.url) {
       window.location.href = res.url
@@ -69,7 +92,8 @@ async function goToBillingPortal() {
     portalError.value = PORTAL_ERROR
   } catch (err) {
     console.error('Billing portal error:', err?.message || err)
-    portalError.value = PORTAL_ERROR
+    // Consent missing or stale: show the server's current terms again, unticked.
+    if (!consent.handleRefusal(err)) portalError.value = PORTAL_ERROR
   }
   opening.value = false
 }

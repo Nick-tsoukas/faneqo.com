@@ -72,7 +72,7 @@ test('an ineligible featured gallery asks for attention instead of looking fine'
     gallery({ id: 2 }),
   ])
   assert.equal(view.kind, 'attention')
-  assert.equal(view.block.detail, 'Publish this gallery before featuring it.')
+  assert.equal(view.block.detail, 'Publish this gallery before showing it on your artist page.')
 })
 
 test('a deleted featured gallery is no longer selected', () => {
@@ -88,11 +88,12 @@ test('the galleries index owns the control and does not add a route', () => {
   assert.match(page, /@featured="onFeatured"/)
   assert.match(archive, /No gallery is currently shown on your artist page/)
   assert.match(archive, /Featured selection needs attention/)
-  assert.match(archive, /is now featured on your artist page/)
+  assert.match(archive, /is now showing on your artist page/)
   assert.match(archive, /featureGalleryOnProfile/)
   assert.match(archive, /unfeatureGalleryOnProfile/)
-  assert.match(item, /Feature on artist page/)
-  assert.match(item, /featureBlock\.eligible \? 'Featured' : 'Needs attention'/)
+  assert.match(item, /Show on artist page/)
+  assert.match(item, /Showing on artist page/)
+  assert.match(item, /Remove from artist page/)
   assert.doesNotMatch(page, /\/galleries\/feature/)
   assert.doesNotMatch(archive, /type="checkbox"/)
   assert.doesNotMatch(item, /type="checkbox"/)

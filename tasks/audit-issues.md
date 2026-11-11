@@ -1,10 +1,10 @@
 # Audit issues
 
-Specs for the **44** audit issues. **Plan (central):** [`tasks/audit-issues-plan.md`](audit-issues-plan.md). **Progress:** check ids in [`tasks/audit-issues-todo.md`](audit-issues-todo.md) as each issue resolves.
+Specs for the **45** audit issues. **Plan (central):** [`tasks/audit-issues-plan.md`](audit-issues-plan.md). **Progress:** check ids in [`tasks/audit-issues-todo.md`](audit-issues-todo.md) as each issue resolves.
 
 **Status: not started.** Acceptance criteria below are the done definition for each id. Progress boxes live on the todo; mark criteria here when that issue ships.
 
-**Standing do-nots:** no Stripe amount / trial / Lifetime Pro (`free`) meaning changes; no fan charges or limited Free tier; leave `POST /stripe/confirm-social` unregistered; do not claim YouTube routes are reachable in production; do not publish toy band names; do not invent extra issues from marketing page-scan notes; no GitHub filing unless separately approved; **do not hardcode CORS hosts** in `middlewares.js` (including a one-off staging FE string) — origins come from public-URL env SoT + optional comma-separated extras (`sec-009`); BFF still means browsers should not call Strapi (`sec-006`–`sec-008`).
+**Standing do-nots:** no Stripe amount / trial / Lifetime Pro (`free`) meaning changes; no fan charges or limited Free tier; leave `POST /stripe/confirm-social` unregistered; do not claim YouTube routes are reachable in production; do not publish toy band names; do not invent extra issues from marketing page-scan notes; no GitHub filing unless separately approved; **do not hardcode CORS hosts** in `middlewares.js` (including a one-off staging FE string) — origins come from public-URL env SoT + optional comma-separated extras (`sec-009`); BFF still means browsers should not call Strapi (`sec-006`–`sec-008`); **after `test-002`**, do not add FE tests by editing long `&&` file lists in `package.json` — drop a file in the test dir / let the runner discover it.
 
 ---
 
@@ -49,6 +49,7 @@ Specs for the **44** audit issues. **Plan (central):** [`tasks/audit-issues-plan
 | `bill-002` | 2 | Medium | S | qrserver | audit-parent | The Connect fee, payment buttons, 30-day trial, and subscription check are already decided |
 | `dead-002` | 2 | High | M | musicbizqr | audit-parent | Unused pages and unused components are still in the app |
 | `dead-003` | 2 | High | S | musicbizqr | audit-parent | Old homepages are still on the live site |
+| `test-002` | 2 | High | M | musicbizqr | audit-parent | FE `package.json` hardcodes a long `&&` test file list that drifts and merge-conflicts |
 | `mkt-013` | 2 | Medium | S | musicbizqr | audit-parent | Do not email the toy band pages |
 | `vocab-005` | 2 | Medium | S | musicbizqr | audit-parent | Team screens invent roles the product does not have |
 | `arch-001-api` | 3 | Medium | XL | qrserver | audit-parent | Band permission, the inbox, and artist updates should be split only if one function does two jobs |
@@ -1569,6 +1570,52 @@ Priority **3**, severity **Medium**, effort **M**, repo **musicbizqr**, findings
 
 ---
 
+## P2 — Test tooling
+
+### `test-002`: FE `package.json` hardcodes a long `&&` test file list that drifts and merge-conflicts
+
+**Role:** Actionable
+
+**Description:** Problem. Frontend `package.json` `scripts.test` (and `test:security`, `test:dashboard`, `test:fan`, `test:messaging`, `test:media`, `test:labs`, `test:seo`, …) is a hand-maintained chain of `node scripts/test-….mjs && …`. Every new test PR touches `package.json`. That file merge-conflicts often, drifts out of sync with commits that only add `scripts/test-*.mjs`, and CI/`npm test` silently skip files that exist on disk but were never wired. Survey 2026-11-11: ~**124** `frontend/scripts/test-*.mjs` files vs ~**83** paths listed in `package.json` scripts — dozens of tests already orphaned.
+
+Fix. One test directory (e.g. `frontend/scripts/tests/` or `frontend/tests/node/`) holding the `*.mjs` (or `test-*.mjs`) files. One runner entrypoint (e.g. `node scripts/run-tests.mjs` or `node --test` / small discover script) that **globs the directory** and runs every file. `package.json` keeps a short stable surface only:
+
+- `"test": "node <runner>"` (required)
+- optional thin aliases like `"test:security": "node <runner> --dir security"` **without** enumerating files
+
+Adding a test = add a file under the test dir (and optional subfolder for category). No `package.json` edit. Do not introduce a heavy new test framework unless the repo already depends on one — prefer Node built-ins + discover. Update FE CI workflow if it calls the old script names. Document in `frontend/AGENTS.md` or README: how to run all / one file / one category.
+
+Priority **2**, severity **High**, effort **M**, repo **musicbizqr**, findings `TEST-RUNNER`, labels: tests, tooling, audit.
+
+**Acceptance criteria:**
+
+- [ ] All former `scripts/test-*.mjs` suite files live under one dedicated test directory (move + update imports/paths as needed).
+- [ ] `npm test` is a **single** command that discovers and runs that directory (no multi-file `&&` lists in `package.json`).
+- [ ] `package.json` no longer lists individual `test-*.mjs` paths in script values (ripgrep clean).
+- [ ] Optional category scripts, if kept, select by dir/tag — not by enumerating files.
+- [ ] A new file dropped in the test dir is picked up by `npm test` with **zero** `package.json` change (prove with one intentional file or a dry doc+assert in the runner).
+- [ ] FE CI still runs the suite (workflow points at `npm test` or the new runner).
+- [ ] Orphan gap closed: runner executes the previously unwired `test-*.mjs` files (or documents intentional excludes in one allowlist file beside the runner — not in `package.json`).
+
+**Verification:**
+
+- [ ] Section `test-002` still matches this page’s inventory title and acceptance criteria
+- [ ] Manual check: `npm test` green; `rg 'scripts/test-.*\.mjs &&' frontend/package.json` empty; count of discovered tests ≥ files in the test dir (minus documented excludes)
+
+**Dependencies:** audit-parent; do **before** `test-001-app` if that work would otherwise lengthen the `&&` list
+
+**Files likely touched:**
+
+- `musicbizqr/package.json` (local: `frontend/package.json`)
+- `musicbizqr/scripts/test-*.mjs` → move into one test dir
+- new `musicbizqr/scripts/run-tests.mjs` (or equivalent discover runner)
+- `musicbizqr/.github/workflows/ci.yml` if script names change
+- short note in `musicbizqr/AGENTS.md` / README
+
+**Estimated scope:** M
+
+---
+
 ## P4 — Tests
 
 ### `test-001-api`: The backend tests do not lock the YouTube caller check or the user-admin secret
@@ -1623,11 +1670,12 @@ Priority **4**, severity **Low**, effort **S**, repo **musicbizqr**, findings `T
 - [ ] Section `test-001-app` still matches this page’s inventory title and acceptance criteria
 - [ ] Manual check: acceptance criteria pass against product code
 
-**Dependencies:** audit-parent, matching sec/billing rules above
+**Dependencies:** audit-parent, matching sec/billing rules above; prefer **`test-002` done first** so the new lock test is a file in the discover dir, not another `package.json` `&&` entry
 
 **Files likely touched:**
 
 - `musicbizqr/utils/billing/artistEntitlement.js` (citation from draft; local trees may be `frontend/` / `backend/`)
+- new focused test file under the `test-002` discover directory
 
 **Estimated scope:** S
 

@@ -4,6 +4,7 @@
 const { default: Stripe } = require('stripe');
 const crypto = require('crypto');
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || '');
+const { openBillingPortal } = require('../../../utils/billing/portalSession');
 const UNPARSED = Symbol.for('unparsedBody');
 const { normalizeSubscriptionStatusForUserRow } = require('../../../utils/billing/subscriptionStatus');
 const {
@@ -179,24 +180,10 @@ async subscriptionStatus(ctx) {
   
 
   // 3) Create a Stripe Billing Portal session
+  // The subscription API registers the same path; both use the same consent
+  // gate (utils/billing/portalSession.js) so neither can bypass it (Billing A).
   async createBillingPortalSession(ctx) {
-    strapi.log.debug('[createBillingPortalSession] entry', { userId: ctx.state.user?.id });
-    const user = ctx.state.user;
-    if (!user || !user.customerId) {
-      strapi.log.warn('[createBillingPortalSession] No Stripe customer on user', { userId: user?.id });
-      return ctx.badRequest('Stripe customer not found');
-    }
-    try {
-      const session = await stripe.billingPortal.sessions.create({
-        customer:   user.customerId,
-        return_url: process.env.BILLING_RETURN_URL,
-      });
-      strapi.log.debug('[createBillingPortalSession] Created billing portal session', { sessionId: session.id });
-      return ctx.send({ url: session.url });
-    } catch (error) {
-      strapi.log.error('[createBillingPortalSession] error', error);
-      return ctx.throw(500, 'Error creating billing portal session');
-    }
+    return openBillingPortal({ ctx, strapi, stripe, returnUrl: process.env.BILLING_RETURN_URL });
   },
 
   // 4) Create a Stripe Customer (with deduplication)

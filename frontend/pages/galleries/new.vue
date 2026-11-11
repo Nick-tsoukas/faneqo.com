@@ -1,5 +1,5 @@
 <template>
-  <main class="gallery-new">
+  <main class="gallery-new" :class="{ 'is-reveal': published && !returningToComposer }">
     <div v-if="loading" class="gallery-new__state" role="status">Opening gallery studio…</div>
     <div v-else-if="error" class="gallery-new__state" role="alert">
       <h1>We couldn’t open that gallery</h1>
@@ -125,26 +125,35 @@
       <p>Your new gallery is attached.</p>
     </section>
 
-    <section v-else class="gallery-new__done">
-      <span class="gallery-new__done-mark">✓</span>
-      <p class="gallery-new__kicker">Published</p>
-      <h1>Your gallery is ready</h1>
-        <p>{{ published.photoCount }} {{ published.photoCount === 1 ? 'photo' : 'photos' }} · {{ selectedRecap ? 'Show attendees' : 'Public' }}</p>
-        <p v-if="published.rocksnapsEnabled">Showing on RockSnaps.</p>
-      <div class="gallery-new__done-actions">
-        <NuxtLink v-if="galleryPath" :to="galleryPath" class="primary">View gallery</NuxtLink>
-        <NuxtLink :to="sendPath" class="secondary">{{ selectedRecap ? 'Message attendees' : 'Message all fans' }}</NuxtLink>
-        <NuxtLink v-if="returnWithGallery" :to="returnWithGallery" class="secondary">Use in original message</NuxtLink>
-        <NuxtLink to="/galleries" class="secondary">All galleries</NuxtLink>
-      </div>
-    </section>
+    <GalleryPublishReveal
+      v-else
+      :title="published.title || ''"
+      :cover-src="publishedCover.src"
+      :cover-alt="publishedCover.alt"
+      :photo-count="Number(published.photoCount) || 0"
+      :audience="audienceName(published.visibility)"
+      :featured="featuredNow"
+      :featuring="featuring"
+      :feature-error="featureError"
+      :kept-title="keptTitle"
+      :can-feature="canOfferFeature"
+      :artist-page-path="artistPagePath"
+      :gallery-path="galleryPath || ''"
+      :send-path="sendPath"
+      :send-label="selectedRecap ? 'Message attendees' : 'Message all fans'"
+      :return-path="returnWithGallery || ''"
+      :rocksnaps="published.rocksnapsEnabled === true"
+      @feature="showOnArtistPage"
+    />
   </main>
 </template>
 
 <script setup>
 import { computed, onBeforeUnmount, onMounted, ref, watch } from 'vue'
 import ArtistUpdateComposer from '~/components/updates/ArtistUpdateComposer.vue'
+import GalleryPublishReveal from '~/components/galleries/GalleryPublishReveal.vue'
 import { useBandTeam } from '~/composables/useBandTeam'
+import { useGalleryDrafts } from '~/composables/useGalleryDrafts'
 import { useShowRecaps } from '~/composables/useShowRecaps'
 import { resolveComposerBand } from '~/utils/campaigns/resolveComposerBand'
 import { formatShowNightDateLong } from '~/utils/shows/formatShowNightDate'
@@ -158,6 +167,7 @@ definePageMeta({ middleware: 'auth' })
 useHead({ title: 'Create Gallery · Faneqo', meta: [{ name: 'robots', content: 'noindex' }] })
 
 const route = useRoute()
+const { featureGalleryOnProfile } = useGalleryDrafts()
 const { getMyBandAccess } = useBandTeam()
 const { hint: activeBandHint, needsPicker } = useWorkspaceBand({
   permission: 'sendFanMessages',
@@ -178,7 +188,38 @@ const recapSearchApplied = ref('')
 const recapPage = ref(0)
 const recapsHasMore = ref(false)
 const published = ref(null)
+const featuredNow = ref(false)
+const featureError = ref('')
+const keptTitle = ref('')
+const featuring = ref(false)
 const returningToComposer = ref(false)
+
+function audienceName(visibility) {
+  if (visibility === 'fan_list') return 'Fans'
+  if (visibility === 'show_attendees') return 'People who were there'
+  return 'Everyone'
+}
+
+const publishedCover = computed(() => {
+  const row = published.value
+  const media = Array.isArray(row?.media) ? row.media : []
+  const coverId = row?.coverMediaId
+  const match = coverId == null
+    ? null
+    : media.find((item) => String(item?.mediaId ?? item?.id) === String(coverId))
+  const photo = match || media.find((item) => item?.largeUrl || item?.url || item?.src)
+  const src = photo?.largeUrl || photo?.url || photo?.src || ''
+  return {
+    src,
+    alt: photo?.alt || row?.title || 'Gallery cover',
+  }
+})
+const canOfferFeature = computed(() => (
+  !featuredNow.value
+  && published.value?.visibility === 'public'
+  && Number(published.value?.photoCount) > 0
+))
+const artistPagePath = computed(() => (bandSlug.value ? `/${bandSlug.value}` : ''))
 
 const RECAP_PAGE_SIZE = 20
 /* Never load unbounded history: one page at a time, newest first. */
@@ -332,8 +373,30 @@ function recapLine(item) {
   return [item.venue, item.city, when].filter(Boolean).join(' · ')
 }
 
+async function showOnArtistPage() {
+  if (!published.value?.id || featuring.value || featuredNow.value) return
+  featuring.value = true
+  featureError.value = ''
+  try {
+    const result = await featureGalleryOnProfile(published.value.id)
+    if (result?.data?.featuredOnProfile === true) {
+      featuredNow.value = true
+      keptTitle.value = ''
+      return
+    }
+    featureError.value = 'Could not show this gallery on your artist page.'
+  } catch (err) {
+    featureError.value = err?.data?.error?.message || err?.message || 'Could not show this gallery on your artist page.'
+  } finally {
+    featuring.value = false
+  }
+}
+
 async function onPublished(row) {
   published.value = row
+  featuredNow.value = row?.featuredOnProfile === true
+  featureError.value = row?.featuredOnProfile === true ? '' : (row?.featureError || '')
+  keptTitle.value = row?.keptFeaturedTitle || ''
   /* The canonical URL comes from the publish response, never from guesswork. */
   const publishedBandSlug = row?.band?.slug || row?.bandSlug || ''
   if (publishedBandSlug) bandSlug.value = publishedBandSlug
@@ -354,9 +417,13 @@ async function onPublished(row) {
 </script>
 
 <style scoped>
+.gallery-new.is-reveal {
+  padding: 0;
+  background: transparent;
+}
 .gallery-new {
   min-height: 100dvh;
-  padding: calc(var(--header-height, 70px) + 0.75rem) 1rem 3rem;
+  padding: calc(var(--header-height, 70px) + 0.75rem) 1rem calc(6.5rem + env(safe-area-inset-bottom, 0px));
   background:
     radial-gradient(760px 320px at 8% -8%, rgba(57, 213, 255, 0.08), transparent 54%),
     radial-gradient(760px 320px at 100% 0, rgba(69, 227, 174, 0.06), transparent 50%),
@@ -570,14 +637,35 @@ async function onPublished(row) {
   flex-wrap: wrap;
   margin-top: 1rem;
 }
-.gallery-new__done-actions a {
+.gallery-new__place {
+  max-width: 28rem;
+  margin: 0.35rem auto 0;
+  color: rgba(255, 255, 255, 0.82);
+  line-height: 1.45;
+}
+.gallery-new__alert {
+  max-width: 28rem;
+  margin: 0.55rem auto 0;
+  color: #fecaca;
+  line-height: 1.45;
+}
+.gallery-new__done-actions a,
+.gallery-new__done-actions button {
   display: inline-flex;
   min-height: 44px;
   align-items: center;
+  justify-content: center;
   padding: 0.6rem 0.85rem;
+  border: 0;
   border-radius: 0.75rem;
   text-decoration: none;
+  font: inherit;
   font-weight: 750;
+  cursor: pointer;
+}
+.gallery-new__done-actions button:disabled {
+  opacity: 0.55;
+  cursor: default;
 }
 .gallery-new__done-actions .primary {
   background: linear-gradient(90deg, #4ca6ff, #39d5ff, #45e3ae);
@@ -587,9 +675,13 @@ async function onPublished(row) {
   border: 1px solid rgba(255, 255, 255, 0.12);
   color: #fff;
 }
-.gallery-new__done-actions a:focus-visible {
+.gallery-new__done-actions a:focus-visible,
+.gallery-new__done-actions button:focus-visible {
   outline: 2px solid #39d5ff;
   outline-offset: 3px;
+}
+@media (min-width: 1024px) {
+  .gallery-new { padding-bottom: 3rem; }
 }
 @media (max-width: 620px) {
   .gallery-new { padding-left: 0.85rem; padding-right: 0.85rem; }

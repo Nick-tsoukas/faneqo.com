@@ -38,6 +38,7 @@
         :days-left="daysLeft"
         :has-payment-method="billingInfo?.hasPaymentMethod ?? null"
         :billing-exempt="isBillingExempt"
+        :price-label="billingPriceLabel"
       />
 
       <TrialBanner
@@ -50,6 +51,8 @@
         "
         :days-left="daysLeft"
         :disabled="loadingPortal"
+        :price-label="billingPriceLabel"
+        ref="trialBannerRef"
         @add-payment="goToBillingPortal"
       />
 
@@ -793,6 +796,7 @@ import PayoutReturnNotice from '~/components/payments/PayoutReturnNotice.vue';
 import { payoutReturnKind, usePayoutSetup } from '~/composables/usePayoutSetup';
 import { payoutReturnNotice, stageFromFlags } from '~/utils/payments/paymentSetupStatus';
 import DashboardActiveBandBar from '~/components/dashboard/ActiveBandBar.vue';
+import { priceLabelFrom } from '~/utils/billing/billingTerms';
 import {
   DASHBOARD_WORKSPACE,
   resolveDashboardWorkspace,
@@ -874,6 +878,8 @@ const subscriptionStatus = ref(null); // new
 const isBillingExempt = computed(
   () => isAmbassadorBilling(billingInfo.value) || isBillingExemptLifetimePro(user.value)
 );
+// The artist's own subscription price for the billing banners (never invented).
+const billingPriceLabel = computed(() => priceLabelFrom(billingInfo.value?.subscription?.price));
 
 const nuxtApp = useNuxtApp();
 const historyStack = nuxtApp.$historyStack; // ← grab the real one
@@ -2083,7 +2089,9 @@ const editItem = (id, page) => {
   router.push(`/${page}/${id}`);
 };
 
-async function goToBillingPortal() {
+// Billing A: the trial banner sends the consent its server terms required (or null).
+const trialBannerRef = ref(null);
+async function goToBillingPortal(payload = {}) {
   if (!token.value) {
     return alert("You must be logged in.");
   }
@@ -2092,10 +2100,13 @@ async function goToBillingPortal() {
     const { url } = await client("/stripe/create-billing-portal-session", {
       method: "POST",
       headers: { Authorization: `Bearer ${token.value}` },
+      body: payload?.consent ? { consent: payload.consent } : {},
     });
     window.location.href = url;
   } catch (err) {
     console.error("[Dashboard] billing-portal error", err);
+    // Consent missing or stale: the banner shows the server's current terms again, unticked.
+    if (trialBannerRef.value?.handleRefusal?.(err)) return;
     alert("Could not open billing portal. Please try again.");
   } finally {
     loadingPortal.value = false;

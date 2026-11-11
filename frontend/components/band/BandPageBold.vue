@@ -149,6 +149,15 @@
         </div>
       </section>
 
+      <div v-if="publicFeaturedGallery" class="max-w-4xl mx-auto px-4">
+        <ArtistFeaturedGallery
+          :gallery="publicFeaturedGallery"
+          :artist-name="band?.name || ''"
+          :artist-slug="band?.slug || ''"
+          :artist-image="band?.bandImg?.url || ''"
+        />
+      </div>
+
       <!-- Streaming Platforms - Bento Grid -->
       <section v-if="visibleStreamingLinks.length" class="space-y-6">
         <div class="flex items-center gap-3">
@@ -339,7 +348,8 @@
 </template>
 
 <script setup>
-import { computed, ref, onMounted } from 'vue'
+import { computed, defineAsyncComponent, ref, onMounted } from 'vue'
+import { resolvePublicFeaturedGallery } from '@/utils/galleries/publicFeaturedGallery'
 import FaneqoArtistHeroImage from '@/components/band/FaneqoArtistHeroImage.vue'
 
 // Live Surface Components
@@ -497,4 +507,7 @@ function formatDateShort(dateStr) {
     day: d.getDate()
   }
 }
+
+const ArtistFeaturedGallery = defineAsyncComponent(() => import('@/components/band/ArtistFeaturedGallery.vue'))
+const publicFeaturedGallery = computed(() => resolvePublicFeaturedGallery(props.band?.featuredGallery))
 </script>

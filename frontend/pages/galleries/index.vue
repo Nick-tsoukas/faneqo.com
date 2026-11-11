@@ -70,5 +70,9 @@ async function load() {
   min-height: 100dvh;
   background: #050506;
   color: #f5f5f6;
+  padding-bottom: calc(6.5rem + env(safe-area-inset-bottom, 0px));
+}
+@media (min-width: 1024px) {
+  .galleries { padding-bottom: 0; }
 }
 </style>

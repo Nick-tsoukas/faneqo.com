@@ -5,7 +5,8 @@
  * Exchanges authorization code for tokens and stores refresh token.
  */
 
-import { defineEventHandler, getQuery, setResponseStatus } from 'h3'
+import { defineEventHandler, deleteCookie, getCookie, getQuery, setResponseStatus } from 'h3'
+import { CORVANA_OAUTH_STATE_COOKIE, escapeHtml, stateMatches } from '../../../utils/corvanaOAuthState.js'
 import { 
   createOAuth2Client, 
   exchangeCodeForTokens, 
@@ -23,9 +24,9 @@ export default defineEventHandler(async (event) => {
     setResponseStatus(event, 400)
     return successHtml(
       'Connection Failed',
-      `OAuth error: ${query.error}`,
+      `OAuth error: ${String(query.error)}`,
       'error',
-      query.error_description as string
+      query.error_description ? escapeHtml(String(query.error_description)) : undefined
     )
   }
   
@@ -37,6 +38,18 @@ export default defineEventHandler(async (event) => {
     return successHtml(
       'Connection Failed',
       'No authorization code received from Google.',
+      'error'
+    )
+  }
+  
+  // Only a callback for a connect started by an authorized admin request (OAuth state) may store a token.
+  const expectedState = getCookie(event, CORVANA_OAUTH_STATE_COOKIE)
+  deleteCookie(event, CORVANA_OAUTH_STATE_COOKIE, { path: '/api/corvana/google' })
+  if (!stateMatches(query.state, expectedState)) {
+    setResponseStatus(event, 403)
+    return successHtml(
+      'Connection Failed',
+      'This sign-in link is invalid or has expired. Start again from the Corvana dashboard.',
       'error'
     )
   }
@@ -135,7 +148,7 @@ function successHtml(
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>${title}</title>
+  <title>${escapeHtml(title)}</title>
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
     body {
@@ -210,8 +223,8 @@ function successHtml(
 <body>
   <div class="container">
     <div class="icon">${icon}</div>
-    <h1>${title}</h1>
-    <p>${message}</p>
+    <h1>${escapeHtml(title)}</h1>
+    <p>${escapeHtml(message)}</p>
     ${help ? `<div class="help">${help}</div>` : ''}
     ${isSuccess ? '<a href="/api/corvana/search-console/test" class="test-link">Test Connection</a>' : ''}
   </div>

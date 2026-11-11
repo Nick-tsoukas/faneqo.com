@@ -75,13 +75,15 @@ function connectFlagsFor(account, { suspended = false, approved = true } = {}) {
   };
 }
 
-/** Flags to store for a band after reading its Connect account. */
+/**
+ * Flags to store for a band after reading its Connect account: Stripe's state
+ * plus the suspension list. The approval gate is NOT folded in: every checkout
+ * and page view checks it live (paymentEligibility), so an operator's approval
+ * or removal takes effect at once instead of waiting for the next Stripe update.
+ */
 async function connectFlagsForBand(strapi, bandId, account) {
-  const [suspended, approved] = await Promise.all([
-    isPaymentsSuspended(strapi, bandId),
-    isPaymentsApproved(strapi, bandId),
-  ]);
-  return connectFlagsFor(account, { suspended, approved });
+  const suspended = await isPaymentsSuspended(strapi, bandId);
+  return connectFlagsFor(account, { suspended });
 }
 
 /** The stored half of the checkout gate: flags plus a connected account. Pure. */
@@ -90,18 +92,43 @@ function storedFlagsAllowCheckout(band) {
 }
 
 /**
- * Whether checkout would accept this band right now: the stored flags AND the
- * live suspension and approval lists. Public pages show payment buttons only
- * when this is true, so a fan never meets a button checkout refuses.
+ * The band's owner account exists and is not blocked. Blocking an owner is how
+ * an operator shuts a fraudulent account, and it must stop payments even while
+ * the band's stored flags still say "on" (a Connect webhook can set them).
+ * Fails closed: no owner, or a failed lookup, means no payments.
+ */
+async function isOwnerAllowed(strapi, bandId) {
+  try {
+    const band = await strapi.entityService.findOne('api::band.band', bandId, {
+      fields: ['id'],
+      populate: { users_permissions_user: { fields: ['id', 'blocked'] } },
+      publicationState: 'preview',
+    });
+    const owner = band?.users_permissions_user;
+    return Boolean(owner?.id) && owner.blocked !== true;
+  } catch (err) {
+    strapi.log?.warn?.(`[payments] owner check failed for band ${bandId}: ${err.message}`);
+    return false;
+  }
+}
+
+/**
+ * Whether checkout would accept this band right now. Public pages show payment
+ * buttons only when this is true, so a fan never meets a button checkout
+ * refuses. The stored flags are only a fast "no"; the answer is the same
+ * paymentEligibility() checkout uses (owner, suspension, review hold, billing,
+ * Stripe, approval gate).
  */
 async function isCheckoutReady(strapi, band) {
   if (!storedFlagsAllowCheckout(band)) return false;
-  if (await isPaymentsSuspended(strapi, band.id)) return false;
-  return isPaymentsApproved(strapi, band.id);
+  // Required here, not at the top: paymentEligibility requires this module.
+  const { paymentEligibility } = require('./paymentEligibility');
+  return (await paymentEligibility(strapi, band.id)).eligible === true;
 }
 
 function clearPaymentAccessCache() {
   cache.clear();
+  require('./paymentEligibility').clearEligibilityCache();
 }
 
 /**
@@ -152,6 +179,7 @@ module.exports = {
   connectFlagsFor,
   connectFlagsForBand,
   storedFlagsAllowCheckout,
+  isOwnerAllowed,
   isCheckoutReady,
   clearPaymentAccessCache,
   suspendOnFraudSignal,

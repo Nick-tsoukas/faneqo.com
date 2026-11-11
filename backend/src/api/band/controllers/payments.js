@@ -3,10 +3,39 @@
 const Stripe = require("stripe");
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY);
 const { createPaymentReport, transactionsToCsv } = require("../../../utils/payments/paymentReport");
-const { connectFlagsForBand } = require("../../../utils/payments/paymentAccess");
+const { connectFlagsForBand, isPaymentsApproved } = require("../../../utils/payments/paymentAccess");
 const { onboardingUrls, payoutStage, requirementsDueCount } = require("../../../utils/payments/payoutOnboarding");
+const { paymentEligibility, canCreateConnectAccount } = require("../../../utils/payments/paymentEligibility");
+
+/** The panel's public view of an eligibility decision: states and dates, no rule names. */
+function eligibilityView(result) {
+  const billing = result.billing || {};
+  return {
+    state: result.state,
+    eligible: result.eligible === true,
+    billing: {
+      standing: billing.standing || null,
+      trialEndsAt: billing.trialEndsAt || null,
+      graceEndsAt: billing.graceEndsAt || null,
+      exceptionExpiresAt: billing.exceptionExpiresAt || null,
+      price: { amountCents: 1200, currency: "usd", interval: "month" },
+    },
+    // While the paid requirement runs in shadow mode the panel shows today's
+    // behaviour; `enforced` tells the UI when the upgrade panel is real.
+    enforced: result.mode === "enforce",
+  };
+}
 
 module.exports = {
+  /** Payments panel state for the owner (DB only; payments.status does the fresh Stripe read). */
+  async eligibility(ctx) {
+    const bandId = Number(ctx.params.id);
+    if (!bandId) return ctx.badRequest("Band id is required");
+    const result = await paymentEligibility(strapi, bandId);
+    ctx.set("Cache-Control", "no-store");
+    ctx.body = eligibilityView(result);
+  },
+
   async onboard(ctx) {
     const bandId = ctx.params.id;
 
@@ -21,6 +50,15 @@ module.exports = {
     let accountId = band.stripeAccountId;
 
     if (!accountId) {
+      // A NEW Stripe account needs a paid entitlement once the paid requirement
+      // is enforced (unpaid trials can't open Connect accounts). Bands that
+      // already have one keep finishing their setup; shadow mode only logs.
+      const gate = await canCreateConnectAccount(strapi, band.id);
+      if (!gate.allowed) {
+        ctx.status = 403;
+        ctx.body = { error: { status: 403, name: "ForbiddenError", message: "Start Faneqo Pro to set up payouts.", details: { code: "billing_required" } } };
+        return;
+      }
       const account = await stripe.accounts.create({
         type: "express",
         capabilities: {
@@ -86,8 +124,8 @@ module.exports = {
     if (band.stripeAccountId) {
       try {
         const retrieved = await stripe.accounts.retrieve(band.stripeAccountId);
-        // Same rule as the Connect webhook: Stripe allows charges, not on the
-        // suspension list, passes the approval gate.
+        // Same rule as the Connect webhook: Stripe allows charges and the band
+        // is not on the suspension list (the approval gate is applied live below).
         const fresh = await connectFlagsForBand(strapi, bandId, retrieved);
         if (
           fresh.paymentsEnabled !== flags.paymentsEnabled ||
@@ -106,10 +144,14 @@ module.exports = {
       }
     }
 
+    // Stored flags mirror Stripe + suspension; the approval gate is applied here
+    // (live), so the dashboard never tells an unapproved artist they are live.
+    const visible = { ...flags, paymentsEnabled: flags.paymentsEnabled && (await isPaymentsApproved(strapi, bandId)) };
+
     ctx.set("Cache-Control", "no-store");
     ctx.body = {
-      stage: payoutStage({ hasAccount: Boolean(band.stripeAccountId), account, ...flags }),
-      ...flags,
+      stage: payoutStage({ hasAccount: Boolean(band.stripeAccountId), account, ...visible }),
+      ...visible,
       requirementsDue: requirementsDueCount(account),
       checkedWithStripe: Boolean(account),
     };

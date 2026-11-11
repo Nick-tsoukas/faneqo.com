@@ -14,13 +14,13 @@ export function featureProfileBlock(item) {
     return { eligible: false, reason: 'Restore first', detail: 'This gallery is hidden.' }
   }
   if (status !== 'published') {
-    return { eligible: false, reason: 'Publish first', detail: 'Publish this gallery before featuring it.' }
+    return { eligible: false, reason: 'Publish first', detail: 'Publish this gallery before showing it on your artist page.' }
   }
   if (String(item?.visibility || '') !== 'public') {
-    return { eligible: false, reason: 'Make public first', detail: 'Make this gallery public before featuring it on your artist profile.' }
+    return { eligible: false, reason: 'Make public first', detail: 'Only galleries visible to Everyone can be shown on your artist page.' }
   }
   if (galleryPhotoCount(item) < 1) {
-    return { eligible: false, reason: 'Add photos first', detail: 'Add a photo before featuring this gallery.' }
+    return { eligible: false, reason: 'Add photos first', detail: 'Add a photo before showing this gallery on your artist page.' }
   }
   return { eligible: true, reason: '', detail: '' }
 }

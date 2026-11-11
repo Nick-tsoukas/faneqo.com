@@ -502,7 +502,24 @@
           </div>
 
           <div class="form-section-content">
+            <PaymentsActivationPanel
+              v-if="activation"
+              ref="activationPanel"
+              class="mb-5"
+              :view="activation"
+              :state="eligibility?.state || ''"
+              :artist-name="bandName"
+              :artist-image="bandImgFullUrl"
+              :busy="activationBusy"
+              :error="activationError || payoutError"
+              :notice="activationNotice"
+              :consent-terms="startProConsent.terms.value"
+              :consent-notice="startProConsent.notice.value"
+              @action="onActivationAction"
+              @open-url="openExternal"
+            />
             <div
+              v-else
               class="payout-status mb-5"
               :class="statusCard.tone === 'ready' ? 'payout-status--ready' : 'payout-status--action'"
               role="status"
@@ -525,7 +542,8 @@
               </button>
             </div>
 
-            <div class="space-y-3">
+            <div v-if="!activation?.hideRows" class="space-y-3">
+              <p v-if="activation && activation.kind !== 'live'" class="setup-subhead mb-0 mt-2">Payment options</p>
               <div
                 v-for="btn in paymentButtons"
                 :key="btn.key"
@@ -534,19 +552,21 @@
               >
                 <div class="flex items-start justify-between gap-4">
                   <div class="flex-1">
-                    <div class="text-white font-medium">{{ btn.title }}</div>
+                    <div class="font-medium" :class="paymentsLocked ? 'text-white/70' : 'text-white'">{{ btn.title }}</div>
                     <div v-if="btn.description" class="text-white/50 text-sm mt-1">
                       {{ btn.description }}
                     </div>
                   </div>
-                  <label class="relative inline-flex items-center cursor-pointer">
+                  <svg v-if="paymentsLocked" class="w-4 h-4 mt-1 text-white/50 shrink-0" aria-hidden="true" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4.5" y="10.5" width="15" height="10" rx="2.5" /><path d="M8 10.5V7.5a4 4 0 0 1 8 0v3" /></svg>
+                  <label class="relative inline-flex items-center cursor-pointer" :class="{ 'opacity-50': paymentsLocked && !btn.enabled }">
                     <input
                       :id="`paybtn-${btn.key}`"
                       type="checkbox"
                       v-model="btn.enabled"
                       class="sr-only peer"
-                      :aria-label="`Show ${btn.title} on your artist page`"
+                      :aria-label="toggleLabel(btn)"
                       @change="onPaymentToggle(btn)"
+                      @click="guardLockedToggle($event, btn)"
                     />
                     <div class="w-11 h-6 bg-white/20 rounded-full peer peer-checked:bg-purple-600 peer-focus-visible:ring-2 peer-focus-visible:ring-purple-300 transition-colors"></div>
                     <div class="absolute left-[2px] top-[2px] w-5 h-5 bg-white rounded-full shadow-sm transition-transform peer-checked:translate-x-5"></div>
@@ -606,8 +626,9 @@
                   </div>
                 </div>
               </div>
+              <p v-if="activation?.rowNote" class="text-white/60 text-sm mx-0.5" data-testid="payments-row-note">{{ activation.rowNote }}</p>
             </div>
-            <div class="setup-divider">
+            <div v-if="!activation || activation.showTiles" class="setup-divider">
               <h3 class="setup-subhead">Payouts</h3>
             <div class="grid grid-cols-3 gap-2 sm:gap-4 mb-4">
               <div class="p-3 sm:p-4 rounded-xl border border-white/10 bg-white/5 text-center">
@@ -629,6 +650,16 @@
             </div>
 
             <button
+              v-if="activation"
+              type="button"
+              class="payout-manage w-full"
+              :disabled="loading"
+              @click="saveThenSetUpPayouts"
+            >
+              Manage payouts
+            </button>
+            <button
+              v-else
               type="button"
               class="w-full py-3 px-4 rounded-xl bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-semibold transition disabled:opacity-50"
               :disabled="loading"
@@ -636,7 +667,7 @@
             >
               {{ stripeOnboardingComplete ? "Manage / Continue Payout Setup" : "Set Up Payouts" }}
             </button>
-            <p v-if="payoutError" class="payout-status__error mt-2" role="alert">{{ payoutError }}</p>
+            <p v-if="payoutError && !activation" class="payout-status__error mt-2" role="alert">{{ payoutError }}</p>
             </div>
           </div>
         </section>
@@ -888,6 +919,16 @@ import { DEFAULT_PUBLICATION_HEADER_IMAGE_MODE } from "@/utils/publicationProfil
 import { paymentSetupStatus } from "@/utils/payments/paymentSetupStatus";
 import { payoutReturnKind, usePayoutSetup } from "@/composables/usePayoutSetup";
 import PayoutSetupPrompt from "@/components/payments/PayoutSetupPrompt.vue";
+import PaymentsActivationPanel from "@/components/payments/PaymentsActivationPanel.vue";
+import { useBillingConsent } from "@/composables/useBillingConsent";
+import { usePaymentActivation } from "@/composables/usePaymentActivation";
+import {
+  activationView,
+  billingReturnKind,
+  billingReturnNotice,
+  chargeCanShow,
+  keptTrialKey,
+} from "@/utils/payments/paymentActivation";
 import {
   readImageDimensions,
   unwrapBandImage,
@@ -963,11 +1004,111 @@ const payoutPromptAnswered = ref(false);
 // Set while saving on the way to Stripe, so submitForm opens Stripe instead of the artist page.
 const payoutAfterSave = ref(false);
 
+// ── Payments panel (server-decided eligibility; see utils/payments/paymentActivation.js)
+const { fetchEligibility, fetchBillingSubscription, startProUrl, confirmReturn } = usePaymentActivation();
+const eligibility = ref(null);
+// The owner's Stripe subscription, so charges are quoted at the price they pay (undefined = unknown).
+const billingSubscription = ref(undefined);
+const keptTrial = ref(false);
+const activationPanel = ref(null);
+const activationBusy = ref(null);
+const activationError = ref("");
+const activationNotice = ref(null);
+// Set while saving on the way to Start Pro, so submitForm opens checkout after the save.
+const proAfterSave = ref(false);
+
+// null = no server answer: the previous payout UI stays exactly as it was.
+const activation = computed(() =>
+  activationView(eligibility.value, { keptTrial: keptTrial.value, subscription: billingSubscription.value })
+);
+// Payment options can't be switched ON while payments need Pro, review, or are unavailable.
+const paymentsLocked = computed(() => Boolean(activation.value?.rowsLocked));
+const toggleLabel = (btn) =>
+  paymentsLocked.value ? `${btn.title} unlocks with Faneqo Pro` : `Show ${btn.title} on your artist page`;
+
+// While payments need Pro, an option can't be switched ON: the click is cancelled
+// (the artist's saved choice is never rewritten) and focus moves to Start Pro.
+function guardLockedToggle(event, btn) {
+  if (!paymentsLocked.value || btn.enabled) return;
+  event.preventDefault();
+  keptTrial.value = false;
+  activationPanel.value?.focusPrimary();
+}
+
+async function loadEligibility() {
+  const answer = await fetchEligibility(route.params.id);
+  // Only views with a paying button need the price and the consent terms; read them before showing them.
+  if (answer && chargeCanShow(answer)) {
+    const [sub] = await Promise.all([fetchBillingSubscription(), startProConsent.load({ bandId: route.params.id })]);
+    billingSubscription.value = sub;
+  }
+  if (answer) eligibility.value = answer;
+}
+
+// Billing A: the server's terms for Start Pro, and the consent the artist gave in the panel.
+const startProConsent = useBillingConsent("start_pro");
+const pendingConsent = ref(null);
+
+function openExternal(url) {
+  if (url && process.client) window.location.href = url;
+}
+
+// Save what's on screen, then open the Stripe page that pays for Pro.
+function saveThenStartPro() {
+  activationError.value = "";
+  payoutError.value = "";
+  activationBusy.value = "start_pro";
+  proAfterSave.value = true;
+  submitForm();
+}
+
+async function onActivationAction(action, extra = {}) {
+  activationError.value = "";
+  if (action === "start_pro" || action === "update_payment") {
+    pendingConsent.value = extra?.consent || null;
+    return saveThenStartPro();
+  }
+  if (action === "setup_payouts" || action === "payout_settings") return saveThenSetUpPayouts();
+  if (action === "keep_trial") {
+    // Nothing changes in billing: the panel steps aside for this visit.
+    keptTrial.value = true;
+    try { sessionStorage.setItem(keptTrialKey(route.params.id), "1"); } catch {}
+    activationNotice.value = { tone: "neutral", text: "Your free trial continues. Payment options unlock whenever you start Pro." };
+    return;
+  }
+  if (action === "check_status") {
+    activationBusy.value = "check_status";
+    try {
+      await refreshPayoutStatus();
+      await loadEligibility();
+    } finally {
+      activationBusy.value = null;
+    }
+    return;
+  }
+  if (action === "view_payments") return router.push(`/analytics/${route.params.id}`);
+  if (action === "contact_support" && process.client) {
+    window.location.href = `mailto:support@faneqo.com?subject=${encodeURIComponent(`Payments review (artist ${route.params.id})`)}`;
+  }
+}
+
+// A validation stop or failed save ends any "Opening checkout…" state.
+watch(loading, (on) => {
+  if (!on) activationBusy.value = null;
+});
+
 onBackFromStripe(() => {
   loading.value = false;
+  activationBusy.value = null;
 });
 
 function onPaymentToggle(btn) {
+  if (activation.value && activation.value.kind !== "live") {
+    if (!btn.enabled) return; // switching an option off is always allowed
+    // Before payouts are live the choice is kept; point at the action that makes it count.
+    activationPanel.value?.focusPrimary();
+    return;
+  }
   if (!btn.enabled || payoutPromptAnswered.value) return;
   if (setupStatus.value.state === "live") return;
   payoutPromptOpen.value = true;
@@ -1879,14 +2020,26 @@ async function fetchBand() {
 }
 onMounted(async () => {
   payoutReturn.value = payoutReturnKind(route.query);
+  const billingReturn = billingReturnKind(route.query);
   await fetchBand();
   if (payoutReturn.value === "error") {
     payoutError.value = "Your band was saved, but Stripe payout setup didn't open. Try again below.";
   }
+  try { keptTrial.value = sessionStorage.getItem(keptTrialKey(route.params.id)) === "1"; } catch {}
+  if (billingReturn === "return") {
+    // Verified with Stripe on the server; the URL alone never changes anything.
+    activationNotice.value = billingReturnNotice(await confirmReturn(route.query.session_id));
+    keptTrial.value = false;
+  } else if (billingReturn === "canceled") {
+    activationNotice.value = billingReturnNotice({ outcome: "canceled" });
+  } else if (route.query.billing === "error") {
+    activationError.value = "Your artist page is saved, but checkout didn't open. Try Start Pro again below.";
+  }
   await refreshPayoutStatus();
-  if (payoutReturn.value || route.hash === "#setup-support") {
-    // Drop ?payouts= so a reload doesn't greet them again; the status stays accurate.
-    if (payoutReturn.value) router.replace({ path: route.path, hash: "#setup-support" });
+  await loadEligibility();
+  if (payoutReturn.value || billingReturn || route.query.billing || route.hash === "#setup-support") {
+    // Drop ?payouts= / ?billing= so a reload doesn't greet them again; the status stays accurate.
+    if (payoutReturn.value || billingReturn || route.query.billing) router.replace({ path: route.path, hash: "#setup-support" });
     await nextTick();
     document.getElementById("setup-support")?.scrollIntoView({ block: "start" });
   }
@@ -1959,6 +2112,8 @@ async function submitForm() {
   const id = route.params.id;
   const thenSetUpPayouts = payoutAfterSave.value;
   payoutAfterSave.value = false;
+  const thenStartPro = proAfterSave.value;
+  proAfterSave.value = false;
 
   try {
     errorSectionId.value = "";
@@ -2366,6 +2521,30 @@ async function submitForm() {
       return;
     }
 
+    // Saved on the way to Start Pro: open the Stripe page that pays for Pro.
+    if (thenStartPro) {
+      loadingMessage.value = 'Changes saved! Opening secure checkout…';
+      try {
+        const url = await startProUrl(id, pendingConsent.value);
+        window.location.href = url;
+        return; // loading stays on while the browser leaves
+      } catch (e) {
+        loading.value = false;
+        if (e?.consentRefusal) {
+          // Show the server's current terms again, unticked; nothing was charged.
+          startProConsent.handleRefusal(e.consentRefusal);
+          activationError.value = `Your changes are saved. ${e.message}`;
+        } else if (e?.code === 'already_active' || e?.code === 'billing_exempt') {
+          await loadEligibility();
+        } else {
+          activationError.value = `Your changes are saved. ${e?.message || "Checkout didn't open."}`;
+        }
+        await nextTick();
+        document.getElementById("setup-support")?.scrollIntoView({ block: "start" });
+        return;
+      }
+    }
+
     // Saved on the way to payout setup: go to Stripe, which returns here.
     if (thenSetUpPayouts) {
       loadingMessage.value = 'Changes saved! Opening Stripe…';
@@ -2510,6 +2689,32 @@ if (process.client) window.location.reload();
 }
 
 .payout-status__action:disabled {
+  opacity: 0.6;
+}
+
+/* Quiet secondary (Design North Star): the live state's payout management */
+.payout-manage {
+  min-height: 48px;
+  padding: 0.75rem 1rem;
+  border-radius: 0.75rem;
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  background: #111217;
+  color: #f5f5f6;
+  font-weight: 600;
+  transition: background-color 0.18s ease, border-color 0.18s ease;
+}
+
+.payout-manage:hover:not(:disabled) {
+  background: #14161b;
+  border-color: rgba(255, 255, 255, 0.24);
+}
+
+.payout-manage:focus-visible {
+  outline: 2px solid #39d5ff;
+  outline-offset: 3px;
+}
+
+.payout-manage:disabled {
   opacity: 0.6;
 }
 
