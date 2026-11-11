@@ -29,15 +29,17 @@ Fill secrets as needed. Node pins in `.env` are non-secret (`NODE_VERSION`, opti
 ```bash
 mise install          # install Node pins from .env
 npm install           # root stackrun + jiti
+npm run install:apps  # FE + BE node_modules via mise Node pins
 ```
 
 Host FE/BE use `mise exec` with FE/BE → `NODE_VERSION` fallbacks. Compose staging images use the same vars (then `22.11.0`). Default `BACKEND_NODE_VERSION=20.20.2` for Strapi’s `<=20.x` engines. Staging needs Docker Compose ≥ 2.18.
 
-Frontend/backend deps: `npm install` in those folders (or staging `before` install/build). Dev stackrun does not run install.
+`npm run install:apps` runs `install:backend` then `install:frontend` (mise-pinned `npm install --prefix …`). One side only: `npm run install:frontend` / `npm run install:backend`. Dev stackrun does **not** install — missing `node_modules` → `nuxt: not found` / similar. Staging `$staging` `before` still install+builds itself.
 
 ## Local development
 
 ```bash
+npm run install:apps  # once (or after wiping node_modules)
 npm run dev
 ```
 

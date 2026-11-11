@@ -4,6 +4,9 @@
   "type": "module",
   "scripts": {
     "dev": "NODE_ENV=development stackrun",
+    "install:frontend": "mise exec node@${FRONTEND_NODE_VERSION:-${NODE_VERSION}} -- npm install --prefix frontend",
+    "install:backend": "mise exec node@${BACKEND_NODE_VERSION:-${NODE_VERSION}} -- npm install --prefix backend",
+    "install:apps": "npm run install:backend && npm run install:frontend",
     "build:frontend": "mise exec node@${FRONTEND_NODE_VERSION:-${NODE_VERSION}} -- npm run build --prefix frontend",
     "build:backend": "mise exec node@${BACKEND_NODE_VERSION:-${NODE_VERSION}} -- npm run build --prefix backend",
     "build": "npm run build:backend && npm run build:frontend",

@@ -24,6 +24,11 @@ const s = pkg.scripts ?? {};
 const exact = {
   dev: "NODE_ENV=development stackrun",
   staging: "NODE_ENV=staging stackrun",
+  "install:frontend":
+    "mise exec node@${FRONTEND_NODE_VERSION:-${NODE_VERSION}} -- npm install --prefix frontend",
+  "install:backend":
+    "mise exec node@${BACKEND_NODE_VERSION:-${NODE_VERSION}} -- npm install --prefix backend",
+  "install:apps": "npm run install:backend && npm run install:frontend",
   "build:frontend":
     "mise exec node@${FRONTEND_NODE_VERSION:-${NODE_VERSION}} -- npm run build --prefix frontend",
   "build:backend":
@@ -255,6 +260,32 @@ grep -Fq 'bash -c' scripts/staging-build.sh \
   || fail "staging-build.sh must run install script under bash -c ([[ not in dash/sh)"
 grep -Fq 'selective rebuild BUILD_BACKEND' scripts/staging-droplet-deploy.sh \
   || fail "staging-droplet-deploy.sh must echo selective BUILD_* decision"
+# History merge script (Tasks 7–10) — dry-run by default; never force-push product remotes
+[[ -f scripts/merge-product-history.sh ]] || fail "scripts/merge-product-history.sh missing"
+grep -Fq 'git filter-repo' scripts/merge-product-history.sh \
+  || grep -Fq 'git-filter-repo' scripts/merge-product-history.sh \
+  || fail "merge-product-history.sh must use git-filter-repo for init"
+grep -Fq 'subtree pull' scripts/merge-product-history.sh \
+  || fail "merge-product-history.sh must subtree pull for re-runnable updates"
+grep -Fq 'dry-run only' scripts/merge-product-history.sh \
+  || fail "merge-product-history.sh must dry-run by default"
+grep -Fq -- '--check-trees' scripts/merge-product-history.sh \
+  || fail "merge-product-history.sh must support --check-trees"
+grep -Fq '.github' scripts/merge-product-history.sh \
+  || fail "merge-product-history.sh must ignore .github/ (CI) in tree compare"
+grep -Fq 'FRONTEND_REF:-main' scripts/merge-product-history.sh \
+  || fail "merge-product-history.sh must default product FRONTEND_REF to main"
+grep -Fq 'BACKEND_REF:-main' scripts/merge-product-history.sh \
+  || fail "merge-product-history.sh must default product BACKEND_REF to main"
+grep -Fq 'MONOREPO_REF:-staging' scripts/merge-product-history.sh \
+  || fail "merge-product-history.sh must default MONOREPO_REF to staging"
+if grep -vE '^[[:space:]]*#' scripts/merge-product-history.sh | grep -Eq 'push\s+(-f|--force)\b|push\s+--force'; then
+  fail "merge-product-history.sh must not force-push"
+fi
+# Skip live tree compare in CI shape check (needs private product remotes).
+if ! bash scripts/merge-product-history.sh --skip-tree-check 2>&1 | grep -Fq 'dry-run only'; then
+  fail "merge-product-history.sh --skip-tree-check must print dry-run only"
+fi
 grep -Fq 'BUILD_BACKEND' scripts/staging-build.sh \
   || fail "staging-build.sh must support BUILD_BACKEND selective build"
 grep -Fq 'BUILD_FRONTEND' scripts/staging-build.sh \
