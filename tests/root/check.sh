@@ -243,6 +243,14 @@ grep -Fq 'npm install' scripts/staging-build.sh \
   || fail "staging-build.sh must run npm install"
 grep -Fq 'npm run build' scripts/staging-build.sh \
   || fail "staging-build.sh must run npm run build"
+grep -Fq '/root/.npm' scripts/staging-build.sh \
+  || fail "staging-build.sh must mount persistent npm cache at /root/.npm"
+grep -Fq '.faneqo-lock-sha' scripts/staging-build.sh \
+  || fail "staging-build.sh must stamp package-lock hash to skip install"
+grep -Fq 'FORCE_NPM_INSTALL' scripts/staging-build.sh \
+  || fail "staging-build.sh must support FORCE_NPM_INSTALL override"
+grep -Fq '.cache/npm' scripts/staging-build.sh \
+  || fail "staging-build.sh must default npm cache under .cache/npm"
 grep -Fq 'BUILD_BACKEND' scripts/staging-build.sh \
   || fail "staging-build.sh must support BUILD_BACKEND selective build"
 grep -Fq 'BUILD_FRONTEND' scripts/staging-build.sh \

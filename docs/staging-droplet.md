@@ -58,7 +58,7 @@ bash scripts/staging-up.sh
 
 What that does:
 
-1. **`scripts/staging-build.sh`** — `docker run --rm --env-file .env` with the same nested Node tags as compose (`FRONTEND_` / `BACKEND_` → `NODE_VERSION` → `22.11.0`). Runs `npm install && npm run build` in one-off containers; bind-mounts write artifacts onto the host tree; containers exit and are removed (`--rm`). **Not** a compose service. `--env-file` is required so Strapi build sees secrets (e.g. `STRIPE_SECRET_KEY` loaded by `cron-tasks.js`).
+1. **`scripts/staging-build.sh`** — `docker run --rm --env-file .env` with the same nested Node tags as compose (`FRONTEND_` / `BACKEND_` → `NODE_VERSION` → `22.11.0`). One-off containers bind-mount the host FE/BE trees (so `node_modules/` already on disk survives `git reset --hard` and `--rm`), plus `<repo>/.cache/npm` → `/root/.npm` for the download cache. Skips `npm install` when `package-lock.json` sha matches `node_modules/.faneqo-lock-sha` (`FORCE_NPM_INSTALL=1` to always install); always runs `npm run build`. **Not** a compose service. `--env-file` is required so Strapi build sees secrets (e.g. `STRIPE_SECRET_KEY` loaded by `cron-tasks.js`).
 2. **`docker compose up -d`** — Postgres + backend + frontend. Services use `restart: unless-stopped` so they survive droplet reboots.
 
 Redeploy after a new commit (CI or manual) — sync SHA, **selectively** rebuild, recreate only what changed:
@@ -78,7 +78,7 @@ bash scripts/staging-droplet-deploy.sh <git-sha>
 3. `scripts/staging-build.sh` honors `BUILD_BACKEND` / `BUILD_FRONTEND` (also `--backend-only` / `--frontend-only` / `--all`)
 4. `docker compose up -d --force-recreate --no-deps` for the services that built (postgres untouched)
 
-Wall clock is droplet install/build, not the Actions runner. Path-aware skips are how docs-only pushes avoid another ~20m Nuxt build.
+Wall clock is droplet install/build, not the Actions runner. Path-aware skips are how docs-only pushes avoid another ~20m Nuxt build. When a tree *does* rebuild: lock-unchanged installs skip (~minutes saved); remaining time is mostly Nuxt/Strapi compile on a 2GB box.
 
 *(Task 5.1 verify: this line is a docs-only deploy probe — should skip FE/BE build.)*
 
