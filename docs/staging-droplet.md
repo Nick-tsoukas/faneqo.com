@@ -86,7 +86,7 @@ Wall clock is droplet install/build, not the Actions runner. Path-aware skips ar
 
 Workflow: [`.github/workflows/deploy-staging.yml`](../.github/workflows/deploy-staging.yml).
 
-On push to `staging` (or `workflow_dispatch`), Actions SSHs to the droplet, resets to `$GITHUB_SHA`, then runs `scripts/staging-droplet-deploy.sh`. Build stays on the droplet — runner is a thin SSH client.
+On push to `staging` (or `workflow_dispatch`), Actions SSHs to the droplet, records `PREV_SHA=$(git rev-parse HEAD)`, resets to `$GITHUB_SHA`, then runs `PREV_SHA=… bash scripts/staging-droplet-deploy.sh`. That preserves the real previous commit for selective FE/BE rebuild (`git diff PREV..NEW`). Build stays on the droplet — runner is a thin SSH client.
 
 Repo secrets (Settings → Secrets and variables → Actions):
 

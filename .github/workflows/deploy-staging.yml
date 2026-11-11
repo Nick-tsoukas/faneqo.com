@@ -28,7 +28,9 @@ jobs:
           script: |
             set -euo pipefail
             cd /opt/faneqo
-            # Reset first so staging-droplet-deploy.sh exists even on older trees
+            # Capture pre-deploy HEAD for selective FE/BE rebuild, then reset so
+            # staging-droplet-deploy.sh exists even on older trees.
+            PREV_SHA="$(git rev-parse HEAD)"
             git fetch origin
             git reset --hard "${{ github.sha }}"
-            bash scripts/staging-droplet-deploy.sh "${{ github.sha }}"
+            PREV_SHA="${PREV_SHA}" bash scripts/staging-droplet-deploy.sh "${{ github.sha }}"

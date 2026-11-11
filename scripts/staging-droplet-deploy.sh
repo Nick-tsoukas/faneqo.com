@@ -5,6 +5,10 @@
 #   bash scripts/staging-droplet-deploy.sh <git-sha>
 #   GITHUB_SHA=<sha> bash scripts/staging-droplet-deploy.sh
 #   FORCE_FULL_BUILD=1 bash scripts/staging-droplet-deploy.sh <sha>   # always both
+#   PREV_SHA=<old> bash scripts/staging-droplet-deploy.sh <sha>
+#     Use when the caller already reset to <sha> (CI does this so the script
+#     exists on older trees). Without PREV_SHA, PREV is HEAD before this script
+#     resets — which is wrong if the tree was already moved to <sha>.
 set -euo pipefail
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 cd "$ROOT"
@@ -15,7 +19,12 @@ if [[ -z "${SHA}" ]]; then
   exit 1
 fi
 
-PREV="$(git rev-parse HEAD)"
+# Prefer caller-supplied PREV_SHA (Actions captures HEAD before reset --hard).
+if [[ -n "${PREV_SHA:-}" ]]; then
+  PREV="${PREV_SHA}"
+else
+  PREV="$(git rev-parse HEAD)"
+fi
 echo "==> fetch + reset --hard ${SHA} (was ${PREV})"
 git fetch origin
 git reset --hard "${SHA}"

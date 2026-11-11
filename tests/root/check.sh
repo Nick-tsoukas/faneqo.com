@@ -280,6 +280,8 @@ grep -Fq 'staging-build.sh' scripts/staging-droplet-deploy.sh \
   || fail "staging-droplet-deploy.sh must call staging-build.sh"
 grep -Fq 'git diff --name-only' scripts/staging-droplet-deploy.sh \
   || fail "staging-droplet-deploy.sh must diff paths for selective rebuild"
+grep -Fq 'PREV_SHA' scripts/staging-droplet-deploy.sh \
+  || fail "staging-droplet-deploy.sh must honor PREV_SHA when caller already reset"
 grep -Fq 'FORCE_FULL_BUILD' scripts/staging-droplet-deploy.sh \
   || fail "staging-droplet-deploy.sh must allow FORCE_FULL_BUILD"
 grep -Fq -- '--force-recreate' scripts/staging-droplet-deploy.sh \
@@ -315,6 +317,10 @@ grep -Fq 'branches: [staging]' .github/workflows/deploy-staging.yml \
   || fail "deploy-staging.yml must trigger on staging branch"
 grep -Fq 'staging-droplet-deploy.sh' .github/workflows/deploy-staging.yml \
   || fail "deploy-staging.yml must invoke staging-droplet-deploy.sh"
+grep -Fq 'PREV_SHA="$(git rev-parse HEAD)"' .github/workflows/deploy-staging.yml \
+  || fail "deploy-staging.yml must capture PREV_SHA from HEAD before reset --hard"
+grep -Fq 'PREV_SHA="${PREV_SHA}" bash scripts/staging-droplet-deploy.sh' .github/workflows/deploy-staging.yml \
+  || fail "deploy-staging.yml must pass PREV_SHA into staging-droplet-deploy.sh"
 grep -Fq 'STAGING_HOST' .github/workflows/deploy-staging.yml \
   || fail "deploy-staging.yml must use STAGING_HOST secret"
 grep -Fq 'STAGING_SSH_PRIVATE_KEY' .github/workflows/deploy-staging.yml \
