@@ -80,7 +80,7 @@ bash scripts/staging-droplet-deploy.sh <git-sha>
 
 Wall clock is droplet install/build, not the Actions runner. Path-aware skips are how docs-only pushes avoid another ~20m Nuxt build. When a tree *does* rebuild: lock-unchanged installs skip (~minutes saved); remaining time is mostly Nuxt/Strapi compile on a 2GB box.
 
-*(Task 5.1 verify: this line is a docs-only deploy probe — should skip FE/BE build.)*
+*(Task 5.1 verify: docs-only probe 2026-11-11b — expect BUILD_BACKEND=0 BUILD_FRONTEND=0, no recreate.)*
 
 ### GitHub Actions (Task 5)
 
